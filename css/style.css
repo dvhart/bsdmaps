@@ -1,0 +1,132 @@
+/*-------------------------
+	Simple resetactive
+--------------------------*/
+
+
+/*-------------------------
+	General Styles
+--------------------------*/
+html, body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "Arial", "Helvetica", sans-serif;
+  color: #222;
+  font-size: 13px;
+  -webkit-tap-highlight-color: rgba(0,0,0,0);
+  overflow-y: hidden;
+}
+
+/* Map styles. */
+#map-container {
+  width: 64.9%;
+  height: 800px;
+  /*  height: 100%; */
+  margin-left: auto;
+  margin-right: auto;
+  position: relative;
+  float: right;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  outline: 1px solid rgba(0,0,0,0.2);
+  z-index: 0;
+}
+
+#map-holder {
+  height: 100%;
+  width: 100%;
+}
+
+/* Panel styles. */
+#panel {
+  float: left;
+  width: 35%;
+  height: 100%;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  outline: 1px solid rgba(0,0,0,0.2);
+  z-index: 100;
+}
+
+#panel-content {
+  padding: 8.5px;
+}
+
+#geojson-controls {
+  padding-bottom: 8px;
+}
+
+#geojson-input {
+  width: 100%;
+  -webkit-box-sizing: border-box; /* <=iOS4, <= Android  2.3 */
+  -moz-box-sizing: border-box; /* FF1+ */
+  box-sizing: border-box; /* Chrome, IE8, Opera, Safari 5.1*/
+  border: none;
+  resize: none;
+  background-color: #F1F1F1;
+}
+
+#panel-title {
+  font-size: 20px;
+  line-height: 24px;
+  color: #DD4B39;
+}
+
+.subtitle {
+  font-size: 16px;
+  color: #222222;
+}
+
+hr {
+  color: #ebebeb;
+}
+
+#geojson-input {
+  background-color: #F1F1F1;
+}
+
+#geojson-input.invalid {
+  background-color: #FAC6C0;
+}
+
+
+
+section footer, header, aside, nav{
+	display: flex;
+}
+
+
+/*-------------------------
+	The menu
+--------------------------*/
+
+nav{
+	display:flex;
+	margin:0px auto 45px;
+	background-color:#5597b4;
+	box-shadow:0 1px 1px #ccc;
+	border-radius:2px;
+}
+
+nav a{
+	display:flex;
+	padding: 18px 30px;
+	color:#fff !important;
+	font-size:20px;
+	font-weight:bold;
+	text-decoration:none !important;
+	line-height:1;
+	text-transform: uppercase;
+	background-color:transparent;	
+}
+
+a:hover{
+	color:#ffd700 !important;
+}
+
+.tab_active {
+	background-color:red;
+}
+

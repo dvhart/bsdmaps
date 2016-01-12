@@ -1,0 +1,22 @@
+{
+  "name": "bsdmaps",
+  "version": "0.0.1",
+  "description": "Beaverton School District Map Tool",
+  "license": "GPL-2.0",
+  "main": "server.js",
+  "author": {
+    "name": "Brad Larson",
+    "email": "bhlarson@gmail.com"
+  },
+  "contributors": [{
+    "name": "Darren Hart",
+    "email": "dvhart@infradead.org"
+  }],
+  "dependencies": {
+    "express": "^4.13.3",
+    "body-parser":  "latest",
+    "mongodb": "latest",
+    "net": "latest",
+    "socket.io": "latest"
+  }
+}

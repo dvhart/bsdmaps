@@ -1,0 +1,48 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BSD Solution Entry</title>
+
+    <script src="angular.min.js"></script>
+	<script src="Chart.min.js"></script>
+	<script src="angular-chart.min.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?v=3.exp"></script>
+    <script src="solution.js"></script>
+    <link href="style.css" rel="stylesheet" />
+	<link href="angular-chart.min.css" rel="stylesheet"/>
+</head>
+<body ng-app="BoundaryEntry">
+    <div ng-controller="BoundaryController">
+        <div id="panel">
+            <div id="panel-content">
+				<a href="https://www.beaverton.k12.or.us/depts/facilities/boundary/HS%20Boundary%20Adjustment%20Process/11.12.15/Springboard%20Committee%20Table%20Map.pdf">Grid Codes</a>
+				<a href="https://www.beaverton.k12.or.us/depts/facilities/boundary/Documents/AllFacilities.pdf">BSD School Boundaries</a>
+                <form novalidate class="css-form">
+                    <label> Proposed High School: </label>
+                    <select name="ProposedHigh" id="proposedHigh" ng-model="data.proposedHigh" value="data.proposedHigh">
+                        <option value="Aloha">Aloha</option>
+                        <option value="Beaverton">Beaverton</option>
+                        <option value="Cooper">Cooper Mountain</option>						
+                        <option value="Southridge">Southridge</option>
+                        <option value="Sunset">Sunset</option>
+                        <option value="Westview">Westview</option>
+                    </select>
+                    <br>
+                    <input type="button" ng-click="DBRefresh()" value="Refresh from DB" />
+                    <br>
+                </form>
+            </div>
+			<div id="chart-container">
+				<p>Student Transitions: {{data.transitions}}</p>
+				<p>Travel Distance (miles): {{data.milesTraveled}}</p>
+				<canvas id="bar" class="chart chart-bar" chart-data="data.students" chart-labels="data.schools"> chart-series="series" </canvas>
+			</div>
+            <pre>data = {{data | json}}</pre>			
+        </div>
+        <div id="map-container">
+            <div id="map-holder"></div>
+        </div>
+    </div>
+</body>
+</html>
