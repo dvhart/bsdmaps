@@ -51,8 +51,9 @@ app.controller('BoundaryController', function ($scope, $http) {
         "transitions":0,
         "milesTraveled":0,
         "students": [
-            [2500, 2500, 2500, 2500, 2500, 2500], // student count
-            [0, 0, 0, 0, 0, 0]]                   // school capacity
+            [2500, 2500, 2500, 2500, 2500, 2500],  // student count
+            [0, 0, 0, 0, 0, 0]],                   // school capacity
+        "capacity_p": [[0, 0, 0, 0, 0, 0]]         // percent of capacity
     };
 
     $scope.DBRefresh = function () {
@@ -116,6 +117,7 @@ app.controller('BoundaryController', function ($scope, $http) {
             for(var i=0; i<results.schools.length; i++)
             {
                 $scope.data.students[0][i] = results.schools[i].students;
+                $scope.data.capacity_p[0][i] = (100*results.schools[i].students/capacity[i]).toFixed(2);
             }
             $scope.data.milesTraveled = milePerMeter*results.distance;
             RefreshFromDB(response);
@@ -205,6 +207,7 @@ function Configure($scope) {
                     for(var i=0; i<results.schools.length; i++)
                     {
                         $scope.data.students[0][i] = results.schools[i].students;
+                        $scope.data.capacity_p[0][i] = results.schools[i].capacity_p;
                     }
                     $scope.data.milesTraveled = milePerMeter*results.distance;
                     event.feature.toGeoJson(function (grid) {
@@ -223,7 +226,7 @@ function Results(grids, schoolData)
     var results = {transitions:0, distance:0,schools:[]};
     for(var i=0; i<numSchools; i++)
     {
-        results.schools[i] = {dbname:schoolData.schools[i].dbName, students:0, capacity:0};
+        results.schools[i] = {dbname:schoolData.schools[i].dbName, students:0, capacity_p:0};
     }
 
     grids.forEach(function (grid){
@@ -241,8 +244,13 @@ function Results(grids, schoolData)
                 results.distance += grid.properties.hs2020*grid.properties.distance[i];
             }
         }
-
     });
+
+    // Calculate percent capacity for eachs school
+    for(var i=0; i<numSchools; i++)
+    {
+        results.schools[i].capacity_p = (100*results.schools[i].students/schoolData.schools[i].capacity).toFixed(2);
+    }
 
     return results;
 }
