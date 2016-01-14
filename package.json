@@ -17,6 +17,7 @@
     "body-parser":  "latest",
     "mongodb": "latest",
     "net": "latest",
-    "socket.io": "latest"
+    "socket.io": "latest",
+    "http-auth": "latest"
   }
 }
