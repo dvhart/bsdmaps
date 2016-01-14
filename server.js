@@ -1,10 +1,13 @@
 ﻿var express = require('express');
 var assert = require('assert');
+var auth = require('http-auth');
+var fs = require('fs');
 var MongoClient = require('mongodb').MongoClient;
 var app = express();
 var dbGrid;
 var dbSchool;
 var dbSolution;
+var basic_auth;
 
 console.log(process.version);
 
@@ -12,6 +15,7 @@ var ObjectId = require('mongodb').ObjectID;
 var urlBsdGrid = 'mongodb://localhost:27017/BSDBoundary';
 var urlBsdSchool = 'mongodb://localhost:27017/BSDSchools';
 var urlBsdSolution = 'mongodb://localhost:27017/BSDSolution';
+var htpasswd_path = __dirname + '/users.htpasswd';
 
 // In command prop, start mongo server and point to node data directory:
 // c:\Program Files\MongoDb\Server\3.2\bin>mongod --dbpath C:\Web\BSDBoundaryAnalysis\dbGrid
@@ -33,6 +37,20 @@ var port = process.env.port || 1337;
 app.use(express.static(__dirname + '/public'));
 app.use(express.static(__dirname + '/js'));
 app.use(express.static(__dirname + '/css'));
+
+// Authentication module.
+// Setup authentication if the htpasswd_path file exists
+try {
+    var stat = fs.statSync(htpasswd_path);
+    basic_auth = auth.basic({
+        realm: "BSD Maps",
+        file: htpasswd_path
+    });
+    app.use(auth.connect(basic_auth));
+} catch (e) {
+    console.log(e);
+    console.log("WARNING: Proceeding without http-auth user authentication.");
+}
 
 
 app.get('/GetFeatures', function (request, response) {
