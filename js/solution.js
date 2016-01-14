@@ -46,7 +46,7 @@ app.controller('BoundaryController', function ($scope, $http) {
         "elementary": "",
         "centroid": [0,0],
         "schools": [],
-        "distance":[0,0,0,0,0,0],
+        "distance":[[0, 0, 0, 0, 0, 0]],
         "time": [0, 0, 0, 0, 0, 0],
         "transitions":0,
         "milesTraveled":0,
@@ -112,14 +112,17 @@ app.controller('BoundaryController', function ($scope, $http) {
             response.data.forEach(function AddSolution(grid){
                 grid.properties.proposedHigh = grid.properties.high;
             });
+
+            // FIXME: we do this assignment in a few places, need to refactor
             var results = Results(response.data, schoolData);
             $scope.data.transitions = results.transitions;
             for(var i=0; i<results.schools.length; i++)
             {
                 $scope.data.students[0][i] = results.schools[i].students;
                 $scope.data.capacity_p[0][i] = (100*results.schools[i].students/capacity[i]).toFixed(2);
+                $scope.data.distance[0][i] = results.schools[i].distance;
             }
-            $scope.data.milesTraveled = milePerMeter*results.distance;
+            $scope.data.milesTraveled = results.distance;
             RefreshFromDB(response);
             Configure($scope);
         });
@@ -208,8 +211,9 @@ function Configure($scope) {
                     {
                         $scope.data.students[0][i] = results.schools[i].students;
                         $scope.data.capacity_p[0][i] = results.schools[i].capacity_p;
+                        $scope.data.distance[0][i] = results.schools[i].distance;
                     }
-                    $scope.data.milesTraveled = milePerMeter*results.distance;
+                    $scope.data.milesTraveled = results.distance;
                     event.feature.toGeoJson(function (grid) {
                         selectedFeature = grid;
                         $scope.$apply();
@@ -223,10 +227,10 @@ function Configure($scope) {
 function Results(grids, schoolData)
 {
     var numSchools = schoolData.schools.length;
-    var results = {transitions:0, distance:0,schools:[]};
+    var results = {transitions:0, distance:0, schools:[]};
     for(var i=0; i<numSchools; i++)
     {
-        results.schools[i] = {dbname:schoolData.schools[i].dbName, students:0, capacity_p:0};
+        results.schools[i] = {dbname:schoolData.schools[i].dbName, students:0, capacity_p:0, distance:0};
     }
 
     grids.forEach(function (grid){
@@ -240,17 +244,25 @@ function Results(grids, schoolData)
             // Compute number of students
             if(hs == schoolData.schools[i].dbName)
             {
-                results.schools[i].students+= grid.properties.hs2020;
-                results.distance += grid.properties.hs2020*grid.properties.distance[i];
+                results.schools[i].students += grid.properties.hs2020;
+                results.schools[i].distance += grid.properties.hs2020*grid.properties.distance[i];
             }
         }
     });
 
-    // Calculate percent capacity for eachs school
+    // Calculate per results from grid totals calculated above
+    // Convert native results distance to miles
     for(var i=0; i<numSchools; i++)
     {
-        results.schools[i].capacity_p = (100*results.schools[i].students/schoolData.schools[i].capacity).toFixed(2);
+        results.schools[i].capacity_p = 100*results.schools[i].students/schoolData.schools[i].capacity;
+        results.schools[i].distance *= milePerMeter;
+        results.distance += results.schools[i].distance;
+
+        // Reduce decimal places to 2 (FIXME this is formatting and should be elsewhere)
+        results.schools[i].capacity_p = (results.schools[i].capacity_p).toFixed(2);
+        results.schools[i].distance = (results.schools[i].distance).toFixed(2);
     }
+    results.distance = results.distance.toFixed(2);
 
     return results;
 }
