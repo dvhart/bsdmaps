@@ -7,7 +7,6 @@ var milePerMeter = 0.000621371;
 
 // Google Map Overlays
 var bsdOverlay;
-var nbhdOverlay;
 
 var schoolData = {schools:[
     {id:0, dbName:'Aloha', displayName:'Aloha', color:'blue', location:{ lat: 45.4846754, lng: -122.8711176 }},
@@ -93,12 +92,6 @@ app.controller('BoundaryController', function ($scope, $http) {
 
         bsdOverlay = new google.maps.GroundOverlay('http://bsdmaps.monkeyblade.net/bsd-boundary-existing-overlay.png', imageBounds);
         bsdOverlay.setMap(map);
-
-        // TODO: Add toggle buttons to the panel to select which of
-        // the overlays to enable.
-        //nbhdOverlay = new google.maps.GroundOverlay('http://bsdmaps.monkeyblade.net/bsd-boundary-neighborhood-overlay.png', imageBounds);
-        //nbhdOverlay.setMap(map);
-
 
         panel = document.getElementById('panel');
 
