@@ -17,7 +17,6 @@ var schoolData = {schools:[
     {id:4, dbName:'Sunset', displayName:'Sunset', color:'purple', location:{ lat: 45.5275796, lng: -122.8188543 }},
     {id:5, dbName:'Westview', displayName:'Westview', color:'pink', location:{ lat: 45.55027, lng: -122.8682147}},
     ]};
-    45.4246773,-122.8589781
 
     /*
 var solution = {submiter:'Brad Larson',
