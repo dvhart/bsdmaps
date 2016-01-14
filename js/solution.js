@@ -9,12 +9,12 @@ var milePerMeter = 0.000621371;
 var bsdOverlay;
 
 var schoolData = {schools:[
-    {id:0, dbName:'Aloha', displayName:'Aloha', color:'blue', location:{ lat: 45.4846754, lng: -122.8711176 }},
-    {id:1, dbName:'Beaverton', displayName:'Beaverton', color:'orange', location:{ lat: 45.4862466, lng: -122.8127043 }},
-    {id:2, dbName:'Cooper', displayName:'Cooper Mtn', color:'green', location:{ lat: 45.4246773, lng: -122.8589781 }},
-    {id:3, dbName:'Southridge', displayName:'Southridge', color:'red', location:{ lat: 45.450176, lng: -122.8097826 }},
-    {id:4, dbName:'Sunset', displayName:'Sunset', color:'purple', location:{ lat: 45.5275796, lng: -122.8188543 }},
-    {id:5, dbName:'Westview', displayName:'Westview', color:'pink', location:{ lat: 45.55027, lng: -122.8682147}},
+    {id:0, dbName:'Aloha', displayName:'Aloha', color:'blue', capacity:2176, location:{ lat: 45.4846754, lng: -122.8711176 }},
+    {id:1, dbName:'Beaverton', displayName:'Beaverton', color:'orange', capacity:2122, location:{ lat: 45.4862466, lng: -122.8127043 }},
+    {id:2, dbName:'Cooper', displayName:'Cooper Mtn', color:'green', capacity:2176, location:{ lat: 45.4246773, lng: -122.8589781 }},
+    {id:3, dbName:'Southridge', displayName:'Southridge', color:'red', capacity:1850, location:{ lat: 45.450176, lng: -122.8097826 }},
+    {id:4, dbName:'Sunset', displayName:'Sunset', color:'purple', capacity:2203, location:{ lat: 45.5275796, lng: -122.8188543 }},
+    {id:5, dbName:'Westview', displayName:'Westview', color:'pink', capacity:2421, location:{ lat: 45.55027, lng: -122.8682147}},
     ]};
 
     /*
@@ -51,8 +51,8 @@ app.controller('BoundaryController', function ($scope, $http) {
         "transitions":0,
         "milesTraveled":0,
         "students": [
-            [2500, 2500, 2500, 2500, 2500, 2500],
-            [0, 0, 0, 0, 0]]
+            [2500, 2500, 2500, 2500, 2500, 2500], // student count
+            [0, 0, 0, 0, 0, 0]]                   // school capacity
     };
 
     $scope.DBRefresh = function () {
@@ -96,13 +96,16 @@ app.controller('BoundaryController', function ($scope, $http) {
         panel = document.getElementById('panel');
 
         var schools = [];
+        var capacity = [];
 
         for(var i=0; i< schoolData.schools.length; i++)
         {
             schools[i] = schoolData.schools[i].displayName;
+            capacity[i] = schoolData.schools[i].capacity;
         }
 
         $scope.data.schools = schools;
+        $scope.data.students[1] = capacity;
 
         $http.get('/GetFeatures').then(function (response) {
             response.data.forEach(function AddSolution(grid){
@@ -220,7 +223,7 @@ function Results(grids, schoolData)
     var results = {transitions:0, distance:0,schools:[]};
     for(var i=0; i<numSchools; i++)
     {
-        results.schools[i] = {dbname:schoolData.schools[i].dbName, students:0};
+        results.schools[i] = {dbname:schoolData.schools[i].dbName, students:0, capacity:0};
     }
 
     grids.forEach(function (grid){
@@ -258,7 +261,6 @@ function ComputeStudents(db)
                 students[i] += grid.properties.hs2020;
             }
         }
-
     });
     return students;
 }
@@ -274,8 +276,5 @@ function Transitions(db)
     });
     return transitions;
 }
-
-
-
 
 

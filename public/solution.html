@@ -36,7 +36,8 @@
             <div id="chart-container">
                 <p>Student Transitions: {{data.transitions}}</p>
                 <p>Travel Distance (miles): {{data.milesTraveled}}</p>
-                <canvas id="bar" class="chart chart-bar" chart-data="data.students" chart-labels="data.schools"> chart-series="series" </canvas>
+                <p>Capacity</p>
+                <canvas id="bar" class="chart chart-bar" chart-data="data.students" chart-labels="data.schools" chart-series="series"> </canvas>
             </div>
             <pre>data = {{data | json}}</pre>            
         </div>
