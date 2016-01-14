@@ -34,7 +34,6 @@
                 </form>
             </div>
             <div id="chart-container">
-                <p>Student Transitions: {{data.transitions}}</p>
                 <p>Capacity</p>
                 <canvas id="bar" class="chart chart-bar" chart-data="data.students" chart-labels="data.schools" chart-series="series"> </canvas>
                 <p>Capacity %</p>
@@ -42,6 +41,9 @@
                 <p>Proximity</p>
                 <p>Travel Distance (miles): {{data.milesTraveled}}</p>
                 <canvas id="bar3" class="chart chart-bar" chart-data="data.distance" chart-labels="data.schools" chart-series="schools"> </canvas>
+                <p>Transitions</p>
+                <p>Student Transitions: {{data.total_transitions}}</p>
+                <canvas id="bar4" class="chart chart-bar" chart-data="data.transitions" chart-labels="data.schools" chart-series="schools"> </canvas>
             </div>
             <pre>data = {{data | json}}</pre>            
         </div>

@@ -48,12 +48,13 @@ app.controller('BoundaryController', function ($scope, $http) {
         "schools": [],
         "distance":[[0, 0, 0, 0, 0, 0]],
         "time": [0, 0, 0, 0, 0, 0],
-        "transitions":0,
+        "total_transitions": 0,
         "milesTraveled":0,
         "students": [
             [2500, 2500, 2500, 2500, 2500, 2500],  // student count
             [0, 0, 0, 0, 0, 0]],                   // school capacity
-        "capacity_p": [[0, 0, 0, 0, 0, 0]]         // percent of capacity
+        "capacity_p": [[0, 0, 0, 0, 0, 0]],        // percent of capacity
+        "transitions": [[0, 0, 0, 0, 0, 0]]
     };
 
     $scope.DBRefresh = function () {
@@ -115,14 +116,16 @@ app.controller('BoundaryController', function ($scope, $http) {
 
             // FIXME: we do this assignment in a few places, need to refactor
             var results = Results(response.data, schoolData);
-            $scope.data.transitions = results.transitions;
             for(var i=0; i<results.schools.length; i++)
             {
                 $scope.data.students[0][i] = results.schools[i].students;
                 $scope.data.capacity_p[0][i] = (100*results.schools[i].students/capacity[i]).toFixed(2);
                 $scope.data.distance[0][i] = results.schools[i].distance;
+                $scope.data.transitions[0][i] = results.schools[i].transitions;
             }
             $scope.data.milesTraveled = results.distance;
+            $scope.data.total_transitions = results.transitions;
+
             RefreshFromDB(response);
             Configure($scope);
         });
@@ -205,15 +208,18 @@ function Configure($scope) {
                 selectedGrid = event.feature;
                 selectedGrid.setProperty('proposedHigh', proposedHigh);
                 map.data.toGeoJson(function (geoJson) {
+                    // FIXME: This is done multiple places
                     var results = Results(geoJson.features, schoolData);
-                    $scope.data.transitions = results.transitions;
                     for(var i=0; i<results.schools.length; i++)
                     {
                         $scope.data.students[0][i] = results.schools[i].students;
                         $scope.data.capacity_p[0][i] = results.schools[i].capacity_p;
                         $scope.data.distance[0][i] = results.schools[i].distance;
+                        $scope.data.transitions[0][i] = results.schools[i].transitions;
                     }
                     $scope.data.milesTraveled = results.distance;
+                    $scope.data.total_transitions = results.transitions;
+
                     event.feature.toGeoJson(function (grid) {
                         selectedFeature = grid;
                         $scope.$apply();
@@ -230,22 +236,23 @@ function Results(grids, schoolData)
     var results = {transitions:0, distance:0, schools:[]};
     for(var i=0; i<numSchools; i++)
     {
-        results.schools[i] = {dbname:schoolData.schools[i].dbName, students:0, capacity_p:0, distance:0};
+        results.schools[i] = {dbname:schoolData.schools[i].dbName, students:0, capacity_p:0, distance:0, transitions:0};
     }
 
     grids.forEach(function (grid){
         var hs = grid.properties.proposedHigh;
         for(var i=0; i<numSchools; i++)
         {
-            if(grid.properties.proposedHigh != grid.properties.high)
-            {
-                results.transitions += grid.properties.hs2020;
-            }
-            // Compute number of students
+            // Compute proposed school stats
             if(hs == schoolData.schools[i].dbName)
             {
                 results.schools[i].students += grid.properties.hs2020;
                 results.schools[i].distance += grid.properties.hs2020*grid.properties.distance[i];
+            }
+            // Compute transitions by existing school
+            if(grid.properties.high == schoolData.schools[i].dbName && hs != grid.properties.high)
+            {
+                results.schools[i].transitions += grid.properties.hs2020;
             }
         }
     });
@@ -257,6 +264,7 @@ function Results(grids, schoolData)
         results.schools[i].capacity_p = 100*results.schools[i].students/schoolData.schools[i].capacity;
         results.schools[i].distance *= milePerMeter;
         results.distance += results.schools[i].distance;
+        results.transitions += results.schools[i].transitions;
 
         // Reduce decimal places to 2 (FIXME this is formatting and should be elsewhere)
         results.schools[i].capacity_p = (results.schools[i].capacity_p).toFixed(2);
