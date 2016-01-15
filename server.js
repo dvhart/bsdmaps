@@ -18,18 +18,21 @@ var urlBsdSolution = 'mongodb://localhost:27017/BSDSolution';
 var htpasswd_path = __dirname + '/users.htpasswd';
 
 // In command prop, start mongo server and point to node data directory:
-// c:\Program Files\MongoDb\Server\3.2\bin>mongod --dbpath C:\Web\BSDBoundaryAnalysis\dbGrid
+// c:\Progra~1\MongoDb\Server\2.2.7\bin\mongod --dbpath E:\Web\bsdmaps\db
 // In second command prompt start mongdb
-// c:\Program Files\MongoDb\Server\3.2\bin>mongo
+// c:\Progra~1\MongoDb\Server\2.2.7\bin\mongo
 // Create database "BSDBoundary"
 //> use BSDBoundary
 // Create data collection in database:
 // > db.createCollection(features)
 // List all collections in database:
-// > db.features.features.find()
+// > db.features.find()
 // Remove everyting from database:
 // > db.features.remove({})
 // dbGrid.usercollection.insert({ "username" : "testuser1", "email" : "testuser1@testdomain.com" })
+//
+// command line solution evaluation:
+//> db.solutions.find()
 
 var port = process.env.port || 1337;
 
@@ -175,6 +178,72 @@ app.post('/EditGrid', function (request, res) {
                 }
             );
         }
+    });
+});
+
+app.post('/NewSolution', function (request, res) {
+    console.time("/NewSolution");
+    var putFeature = '';
+    
+    request.on('data', function (data) {
+        putFeature += data;
+        if (putFeature.length > 1e6)
+            request.connection.destroy();
+    });
+    
+    request.on('end', function () {
+        
+        if (putFeature != '') {
+            var newFeature = JSON.parse(putFeature);
+            dbGrid.collection('solutions').insertOne(newFeature, function (err, result) {
+                assert.equal(err, null);
+                
+                if (err != null) {
+                    console.log("/NewSolution error" + err);
+                }
+                else {
+                    console.log("/NewSolution result" + result);
+                    
+                    var features = dbGrid.collection('solutions').find().toArray(function (err, items) {
+                        if (err) {
+                            console.log("/NewSolution error" + err);
+                            return next(err);
+                        }
+                        res.send(JSON.stringify(result));
+                        console.timeEnd("/NewSolution");
+                    });
+                }
+            });
+        }
+
+    });
+});
+
+app.post('/Solution', function (request, response) {
+    console.time("/Solution");
+    var queryString = '';
+    
+    request.on('data', function (data) {
+        queryString += data;
+        if (queryString.length > 1e6)
+            request.connection.destroy();
+    });
+    
+    request.on('end', function () {
+        
+        if (queryString != '') {
+            var query = JSON.parse(queryString);
+            dbGrid.collection('solutions').findOne(query, function (err, queryResult) {
+                if (err != null) {
+                    console.log("/Solution error" + err);
+                }
+                else {
+                    response.send(JSON.stringify(queryResult));
+                    console.timeEnd("/Solution");
+                }
+            });
+        }
+
     });
 });
 
