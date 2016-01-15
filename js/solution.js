@@ -17,25 +17,6 @@ var schoolData = {schools:[
     {id:5, dbName:'Westview', displayName:'Westview', color:'pink', capacity:2421, location:{ lat: 45.55027, lng: -122.8682147}},
     ]};
 
-    /*
-var solution = {submiter:'Brad Larson',
-    contact:'bhlarson@gmail.com',
-    objectives:['Weight solutions using school district criteria'],
-    results:{ [{
-            population:0,
-            percentReducedLunch:0,
-            performance:{math:0,english:0,science:0},
-            demographics:{[group:percent]}
-            ]
-        transitions:0,
-        travelDistance:0,
-        travelTime:0,
-        safety:0,
-        unity:0},
-    allocation:{[school:[grid]]}
-    };
-*/
-
 app.controller('BoundaryController', function ($scope, $http) {
     $scope.data = {
         "gc": 0,
@@ -55,12 +36,19 @@ app.controller('BoundaryController', function ($scope, $http) {
             [0, 0, 0, 0, 0, 0]],                   // school capacity
         "capacity_p": [[0, 0, 0, 0, 0, 0]],        // percent of capacity
         "transitions": [[0, 0, 0, 0, 0, 0]],
-        "frl_p": [[0, 0, 0, 0, 0, 0]]
+        "frl_p": [[0, 0, 0, 0, 0, 0]],
+        "solutionName":"",
+        "solutionDescription":"",
+        "username": "",
+        "email": "",
+        "primaryObjectives": [],
+        "otherObjectives": []
     };
 
     $scope.DBRefresh = function () {
         map.data.revertStyle();
         $http.get('/GetFeatures').then(function (response) {
+            // Load current high school as proposed high school
             response.data.forEach(function AddSolution(grid){
                 grid.properties.proposedHigh = grid.properties.high;
             });
@@ -69,9 +57,75 @@ app.controller('BoundaryController', function ($scope, $http) {
             Configure($scope);
         });
     };
+	
+	var SaveJsonToFile = (function () {
+		var a = document.createElement("a");
+		document.body.appendChild(a);
+		a.style = "display: none";
+		return function (data, defaultFileName) {
+			var json = JSON.stringify(data),
+				blob = new Blob([json], {type: "octet/stream"}),
+				url = window.URL.createObjectURL(blob);
+			a.href = url;
+			a.download = defaultFileName;
+			a.click();
+			window.URL.revokeObjectURL(url);
+		};
+	}());	
+	
+    $scope.SaveToFile = function() {
 
-  $scope.series = ['Students', 'Capacity 35/90'];
+		map.data.toGeoJson(function (geoJson) {
+			var solution = SolutionToJson($scope.data, geoJson.features, results);
+            var defaultFileName = "solution.json";
+			SaveJsonToFile(solution, defaultFileName);
+		}); 		
+    };	
+	
+    $scope.SaveToDB = function() {	
+        map.data.toGeoJson(function (geoJson) {
+            var solution = SolutionToJson($scope.data, geoJson.features, results);
+            $http.post('/NewSolution', solution).then(function (response) {
 
+            });
+        }); 	
+    };
+    
+    $scope.LoadFromDB = function () {
+        var queryString = { solutionName: $scope.data.searchName };
+        $http.post('/Solution', queryString).then(function (response) {
+
+            var solutionObj = response.data;
+            
+            if (solutionObj != "null") {
+                map.data.toGeoJson(function (geoJson) {
+                    JsonToSolution(solutionObj, geoJson.features);
+                    
+                    var newData = new google.maps.Data({ map: map });
+                    newData.addGeoJson(geoJson);
+                    
+                    // No error means GeoJSON was valid!
+                    map.data.setMap(null);
+                    map.data = newData;
+                    
+                    results = Results(geoJson.features, schoolData);
+                    $scope.data.transitions = results.transitions;
+                    for (var i = 0; i < results.schools.length; i++) {
+                        $scope.data.students[0][i] = results.schools[i].students;
+                    }
+                    $scope.data.milesTraveled = milePerMeter * results.distance;
+                    Configure($scope);
+                });
+            }
+            else {
+                // Solution not found
+            }
+
+        });
+    };
+      	
+	
+    $scope.series = ['Students', 'Capacity 35/90'];
 
 
     function initMap() {
@@ -231,6 +285,39 @@ function Configure($scope) {
 
         }
     });
+}
+
+function SolutionToJson(formData, gridData, resultsData)
+{
+    var solution = {
+        solutionName: formData.solutionName, 
+        solutionDescription: formData.solutionDescription, 
+        solutionDescription: formData.solutionDescription, 
+        email: formData.email , 
+        grids: [], 
+        results: resultsData
+    };
+	for(var i=0; i<gridData.length; i++)
+	{
+		solution.grids[i] = {gc:gridData[i].properties.gc, proposedHigh:gridData[i].properties.proposedHigh};
+	}
+
+	return solution;
+}
+
+function JsonToSolution(solution, gridData)
+{
+	for(var i=0; i< solution.grids.length; i++)
+	{
+		if(gridData[i].properties.gc = solution.grids[i].gc)
+		{
+			gridData[i].properties.proposedHigh = solution.grids[i].proposedHigh;
+		}
+		else
+		{
+			console.log("Unexpected grid code index " + solution.grids[i].gc);
+		}
+	}
 }
 
 function Results(grids, schoolData)
