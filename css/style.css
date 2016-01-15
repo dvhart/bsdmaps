@@ -21,29 +21,64 @@ body {
   overflow-y: scroll;
 }
 
+h1 {
+  font-size: 36px;
+}
+
+h1, h2, h3 {
+  font-family: inherit;
+  font-weight: 500;
+  line-height: 1.1;
+  color: inherit;
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
+
+@media print {
+.no-print, .no-print * { display: none !important; }
+.no-break { page-break-inside: avoid; }
+}
+
 /* Map styles. */
 #map-container {
-  width: 64.9%;
-  height: 800px;
-  /*  height: 100%; */
+  width: 700px;
+  height: 100%;
+  padding: 20px;
   margin-left: auto;
   margin-right: auto;
   position: relative;
-  float: right;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-  outline: 1px solid rgba(0,0,0,0.2);
+  float: left;
   z-index: 0;
 }
 
+#map-header {
+  margin: 40px 0 20px;
+  text-align: center;
+}
+
 #map-holder {
-  height: 100%;
+  height: 900px;
   width: 100%;
+}
+
+#map-charts {
+}
+
+.chart-row {
+  width: 800px;
+}
+
+.chart-panel {
+  width: 50%;
+  padding: 15px;
+  /* This is said not to work in IE, unfortunately, inline-block doesn't work
+   * for us */
+  display: table-cell;
 }
 
 /* Panel styles. */
 #panel {
   float: left;
-  width: 35%;
   height: 100%;
   box-shadow: 0 4px 16px rgba(0,0,0,0.2);
   outline: 1px solid rgba(0,0,0,0.2);
