@@ -233,15 +233,18 @@ app.post('/Solution', function (request, response) {
         
         if (queryString != '') {
             var query = JSON.parse(queryString);
-            dbGrid.collection('solutions').findOne(query, function (err, queryResult) {
-                if (err != null) {
-                    console.log("/Solution error" + err);
+            var solutionsObj = dbGrid.collection('solutions').find(query);
+            var solutions = [];
+            solutionsObj.each(function (err, solution){
+                if (solution != null) {
+                    solutions.push(solution);
                 }
                 else {
-                    response.send(JSON.stringify(queryResult));
+                    response.send(JSON.stringify(solutions));
                     console.timeEnd("/Solution");
                 }
             });
+
         }
 
     });

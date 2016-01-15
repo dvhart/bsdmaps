@@ -3,6 +3,7 @@ var map;
 var panel;
 var selectedGrid; // selected feature object
 var selectedFeature; //  JSON selected grid
+var results;
 var milePerMeter = 0.000621371;
 
 // Google Map Overlays
@@ -41,8 +42,14 @@ app.controller('BoundaryController', function ($scope, $http) {
         "frl_p": [[0, 0, 0, 0, 0, 0]],
         "solutionName":"",
         "solutionDescription":"",
-        "username": "",
-        "email": "",
+        "solutionUsername": "",
+        "solutionEmail": "",
+        "solutionUrl": "",
+        "searchName": "",
+        "searchDescription": "",
+        "searchUsername": "",
+        "searchEmail": "",
+        "solutions":[],
         "primaryObjectives": [],
         "otherObjectives": []
     };
@@ -95,14 +102,29 @@ app.controller('BoundaryController', function ($scope, $http) {
     };
     
     $scope.LoadFromDB = function () {
-        var queryString = { solutionName: $scope.data.searchName };
+        var queryString = {};
+        
+        if ($scope.data.searchName) {
+            queryString.solutionName = $scope.data.searchName;
+        }
+        if ($scope.data.searcDescription) {
+            queryString.searcDescription = $scope.data.searcDescription;
+        }
+        if ($scope.data.searchUsername) {
+            queryString.searchUsername = $scope.data.searchUsername;
+        }
+        
+        if ($scope.data.searchEmail) {
+            queryString.searchEmail = $scope.data.searchEmail;
+        }
+        
         $http.post('/Solution', queryString).then(function (response) {
 
-            var solutionObj = response.data;
+            $scope.data.solutions = response.data;
             
             if (solutionObj != "null") {
                 map.data.toGeoJson(function (geoJson) {
-                    JsonToSolution(solutionObj, geoJson.features);
+                    JsonToSolution(solutionObj[0], geoJson.features);
                     
                     var newData = new google.maps.Data({ map: map });
                     newData.addGeoJson(geoJson);
@@ -124,6 +146,29 @@ app.controller('BoundaryController', function ($scope, $http) {
                 // Solution not found
             }
 
+        });
+    };
+    
+    $scope.SelectSolution = function () {
+        var selectedSolution = $scope.data.selectedSolution;
+
+        map.data.toGeoJson(function (geoJson) {
+            JsonToSolution(selectedSolution[0], geoJson.features);
+            
+            var newData = new google.maps.Data({ map: map });
+            newData.addGeoJson(geoJson);
+            
+            // No error means GeoJSON was valid!
+            map.data.setMap(null);
+            map.data = newData;
+            
+            results = Results(geoJson.features, schoolData);
+            $scope.data.transitions = results.transitions;
+            for (var i = 0; i < results.schools.length; i++) {
+                $scope.data.students[0][i] = results.schools[i].students;
+            }
+            $scope.data.milesTraveled = milePerMeter * results.distance;
+            Configure($scope);
         });
     };
       	
@@ -173,7 +218,7 @@ app.controller('BoundaryController', function ($scope, $http) {
             });
 
             // FIXME: we do this assignment in a few places, need to refactor
-            var results = Results(response.data, schoolData);
+            results = Results(response.data, schoolData);
             for(var i=0; i<results.schools.length; i++)
             {
                 $scope.data.students[0][i] = results.schools[i].students;
@@ -284,7 +329,7 @@ function Configure($scope) {
                 }
 
                 // FIXME: This is done multiple places
-                var results = Results(grids, schoolData);
+                results = Results(grids, schoolData);
                 for(var i=0; i<results.schools.length; i++)
                 {
                     $scope.data.students[0][i] = results.schools[i].students;
@@ -310,8 +355,9 @@ function SolutionToJson(formData, gridData, resultsData)
     var solution = {
         solutionName: formData.solutionName, 
         solutionDescription: formData.solutionDescription, 
-        solutionDescription: formData.solutionDescription, 
-        email: formData.email , 
+        solutionUsername: formData.solutionUsername, 
+        email: formData.solutionEmail, 
+        url: formData.solutionUrl,
         grids: [], 
         results: resultsData
     };
