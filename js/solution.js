@@ -19,6 +19,8 @@ var schoolData = {schools:[
 
 app.controller('BoundaryController', function ($scope, $http) {
     $scope.data = {
+        "proposedHigh":"Cooper",
+        "paintBy":"ES",
         "gc": 0,
         "hs2020": 0,
         "reducedLunch": 0,
@@ -52,8 +54,9 @@ app.controller('BoundaryController', function ($scope, $http) {
             response.data.forEach(function AddSolution(grid){
                 grid.properties.proposedHigh = grid.properties.high;
             });
+            // FIXME: is this still necessary?
             $scope.data.students[0] = ComputeStudents(response.data);
-            RefreshFromDB(response);
+            RefreshFromGrids(response.data);
             Configure($scope);
         });
     };
@@ -182,7 +185,7 @@ app.controller('BoundaryController', function ($scope, $http) {
             $scope.data.milesTraveled = results.distance;
             $scope.data.total_transitions = results.transitions;
 
-            RefreshFromDB(response);
+            RefreshFromGrids(response.data);
             Configure($scope);
         });
     };
@@ -190,9 +193,9 @@ app.controller('BoundaryController', function ($scope, $http) {
     initMap();
 });
 
-function RefreshFromDB(dbData) {
+function RefreshFromGrids(grids) {
     try {
-        var geoJsonData = { "type": "FeatureCollection", "features": dbData.data };
+        var geoJsonData = { "type": "FeatureCollection", "features": grids };
 
         var newData = new google.maps.Data({map: map});
         newData.addGeoJson(geoJsonData);
@@ -260,32 +263,47 @@ function Configure($scope) {
         var proposedHigh = $scope.data.proposedHigh;
         if(proposedHigh)
         {
-                // Record selected grid and grid data
-                selectedGrid = event.feature;
-                selectedGrid.setProperty('proposedHigh', proposedHigh);
-                map.data.toGeoJson(function (geoJson) {
-                    // FIXME: This is done multiple places
-                    var results = Results(geoJson.features, schoolData);
-                    for(var i=0; i<results.schools.length; i++)
-                    {
-                        $scope.data.students[0][i] = results.schools[i].students;
-                        $scope.data.capacity_p[0][i] = results.schools[i].capacity_p;
-                        $scope.data.distance[0][i] = results.schools[i].distance;
-                        $scope.data.transitions[0][i] = results.schools[i].transitions;
-                        $scope.data.frl_p[0][i] = results.schools[i].frl_p;
-                    }
-                    $scope.data.milesTraveled = results.distance;
-                    $scope.data.total_transitions = results.transitions;
+            // Record selected grid and grid data
+            selectedGrid = event.feature;
+            selectedGrid.setProperty('proposedHigh', proposedHigh);
+            selectedES = selectedGrid.getProperty('elementary');
 
-                    event.feature.toGeoJson(function (grid) {
-                        selectedFeature = grid;
-                        $scope.$apply();
-                });
+            map.data.toGeoJson(function (geoJson) {
+                var grids = geoJson.features;
+
+                // If painting by Elementary School Boundary, update all
+                // Grid Codes with a matching Elementary School Boundary
+                if ($scope.data.paintBy == "ES")
+                {
+                    grids.forEach(function (grid) {
+                        if (grid.properties.elementary == selectedES)
+                        {
+                            grid.properties.proposedHigh = proposedHigh;
+                        }
+                    });
+                }
+
+                // FIXME: This is done multiple places
+                var results = Results(grids, schoolData);
+                for(var i=0; i<results.schools.length; i++)
+                {
+                    $scope.data.students[0][i] = results.schools[i].students;
+                    $scope.data.capacity_p[0][i] = results.schools[i].capacity_p;
+                    $scope.data.distance[0][i] = results.schools[i].distance;
+                    $scope.data.transitions[0][i] = results.schools[i].transitions;
+                    $scope.data.frl_p[0][i] = results.schools[i].frl_p;
+                }
+                $scope.data.milesTraveled = results.distance;
+                $scope.data.total_transitions = results.transitions;
+
+                RefreshFromGrids(grids);
+                Configure($scope);
+
+                $scope.$apply();
             });
-
         }
     });
-}
+};
 
 function SolutionToJson(formData, gridData, resultsData)
 {

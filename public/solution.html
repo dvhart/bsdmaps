@@ -23,14 +23,20 @@
                     <select name="ProposedHigh" id="proposedHigh" ng-model="data.proposedHigh" value="data.proposedHigh">
                         <option value="Aloha">Aloha</option>
                         <option value="Beaverton">Beaverton</option>
-                        <option value="Cooper">Cooper Mountain</option>                        
+                        <option value="Cooper">Cooper Mountain</option>
                         <option value="Southridge">Southridge</option>
                         <option value="Sunset">Sunset</option>
                         <option value="Westview">Westview</option>
                     </select>
                     <br>
-					
-                    <input type="button" ng-click="DBRefresh()" value="Refresh from DB" /><br>
+                    <label> Apply to: </label>
+                    <select name="PaintBy" id="paintBy" ng-model="data.paintBy" value="data.paintBy">
+                        <option value="GC">Grid Code</option>
+                        <option value="ES">Elementary Boundary</option>
+                    </select>
+                    <br>
+                    <input type="button" ng-click="DBRefresh()" value="Refresh from DB" />
+                    <br>
                 </form>
             </div>
             <div id="solutiondb-form">
