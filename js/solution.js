@@ -299,12 +299,15 @@ function Configure($scope) {
             console.log("click proposedHigh=" + proposedHigh + " elementary=" + selectedES);
             
             var numEsGrids = 0;
-            mapGrids.forEach(function (grid) {
-                if (grid.getProperty('elementary') == selectedES) {
-                    grid.setProperty('proposedHigh', proposedHigh);
-                    numEsGrids++;
-                }
-            });
+            if ($scope.data.paintBy == "ES") {
+                mapGrids.forEach(function (grid) {
+                    if (grid.getProperty('elementary') == selectedES) {
+                        grid.setProperty('proposedHigh', proposedHigh);
+                        numEsGrids++;
+                    }
+                });
+            }
+
             console.log("click elementary grids=" + numEsGrids);
             
             // FIXME: This is done multiple places
