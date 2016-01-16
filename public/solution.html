@@ -43,13 +43,13 @@
             <div id="solutiondb-form">
                 <h4><a href="#" ng-click="saveForm = ! saveForm">V Save Solution</a></h4>
                 <div class="procedure-details" ng-show="saveForm">
-                    <form novalidate class="css-form">
+                    <form class="css-form" ng-submit="SaveSolution()">
                         <p>Simple clear saving instructions</p>
-                        Solution Name: <input type="text" ng-model="data.solutionName" required /><br />
-                        Description: <input type="text" ng-model="data.solutionDescription" /><br />
-                        Name: <input type="text" ng-model="data.solutionUsername" /><br />
-                        Email: <input type="email" ng-model="data.solutionEmail" required /><br />
-                        url: <input type="url" ng-model="data.solutionUrl"  /><br />
+                        * Solution Name: <input type="text" ng-model="data.solutionName" required /><br />
+                        * Description:    <input type="text" ng-model="data.solutionDescription" required /><br />
+                        * Submitter Name: <input type="text" ng-model="data.solutionUsername" required />  <br/>
+                        * Submitter Email: <input type="email" ng-model="data.solutionEmail" required /><br />
+                        url: <input type="url" ng-model="data.solutionUrl" /><br />
                         Primary Objectives:<br />
                         <select name="PrimaryObjectives" id="primaryObjectives" ng-model="data.submission.primaryObjectives" value="data.solution.primaryObjectives" multiple>
                             <option value="Space">Space</option>
@@ -59,28 +59,31 @@
                         </select><br />
                         Other Objectives:<br />
                         <select name="OtherObjectives" id="otherObjectives" ng-model="data.submission.otherObjectives" value="data.solution.otherObjectives" multiple>
+                            <option value="minTransitions">Minimize Transitions</option>
+                            <option value="education">Education</option>
                             <option value="transportCost">Transportation Cost</option>
                             <option value="composition">Student Body Composition</option>
                             <option value="feeders">Feeder Schools</option>
                             <option value="buildingEfficiency">Building Efficiency</option>
-                            <option value="education">Education</option>
                         </select><br />
 
-                        <input type="submit" ng-click="SaveToDB()" value="Save Solution" />
-                </form>
+                        <input type="submit" value="Save Solution" /> 
+                        <p>{{data.solutionSaveResponse}}</p><br />
+                    </form>
                 </div>
 
                 <h4><a href="#" ng-click="loadForm = ! loadForm">V Load Solution</a></h4>
                 <div class="procedure-details" ng-show="loadForm">
-                    <p>Search For Solution</p>
-                    Solution Name: <input type="text" ng-model="data.searchName" required /><br />
-                    Description: <input type="text" ng-model="data.searchDescription" required /><br />
-                    Name: <input type="text" ng-model="data.searchUsername" required /><br />
-                    Email: <input type="email" ng-model="data.searchEmail" required /><br />
-
-                    <input type="button" ng-click="LoadFromDB()" value="Find Solutions" /><br>
-                    <select id="myselection" multiple ng-multiple="false" ng-model="data.selectedSolution" ng-change="SelectSolution()" ng-options="c.solutionName for c in data.solutions"></select>
-                </div>
+                    <form class="css-form">
+                        <p>Enter solution search terms:</p>
+                        Solution Name: <input type="text" ng-model="data.searchName" /><br />
+                        Description: <input type="text" ng-model="data.searchDescription" /><br />
+                        Name: <input type="text" ng-model="data.searchUsername" /><br />
+                        Email: <input type="email" ng-model="data.searchEmail" /><br />
+                        <input type="button" ng-click="LoadFromDB()" value="Find Solutions" /><br>
+                        <select id="myselection" multiple ng-multiple="false" ng-model="data.selectedSolution" ng-change="SelectSolution()" ng-options="c.solutionName for c in data.solutions"></select>
+                    </div>
+                </form>
             </div>
             <pre>data = {{data | json}}</pre>            
         </div>

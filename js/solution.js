@@ -8,6 +8,7 @@ var milePerMeter = 0.000621371;
 
 // Google Map Overlays
 var bsdOverlay;
+var mapGrids;
 
 var schoolData = {schools:[
     {id:0, dbName:'Aloha', displayName:'Aloha', color:'blue', capacity:2176, location:{ lat: 45.4846754, lng: -122.8711176 }},
@@ -51,7 +52,8 @@ app.controller('BoundaryController', function ($scope, $http) {
         "searchEmail": "",
         "solutions":[],
         "primaryObjectives": [],
-        "otherObjectives": []
+        "otherObjectives": [],
+        "solutionSaveResponse":""
     };
 
     $scope.DBRefresh = function () {
@@ -91,15 +93,16 @@ app.controller('BoundaryController', function ($scope, $http) {
 			SaveJsonToFile(solution, defaultFileName);
 		}); 		
     };	
-	
-    $scope.SaveToDB = function() {	
+    
+    $scope.SaveSolution = function () {
         map.data.toGeoJson(function (geoJson) {
             var solution = SolutionToJson($scope.data, geoJson.features, results);
             $http.post('/NewSolution', solution).then(function (response) {
-
+                $scope.data.solutionSaveResponse = response.toString();
             });
-        }); 	
+        });
     };
+
     
     $scope.LoadFromDB = function () {
         var queryString = {};
@@ -121,30 +124,8 @@ app.controller('BoundaryController', function ($scope, $http) {
         $http.post('/Solution', queryString).then(function (response) {
 
             $scope.data.solutions = response.data;
-            
-            if (solutionObj != "null") {
-                map.data.toGeoJson(function (geoJson) {
-                    JsonToSolution(solutionObj[0], geoJson.features);
-                    
-                    var newData = new google.maps.Data({ map: map });
-                    newData.addGeoJson(geoJson);
-                    
-                    // No error means GeoJSON was valid!
-                    map.data.setMap(null);
-                    map.data = newData;
-                    
-                    results = Results(geoJson.features, schoolData);
-                    $scope.data.transitions = results.transitions;
-                    for (var i = 0; i < results.schools.length; i++) {
-                        $scope.data.students[0][i] = results.schools[i].students;
-                    }
-                    $scope.data.milesTraveled = milePerMeter * results.distance;
-                    Configure($scope);
-                });
-            }
-            else {
-                // Solution not found
-            }
+            $scope.$apply();
+
 
         });
     };
@@ -156,11 +137,12 @@ app.controller('BoundaryController', function ($scope, $http) {
             JsonToSolution(selectedSolution[0], geoJson.features);
             
             var newData = new google.maps.Data({ map: map });
-            newData.addGeoJson(geoJson);
+            var features = newData.addGeoJson(geoJson);
             
             // No error means GeoJSON was valid!
             map.data.setMap(null);
             map.data = newData;
+            mapGrids = features;
             
             results = Results(geoJson.features, schoolData);
             $scope.data.transitions = results.transitions;
@@ -169,6 +151,7 @@ app.controller('BoundaryController', function ($scope, $http) {
             }
             $scope.data.milesTraveled = milePerMeter * results.distance;
             Configure($scope);
+            $scope.$apply();
         });
     };
       	
@@ -243,11 +226,12 @@ function RefreshFromGrids(grids) {
         var geoJsonData = { "type": "FeatureCollection", "features": grids };
 
         var newData = new google.maps.Data({map: map});
-        newData.addGeoJson(geoJsonData);
+        var features = newData.addGeoJson(geoJsonData);
 
         // No error means GeoJSON was valid!
         map.data.setMap(null);
         map.data = newData;
+        mapGrids = features;
 
     } catch (error) {
         newData.setMap(null);
@@ -295,57 +279,49 @@ function Configure($scope) {
             map.data.overrideStyle(event.feature, { strokeWeight: 1 });
         }
     });
-
+    
     map.data.addListener('mouseout', function (event) {
         if (selectedGrid == null) {
             map.data.revertStyle();
         }
     });
-
+    
     map.data.addListener('click', selectGrid = function (event) {
         map.data.revertStyle();
-
+        
         var proposedHigh = $scope.data.proposedHigh;
-        if(proposedHigh)
-        {
+        if (proposedHigh) {
             // Record selected grid and grid data
             selectedGrid = event.feature;
             selectedGrid.setProperty('proposedHigh', proposedHigh);
             selectedES = selectedGrid.getProperty('elementary');
+            
+            console.log("click proposedHigh=" + proposedHigh + " elementary=" + selectedES);
+            
+            var numEsGrids = 0;
+            if ($scope.data.paintBy == "ES") {
+                mapGrids.forEach(function (grid) {
+                    if (grid.getProperty('elementary') == selectedES) {
+                        grid.setProperty('proposedHigh', proposedHigh);
+                        numEsGrids++;
+                    }
+                });
+            }
 
-            map.data.toGeoJson(function (geoJson) {
-                var grids = geoJson.features;
-
-                // If painting by Elementary School Boundary, update all
-                // Grid Codes with a matching Elementary School Boundary
-                if ($scope.data.paintBy == "ES")
-                {
-                    grids.forEach(function (grid) {
-                        if (grid.properties.elementary == selectedES)
-                        {
-                            grid.properties.proposedHigh = proposedHigh;
-                        }
-                    });
-                }
-
-                // FIXME: This is done multiple places
-                results = Results(grids, schoolData);
-                for(var i=0; i<results.schools.length; i++)
-                {
-                    $scope.data.students[0][i] = results.schools[i].students;
-                    $scope.data.capacity_p[0][i] = results.schools[i].capacity_p;
-                    $scope.data.distance[0][i] = results.schools[i].distance;
-                    $scope.data.transitions[0][i] = results.schools[i].transitions;
-                    $scope.data.frl_p[0][i] = results.schools[i].frl_p;
-                }
-                $scope.data.milesTraveled = results.distance;
-                $scope.data.total_transitions = results.transitions;
-
-                RefreshFromGrids(grids);
-                Configure($scope);
-
-                $scope.$apply();
-            });
+            console.log("click elementary grids=" + numEsGrids);
+            
+            // FIXME: This is done multiple places
+            results = MapResults(mapGrids, schoolData);
+            for (var i = 0; i < results.schools.length; i++) {
+                $scope.data.students[0][i] = results.schools[i].students;
+                $scope.data.capacity_p[0][i] = results.schools[i].capacity_p;
+                $scope.data.distance[0][i] = results.schools[i].distance;
+                $scope.data.transitions[0][i] = results.schools[i].transitions;
+                $scope.data.frl_p[0][i] = results.schools[i].frl_p;
+            }
+            $scope.data.milesTraveled = results.distance;
+            $scope.data.total_transitions = results.transitions;            
+            $scope.$apply();
         }
     });
 };
@@ -382,6 +358,54 @@ function JsonToSolution(solution, gridData)
 			console.log("Unexpected grid code index " + solution.grids[i].gc);
 		}
 	}
+}
+
+function MapResults(mapGrids, schoolData) {
+    var numSchools = schoolData.schools.length;
+    var results = { transitions: 0, distance: 0, schools: [] };
+    for (var i = 0; i < numSchools; i++) {
+        results.schools[i] = { dbname: schoolData.schools[i].dbName, students: 0, capacity_p: 0, distance: 0, transitions: 0, frl: 0, frl_p: 0 };
+    }
+    
+    mapGrids.forEach(function (grid) {
+        var proposedHs = grid.getProperty('proposedHigh') ;
+        var distance = grid.getProperty('distance');
+        for (var i = 0; i < numSchools; i++) {
+            // Compute proposed school stats
+            var projectedStudents = grid.getProperty('hs2020');
+            if (proposedHs == schoolData.schools[i].dbName) {
+                results.schools[i].students += projectedStudents;
+                results.schools[i].distance += projectedStudents * distance[i] ;
+                results.schools[i].frl += grid.getProperty('reducedLunch');
+            }
+            // Compute transitions by existing school
+            var currentHs = grid.getProperty('high');
+            if (currentHs == schoolData.schools[i].dbName && proposedHs != currentHs) {
+                results.schools[i].transitions += projectedStudents;
+            }
+        }
+    });
+    
+    // Calculate per results from grid totals calculated above
+    // Convert native results distance to miles
+    for (var i = 0; i < numSchools; i++) {
+        results.schools[i].capacity_p = 100 * results.schools[i].students / schoolData.schools[i].capacity;
+        results.schools[i].distance *= milePerMeter;
+        results.distance += results.schools[i].distance;
+        results.transitions += results.schools[i].transitions;
+        if (results.schools[i].students) {
+            results.schools[i].frl_p = 100 * results.schools[i].frl / (results.schools[i].students);
+        }
+        
+        
+        // Reduce decimal places to 2 (FIXME this is formatting and should be elsewhere)
+        results.schools[i].capacity_p = (results.schools[i].capacity_p).toFixed(2);
+        results.schools[i].distance = (results.schools[i].distance).toFixed(2);
+        results.schools[i].frl_p = (results.schools[i].frl_p).toFixed(2);
+    }
+    results.distance = results.distance.toFixed(2);
+    
+    return results;
 }
 
 function Results(grids, schoolData)
