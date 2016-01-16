@@ -1,24 +1,27 @@
 /*-------------------------
-	Simple resetactive
+	Printing Styles
 --------------------------*/
+@media print {
+  .no-print, .no-print * { display: none !important; }
+  .no-break { page-break-inside: avoid; }
+}
 
 
 /*-------------------------
 	General Styles
 --------------------------*/
 html, body {
-  height: 100%;
-  width: 100%;
   margin: 0;
   padding: 0;
 }
 
 body {
   font-family: "Arial", "Helvetica", sans-serif;
-  color: #222;
   font-size: 13px;
   -webkit-tap-highlight-color: rgba(0,0,0,0);
   overflow-y: scroll;
+  background: #eee;
+  color: black;
 }
 
 h1 {
@@ -26,46 +29,55 @@ h1 {
 }
 
 h1, h2, h3 {
-  font-family: inherit;
   font-weight: 500;
   line-height: 1.1;
-  color: inherit;
-  margin-top: 20px;
-  margin-bottom: 10px;
+  color: black;
 }
 
-@media print {
-.no-print, .no-print * { display: none !important; }
-.no-break { page-break-inside: avoid; }
+hr {
+  color: black;
 }
 
-/* Map styles. */
-#map-container {
-  width: 700px;
+
+/*-------------------------
+	Panel Structure
+--------------------------*/
+#panel {
   height: 100%;
-  padding: 20px;
-  margin-left: auto;
-  margin-right: auto;
-  position: relative;
-  float: left;
-  z-index: 0;
+  background: white;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  outline: 1px solid rgba(0,0,0,0.2);
+  margin-right: 50px;
+  display: inline-block;
+  padding: 10px;
 }
 
-#map-header {
-  margin: 40px 0 20px;
+
+/*-------------------------
+	Page Structure
+--------------------------*/
+
+.report {
+  height: 100%;
+  background: white;
+  display: inline-block;
+  vertical-align: top;
   text-align: center;
 }
 
-#map-holder {
-  height: 900px;
-  width: 100%;
+.page {
+  margin: 25px;
 }
 
-#map-charts {
+/* Map styles. */
+#map-holder {
+  height: 850px;
+  width: 700px;
 }
 
 .chart-row {
-  width: 800px;
+  width: 100%;
+  height: 400px;
 }
 
 .chart-panel {
@@ -76,23 +88,15 @@ h1, h2, h3 {
   display: table-cell;
 }
 
-/* Panel styles. */
-#panel {
-  float: left;
-  height: 100%;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-  outline: 1px solid rgba(0,0,0,0.2);
-  z-index: 100;
-}
-
-#panel-content {
-  padding: 8.5px;
-}
 
 #geojson-controls {
   padding-bottom: 8px;
 }
 
+
+/*-------------------------
+	Map Styles
+--------------------------*/
 #geojson-input {
   width: 100%;
   -webkit-box-sizing: border-box; /* <=iOS4, <= Android  2.3 */
@@ -112,10 +116,6 @@ h1, h2, h3 {
 .subtitle {
   font-size: 16px;
   color: #222222;
-}
-
-hr {
-  color: #ebebeb;
 }
 
 #geojson-input {
