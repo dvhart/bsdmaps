@@ -51,7 +51,8 @@ app.controller('BoundaryController', function ($scope, $http) {
         "searchEmail": "",
         "solutions":[],
         "primaryObjectives": [],
-        "otherObjectives": []
+        "otherObjectives": [],
+        "solutionSaveResponse":""
     };
 
     $scope.DBRefresh = function () {
@@ -91,15 +92,16 @@ app.controller('BoundaryController', function ($scope, $http) {
 			SaveJsonToFile(solution, defaultFileName);
 		}); 		
     };	
-	
-    $scope.SaveToDB = function() {	
+    
+    $scope.SaveSolution = function () {
         map.data.toGeoJson(function (geoJson) {
             var solution = SolutionToJson($scope.data, geoJson.features, results);
             $http.post('/NewSolution', solution).then(function (response) {
-
+                $scope.data.solutionSaveResponse = response.toString();
             });
-        }); 	
+        });
     };
+
     
     $scope.LoadFromDB = function () {
         var queryString = {};
@@ -121,30 +123,8 @@ app.controller('BoundaryController', function ($scope, $http) {
         $http.post('/Solution', queryString).then(function (response) {
 
             $scope.data.solutions = response.data;
-            
-            if (solutionObj != "null") {
-                map.data.toGeoJson(function (geoJson) {
-                    JsonToSolution(solutionObj[0], geoJson.features);
-                    
-                    var newData = new google.maps.Data({ map: map });
-                    newData.addGeoJson(geoJson);
-                    
-                    // No error means GeoJSON was valid!
-                    map.data.setMap(null);
-                    map.data = newData;
-                    
-                    results = Results(geoJson.features, schoolData);
-                    $scope.data.transitions = results.transitions;
-                    for (var i = 0; i < results.schools.length; i++) {
-                        $scope.data.students[0][i] = results.schools[i].students;
-                    }
-                    $scope.data.milesTraveled = milePerMeter * results.distance;
-                    Configure($scope);
-                });
-            }
-            else {
-                // Solution not found
-            }
+            $scope.$apply();
+
 
         });
     };
@@ -169,6 +149,7 @@ app.controller('BoundaryController', function ($scope, $http) {
             }
             $scope.data.milesTraveled = milePerMeter * results.distance;
             Configure($scope);
+            $scope.$apply();
         });
     };
       	
