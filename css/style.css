@@ -44,29 +44,27 @@ hr {
 --------------------------*/
 .panel-left {
   height: 100%;
-  width: 400px;
+  width: 350px;
   background: white;
   box-shadow: 0 4px 16px rgba(0,0,0,0.2);
   outline: 1px solid rgba(0,0,0,0.2);
   display: inline-block;
-  padding: 10px;
-  margin-right: 25px;
+  margin-right: 10px;
   vertical-align: top;
 }
 .panel-right {
   height: 100%;
-  width: 400px;
+  width: 350px;
   background: white;
   box-shadow: 0 4px 16px rgba(0,0,0,0.2);
   outline: 1px solid rgba(0,0,0,0.2);
   display: inline-block;
-  padding: 10px;
-  margin-left: 25px;
+  margin-left: 10px;
   vertical-align: top;
 }
 
 .form-panel {
-  margin: 15px
+  margin: 5px
 }
 
 .form-header {
@@ -80,7 +78,7 @@ hr {
 }
 
 .form-body {
-  padding: 15px;
+  padding: 10px;
   border-left: 1px solid black;
   border-right: 1px solid black;
   border-bottom: 1px solid black;
