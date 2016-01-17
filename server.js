@@ -68,6 +68,38 @@ app.get('/GetFeatures', function (request, response) {
     });
 });
 
+app.post('/SetFeatures', function (request, res) {
+	console.time("/SetFeatures");
+	var putFeatures = '';
+	
+	request.on('data', function (data) {
+		putFeatures += data;
+		if (putFeatures.slength > 1e6)
+			request.connection.destroy();
+	});
+	
+	request.on('end', function () {
+		
+		if (putFeatures != '') {
+			var newFeatures = JSON.parse(putFeatures);
+			
+			dbGrid.collection('features').remove({}); // remove features from database
+			dbGrid.collection('features').insert(newFeatures, function (err, result) {
+				assert.equal(err, null);
+				
+				if (err != null) {
+					console.log("/SetFeatures error" + err);
+				}
+				else {
+					res.send(JSON.stringify(result));
+					console.timeEnd("/SetFeatures");
+				}
+			});
+		}
+
+	});
+});
+
 app.post('/NewGrid', function (request, res) {
     console.time("/NewGrid");
     var putFeature = '';
