@@ -44,6 +44,35 @@
             </div> <!-- BSD Solution Editor -->
 
             <div class="form-panel">
+                <div class="form-header"><a href="#" ng-click="loadForm = ! loadForm">Load Solution</a></div>
+                <div class="procedure-details form-body">
+                    <form class="css-form" ng-show="loadForm">
+                        <p>Enter solution search terms:</p>
+
+                        <div class="form-row">
+                            <label>Solution Name</label>
+                            <input type="text" ng-model="data.searchName" />
+                        </div>
+                        <div class="form-row">
+                            <label>Description</label>
+                            <input type="text" ng-model="data.searchDescription" />
+                        </div>
+                        <div class="form-row">
+                            <label>Name</label>
+                            <input type="text" ng-model="data.searchUsername" />
+                        </div>
+                        <div class="form-row">
+                            <label>Email</label>
+                            <input type="email" ng-model="data.searchEmail" />
+                        </div>
+                        <input type="button" ng-click="LoadFromDB()" value="Find Solutions" /><br>
+                        <select id="myselection" multiple ng-multiple="false" ng-model="data.selectedSolution" ng-change="SelectSolution()" ng-options="c.solutionName for c in data.solutions"></select>
+                    </form>
+                    (Click Title to Open/Close Form)
+                </div>
+            </div> <!-- Load Panel -->
+
+            <div class="form-panel">
                 <div class="form-header"><a href="#" ng-click="saveForm = !  saveForm">Save Solution</a></div>
                 <div class="procedure-details form-body">
                     <form class="css-form" ng-submit="SaveSolution()" ng-show="saveForm">
@@ -96,34 +125,6 @@
                 </div>
             </div> <!-- Save Panel -->
 
-            <div class="form-panel">
-                <div class="form-header"><a href="#" ng-click="loadForm = ! loadForm">Load Solution</a></div>
-                <div class="procedure-details form-body">
-                    <form class="css-form" ng-show="loadForm">
-                        <p>Enter solution search terms:</p>
-
-                        <div class="form-row">
-                            <label>Solution Name</label>
-                            <input type="text" ng-model="data.searchName" />
-                        </div>
-                        <div class="form-row">
-                            <label>Description</label>
-                            <input type="text" ng-model="data.searchDescription" />
-                        </div>
-                        <div class="form-row">
-                            <label>Name</label>
-                            <input type="text" ng-model="data.searchUsername" />
-                        </div>
-                        <div class="form-row">
-                            <label>Email</label>
-                            <input type="email" ng-model="data.searchEmail" />
-                        </div>
-                        <input type="button" ng-click="LoadFromDB()" value="Find Solutions" /><br>
-                        <select id="myselection" multiple ng-multiple="false" ng-model="data.selectedSolution" ng-change="SelectSolution()" ng-options="c.solutionName for c in data.solutions"></select>
-                    </form>
-                    (Click Title to Open/Close Form)
-                </div>
-            </div> <!-- Load Panel -->
             <!-- <pre>data = {{data | json}}</pre> -->
         </div> <!-- panel -->
 
