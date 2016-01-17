@@ -42,15 +42,27 @@ hr {
 /*-------------------------
 	Panel Styles
 --------------------------*/
-#panel {
+.panel-left {
   height: 100%;
   width: 400px;
   background: white;
   box-shadow: 0 4px 16px rgba(0,0,0,0.2);
   outline: 1px solid rgba(0,0,0,0.2);
-  margin-right: 25px;
   display: inline-block;
   padding: 10px;
+  margin-right: 25px;
+  vertical-align: top;
+}
+.panel-right {
+  height: 100%;
+  width: 400px;
+  background: white;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  outline: 1px solid rgba(0,0,0,0.2);
+  display: inline-block;
+  padding: 10px;
+  margin-left: 25px;
+  vertical-align: top;
 }
 
 .form-panel {
