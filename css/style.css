@@ -40,7 +40,7 @@ hr {
 
 
 /*-------------------------
-	Panel Structure
+	Panel Styles
 --------------------------*/
 #panel {
   height: 100%;
@@ -53,11 +53,48 @@ hr {
   padding: 10px;
 }
 
+.form-panel {
+  margin: 15px
+}
+
+.form-header {
+  height: 30px;
+  line-height: 30px;
+  text-align: center;
+  font-weight: bold;
+  background: #eee;
+  border-radius: 6px 6px 0px 0px;
+  border: 1px solid black;
+}
+
+.form-body {
+  padding: 15px;
+  border-left: 1px solid black;
+  border-right: 1px solid black;
+  border-bottom: 1px solid black;
+}
+
+/* label [input] row formatting */
+div.form-row {
+  padding-bottom: 1.25em;
+}
+div.form-row label {
+  width: 10em;
+  padding-top: .1em; 
+  padding-right: .25em; 
+  text-align: right;
+  display: block;
+  float: left;
+}
+div.form-row input,
+div.form-row textarea {
+  display: block;
+}
+
 
 /*-------------------------
 	Page Structure
 --------------------------*/
-
 .report {
   height: 100%;
   background: white;
