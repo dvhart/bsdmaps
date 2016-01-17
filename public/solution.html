@@ -14,96 +14,243 @@
 </head>
 <body ng-app="BoundaryEntry">
     <div ng-controller="BoundaryController">
-        <div id="panel">
-            <div id="panel-content">
-                <a href="https://www.beaverton.k12.or.us/depts/facilities/boundary/HS%20Boundary%20Adjustment%20Process/11.12.15/Springboard%20Committee%20Table%20Map.pdf">Grid Codes</a>
-                <a href="https://www.beaverton.k12.or.us/depts/facilities/boundary/Documents/AllFacilities.pdf">BSD School Boundaries</a>
-                <form novalidate class="css-form">
-                    <label> Proposed High School: </label>
-                    <select name="ProposedHigh" id="proposedHigh" ng-model="data.proposedHigh" value="data.proposedHigh">
-                        <option value="Aloha">Aloha</option>
-                        <option value="Beaverton">Beaverton</option>
-                        <option value="Cooper">Cooper Mountain</option>
-                        <option value="Southridge">Southridge</option>
-                        <option value="Sunset">Sunset</option>
-                        <option value="Westview">Westview</option>
-                    </select>
-                    <br>
-                    <label> Apply to: </label>
-                    <select name="PaintBy" id="paintBy" ng-model="data.paintBy" value="data.paintBy">
-                        <option value="GC">Grid Code</option>
-                        <option value="ES">Elementary Boundary</option>
-                    </select>
-                    <br>
-                    <input type="button" ng-click="DBRefresh()" value="Refresh from DB" />
-                    <br>
-                </form>
-            </div>
-            <div id="solutiondb-form">
-                <h4><a href="#" ng-click="saveForm = ! saveForm">V Save Solution</a></h4>
-                <div class="procedure-details" ng-show="saveForm">
-                    <form class="css-form" ng-submit="SaveSolution()">
-                        <p>Simple clear saving instructions</p>
-                        * Solution Name: <input type="text" ng-model="data.solutionName" required /><br />
-                        * Description:    <input type="text" ng-model="data.solutionDescription" required /><br />
-                        * Submitter Name: <input type="text" ng-model="data.solutionUsername" required />  <br/>
-                        * Submitter Email: <input type="email" ng-model="data.solutionEmail" required /><br />
-                        url: <input type="url" ng-model="data.solutionUrl" /><br />
-                        Primary Objectives:<br />
-                        <select name="PrimaryObjectives" id="primaryObjectives" ng-model="data.submission.primaryObjectives" value="data.solution.primaryObjectives" multiple>
-                            <option value="Space">Space</option>
-                            <option value="Proximity">Proximity</option>
-                            <option value="Safety">Safety</option>
-                            <option value="Unity">Neighborhood Unity</option>
-                        </select><br />
-                        Other Objectives:<br />
-                        <select name="OtherObjectives" id="otherObjectives" ng-model="data.submission.otherObjectives" value="data.solution.otherObjectives" multiple>
-                            <option value="minTransitions">Minimize Transitions</option>
-                            <option value="education">Education</option>
-                            <option value="transportCost">Transportation Cost</option>
-                            <option value="composition">Student Body Composition</option>
-                            <option value="feeders">Feeder Schools</option>
-                            <option value="buildingEfficiency">Building Efficiency</option>
-                        </select><br />
+        <div class="panel-left" class="no-print">
 
-                        <input type="submit" value="Save Solution" /> 
-                        <p>{{data.solutionSaveResponse}}</p><br />
+            <div class="form-panel">
+                <div class="form-header">BSD Solution Editor</div>
+                <div class="form-body">
+                    <form novalidate class="css-form">
+                        <div class="form-row">
+                            <label>Proposed High School</label>
+                            <select name="ProposedHigh" id="proposedHigh" ng-model="data.proposedHigh" value="data.proposedHigh">
+                                <option value="Aloha">Aloha</option>
+                                <option value="Beaverton">Beaverton</option>
+                                <option value="Cooper">Cooper Mountain</option>
+                                <option value="Southridge">Southridge</option>
+                                <option value="Sunset">Sunset</option>
+                                <option value="Westview">Westview</option>
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <label>Apply To</label>
+                            <select name="PaintBy" id="paintBy" ng-model="data.paintBy" value="data.paintBy">
+                                <option value="GC">Grid Code</option>
+                                <option value="ES">Elementary Boundary</option>
+                            </select>
+                        </div>
+                        <input type="button" ng-click="DBRefresh()" value="Refresh from DB" />
                     </form>
                 </div>
+            </div> <!-- BSD Solution Editor -->
 
-                <h4><a href="#" ng-click="loadForm = ! loadForm">V Load Solution</a></h4>
-                <div class="procedure-details" ng-show="loadForm">
-                    <form class="css-form">
+            <div class="form-panel">
+                <div class="form-header"><a href="#" ng-click="loadForm = ! loadForm">Load Solution</a></div>
+                <div class="procedure-details form-body">
+                    <form class="css-form" ng-show="loadForm">
                         <p>Enter solution search terms:</p>
-                        Solution Name: <input type="text" ng-model="data.searchName" /><br />
-                        Description: <input type="text" ng-model="data.searchDescription" /><br />
-                        Name: <input type="text" ng-model="data.searchUsername" /><br />
-                        Email: <input type="email" ng-model="data.searchEmail" /><br />
+
+                        <div class="form-row">
+                            <label>Solution Name</label>
+                            <input type="text" ng-model="data.searchName" />
+                        </div>
+                        <div class="form-row">
+                            <label>Description</label>
+                            <input type="text" ng-model="data.searchDescription" />
+                        </div>
+                        <div class="form-row">
+                            <label>Name</label>
+                            <input type="text" ng-model="data.searchUsername" />
+                        </div>
+                        <div class="form-row">
+                            <label>Email</label>
+                            <input type="email" ng-model="data.searchEmail" />
+                        </div>
                         <input type="button" ng-click="LoadFromDB()" value="Find Solutions" /><br>
                         <select id="myselection" multiple ng-multiple="false" ng-model="data.selectedSolution" ng-change="SelectSolution()" ng-options="c.solutionName for c in data.solutions"></select>
+                    </form>
+                    (Click Title to Open/Close Form)
+                </div>
+            </div> <!-- Load Panel -->
+
+            <div class="form-panel">
+                <div class="form-header"><a href="#" ng-click="saveForm = !  saveForm">Save Solution</a></div>
+                <div class="procedure-details form-body">
+                    <form class="css-form" ng-submit="SaveSolution()" ng-show="saveForm">
+                        <p>Simple clear saving instructions</p>
+
+                        <div class="form-row">
+                            <label>* Solution Name</label>
+                            <input type="text" ng-model="data.solutionName" required />
+                        </div>
+                        <div class="form-row">
+                            <label>* Description</label>
+                            <input type="text" ng-model="data.solutionDescription" required />
+                        </div>
+                        <div class="form-row">
+                            <label>* Submitter Name</label>
+                            <input type="text" ng-model="data.solutionUsername" required />
+                        </div>
+                        <div class="form-row">
+                            <label>* Submitter Email</label>
+                            <input type="email" ng-model="data.solutionEmail" required />
+                        </div>
+                        <div class="form-row">
+                            <label>URL</label>
+                            <input type="url" ng-model="data.solutionUrl" />
+                        </div>
+                        <div class="form-row">
+                            <label>Primary Objectives</label>
+                            <select name="PrimaryObjectives" id="primaryObjectives" ng-model="data.submission.primaryObjectives" value="data.solution.primaryObjectives" multiple>
+                                <option value="Space">Space</option>
+                                <option value="Proximity">Proximity</option>
+                                <option value="Safety">Safety</option>
+                                <option value="Unity">Neighborhood Unity</option>
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <label>Other Objectives</label>
+                            <select name="OtherObjectives" id="otherObjectives" ng-model="data.submission.otherObjectives" value="data.solution.otherObjectives" multiple>
+                                <option value="minTransitions">Minimize Transitions</option>
+                                <option value="education">Education</option>
+                                <option value="transportCost">Transportation Cost</option>
+                                <option value="composition">Student Body Composition</option>
+                                <option value="feeders">Feeder Schools</option>
+                                <option value="buildingEfficiency">Building Efficiency</option>
+                            </select>
+                        </div>
+                        <input type="submit" value="Save Solution" /> 
+                        <p>{{data.solutionSaveResponse}}</p>
+                    </form>
+                    (Click Title to Open/Close Form)
+                </div>
+            </div> <!-- Save Panel -->
+
+            <!-- <pre>data = {{data | json}}</pre> -->
+        </div> <!-- panel -->
+
+        <div class="report">
+            <div class="page no-break">
+                <h1>Beaverton School District</h1>
+                <h2>Community Proposed Map: {{data.mapTitle}}</h2>
+                <div id="map-holder"></div>
+            </div> <!-- page -->
+
+            <div class="no-print"><hr/></div>
+
+            <div class="page no-break">
+                <div class="chart-row">
+                    <div class="chart-panel">
+                        <div class="chart-header">Percent Capacity</div>
+                        <div class="chart-box">
+                            <canvas id="bar2" class="chart chart-bar"
+                                              height="250"
+                                              chart-data="data.capacity_p"
+                                              chart-labels="data.schools"
+                                              chart-series="schools">
+                            </canvas>
+                            <div class="chart-caption">
+                            </div>
+                        </div>
                     </div>
-                </form>
+                    <div class="chart-panel">
+                        <div class="chart-header">Proximity</div>
+                        <div class="chart-box">
+                            <canvas id="bar3" class="chart chart-bar"
+                                              height="250"
+                                              chart-data="data.distance"
+                                              chart-labels="data.schools"
+                                              chart-series="schools">
+                            </canvas>
+                            <div class="chart-caption">
+                                Travel Distance (miles): {{data.milesTraveled}}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chart-row">
+                    <div class="chart-panel">
+                        <div class="chart-header">Transitions</div>
+                        <div class="chart-box">
+                            <canvas id="bar4" class="chart chart-bar"
+                                              height="250"
+                                              chart-data="data.transitions"
+                                              chart-labels="data.schools"
+                                              chart-series="schools">
+                            </canvas>
+                            <div class="chart-caption">
+                                Student Transitions: {{data.total_transitions}}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chart-panel">
+                        <div class="chart-header">Equity</div>
+                        <div class="chart-box">
+                            <canvas id="bar5" class="chart chart-bar"
+                                              height="250"
+                                              chart-data="data.frl_p"
+                                              chart-labels="data.schools"
+                                              chart-series="schools">
+                            </canvas>
+                            <div class="chart-caption">
+                                As measured by Free and Reduced Lunch Percentage
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <hr/>
+                This is a community generated map and is not endorsed in any way
+                by the Beaverton School District.
+            </div> <!-- page -->
+        </div> <!-- report -->
+
+        <div class="panel-right" class="no-print">
+            <div class="form-panel">
+                <div class="form-header">Instructions</div>
+                <div class="form-body">
+                    <p>This is a community developed tool to generate proposed
+                    attendance boundaries for the Beaverton School District*
+                    High Schools.</p>
+
+                    <p>To create your own map, start with the existing
+                    boundaries, or load a previously saved map. You can reload
+                    the existing boundaries by pressing "Refresh from DB". You
+                    can search for maps that meet your criteria in the Load
+                    Solution form. Once loaded, you can make your own changes.
+                    You will not be able to modify the existing maps, but you
+                    can save your changes as a new map in the Save Solution
+                    form.</p>
+
+                    <p>Next, select the "Proposed High School" from the drop
+                    down list. Then, in the "Apply to" drop down box, choose
+                    between applying the proposed high school to individual grid
+                    codes, or to all grid codes in the same elementary school
+                    boundary.  Finally, click on the map to assign areas to high
+                    schools.</p>
+
+                    <p>As you make changes, the statistics are updated in real
+                    time below the map to help you evaluate the impact.</p>
+
+                    <p>When you have created a map you feel is worth saving, you
+                    can print it using your browser's print feature. You can
+                    also save it for others to see om tje Save Solution
+                    form.</p>
+                </div>
             </div>
-            <div id="chart-container">
-                <p>Capacity</p>
-                <canvas id="bar" class="chart chart-bar" chart-data="data.students" chart-labels="data.schools" chart-series="series"> </canvas>
-                <p>Capacity %</p>
-                <canvas id="bar2" class="chart chart-bar" chart-data="data.capacity_p" chart-labels="data.schools" chart-series="schools"> </canvas>
-                <p>Proximity</p>
-                <p>Travel Distance (miles): {{data.milesTraveled}}</p>
-                <canvas id="bar3" class="chart chart-bar" chart-data="data.distance" chart-labels="data.schools" chart-series="schools"> </canvas>
-                <p>Transitions</p>
-                <p>Student Transitions: {{data.total_transitions}}</p>
-                <canvas id="bar4" class="chart chart-bar" chart-data="data.transitions" chart-labels="data.schools" chart-series="schools"> </canvas>
-                <p>Equity</p>
-                (As measured by Free and Reduced Lunch Percentage)
-                <canvas id="bar5" class="chart chart-bar" chart-data="data.frl_p" chart-labels="data.schools" chart-series="schools"> </canvas>
+            <div class="form-panel">
+                <div class="form-header">Resources</div>
+                <div class="form-body">
+                    <p>The data used in this tool was manually extracted, and may
+                    contain errors, from the following resources:</p>
+                    <a href="https://www.beaverton.k12.or.us/depts/facilities/boundary/HS%20Boundary%20Adjustment%20Process/11.12.15/Springboard%20Committee%20Table%20Map.pdf">Grid Codes</a> |
+                    <a href="https://www.beaverton.k12.or.us/depts/facilities/boundary/Documents/AllFacilities.pdf">BSD School Boundaries</a>
+                    <hr/>
+                    *This tool and the data provided are in no way authorized or
+                    supported by the Beaverton School District.
+                </div>
             </div>
-            <pre>data = {{data | json}}</pre>            
         </div>
-        <div id="map-container">
-            <div id="map-holder"></div>
-        </div>
+        </div><!-- Right Panel -->
     </div>
 </body>
 </html>

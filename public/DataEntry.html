@@ -6,7 +6,7 @@
 
     <script src="angular.min.js"></script>
     <script src="https://maps.googleapis.com/maps/api/js?v=3.exp"></script>
-    <script src="fillgriddbdev.js"></script>
+    <script src="fillgriddb.js"></script>
     <link href="style.css" rel="stylesheet" />
 </head>
 <body ng-app="BoundaryEntry">
@@ -73,7 +73,7 @@
                         <option value="West Tualatin View">West Tualatin View</option>
                         <option value="William Walker">William Walker</option>
                     </select> <br>
-                    <input type="button" ng-click="NewGrid(data)" value="Add Selected Grid" />                    
+                    <input type="button" ng-click="NewGrid(data)" value="Add Selected Grid" />
                     <input type="button" ng-click="EditGrid(data)" value="Update Selected Grid" />
                     <input type="button" ng-click="DeleteGrid(data)" value="Delete Selected Grid" />
                     <input type="button" ng-click="DBRefresh()" value="Refresh from DB" />
