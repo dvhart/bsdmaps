@@ -368,17 +368,17 @@ function SolutionToJson(formData, gridData, resultsData)
 
 function JsonToSolution(solution, gridData)
 {
-    for(var i=0; i< solution.grids.length; i++)
-    {
-        if(gridData[i].properties.gc == solution.grids[i].gc)
-        {
-            gridData[i].properties.proposedHigh = solution.grids[i].proposedHigh;
-        }
-        else
-        {
-            console.log("Unexpected grid code index " + solution.grids[i].gc);
-        }
-    }
+	for(var i=0; i< solution.grids.length; i++)
+	{
+		if(gridData[i].properties.gc == solution.grids[i].gc)
+		{
+			gridData[i].properties.proposedHigh = solution.grids[i].proposedHigh;
+		}
+		else
+		{
+			console.log("Unexpected grid code index " + solution.grids[i].gc);
+		}
+	}
 }
 
 function Results(grids, schoolData)
@@ -399,7 +399,7 @@ function Results(grids, schoolData)
             {
                 results.schools[i].students += grid.properties.hs2020;
                 results.schools[i].distance += grid.properties.hs2020*grid.properties.distance[i];
-                results.schools[i].frl += grid.properties.reducedLunch;
+                results.schools[i].frl += FrlFit(grid.properties.reducedLunch,  grid.properties.hs2020);
             }
             // Compute transitions by existing school
             if(grid.properties.high == schoolData.schools[i].dbName && hs != grid.properties.high)
@@ -459,4 +459,20 @@ function Transitions(db)
         }
     });
     return transitions;
+}
+
+function FrlFit(frl, total2020) {
+	var m = 0.95
+	var b = 0.14;
+	var k = 1.25;
+	
+	var frlFit = 0;
+	if (total2020 > 0) {
+		frlFit = (m * Math.pow(frl / total2020, k) + b) * total2020;
+		if (frlFit > total2020) {
+			frlFit = total2020;
+		}
+	}
+	
+	return frlFit;
 }

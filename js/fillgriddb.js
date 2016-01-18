@@ -212,18 +212,71 @@ function Configure($scope) {
     // Initialise the map.
     map.data.setControls(['Polygon']);
 
-    map.data.setStyle(function (feature) {
-        var highSchool = feature.getProperty('high');
+    map.data.setStyle(function (feature) {		
+		var view = "elementary";
 
-        var color = 'grey';
-        switch (highSchool) {
-            case 'Sunset': color = 'purple'; break;
-            case 'Beaverton': color = 'orange'; break;
-            case 'Westview': color = 'pink'; break;
-            case 'Aloha': color = 'blue'; break;
-            case 'Southridge': color = 'red'; break;
-            case 'Cooper': color = 'green'; break;
-        }
+		var color = 'grey';
+		if (view == "high") {
+			switch (feature.getProperty('high')) {
+				case 'Sunset': color = 'purple'; break;
+				case 'Beaverton': color = 'orange'; break;
+				case 'Westview': color = 'pink'; break;
+				case 'Aloha': color = 'blue'; break;
+				case 'Southridge': color = 'red'; break;
+				case 'Cooper': color = 'green'; break;
+			}
+		}
+		else if (view == "middle") {
+			switch (feature.getProperty('middle')) {
+				case 'Cedar Park': color = 'purple'; break;
+				case 'Conestoga': color = 'orange'; break;
+				case 'Five Oaks': color = 'pink'; break;
+				case 'Highland Park': color = 'blue'; break;
+				case 'Meadow Park': color = 'red'; break;
+				case 'Mountain View': color = 'green'; break;
+				case 'Stoller': color = 'Peru'; break;
+				case 'Whitford': color = 'PaleVioletRed'; break;
+			}
+		}
+		else {
+			switch (feature.getProperty('elementary')) {
+				case 'Aloha-Huber Park': color = 'AliceBlue'; break;
+				case 'Barnes': color = 'Brown'; break;
+				case 'Beaver Acres': color = 'Chartreuse'; break;
+				case 'Bethany': color = 'Coral'; break;
+				case 'Bonny Slope': color = 'DarkGreen'; break;
+				case 'Cedar Mill': color = 'DarkMagenta'; break;
+				case 'Chehalem': color = 'DeepSkyBlue'; break;
+				case 'Cooper Mountain': color = 'DarkOrange'; break;
+				case 'Elmonica': color = 'Gold'; break;
+				case 'Errol Hassell': color = 'HotPink'; break;
+				case 'Findley': color = 'Tomato'; break;
+				case 'Fir Grove': color = 'MediumOrchid'; break;
+				case 'Greenway': color = 'Peru'; break;
+				case 'Hazeldale': color = 'OrangeRed'; break;
+				case 'Hiteon': color = 'PaleGreen'; break;
+				case 'Jacob Wismer': color = 'PaleVioletRed'; break;
+				case 'Kinnaman': color = 'LightBlue'; break;
+				case 'Mckay': color = 'PaleVioletRed'; break;
+				case 'Mckinley': color = 'Red'; break;
+				case 'Montclair': color = 'Sienna'; break;
+				case 'Nancy Ryles': color = 'SeaGreen'; break;
+				case 'Oak Hills': color = 'Teal'; break;
+				case 'Raleigh Hills': color = 'MediumVioletRed'; break;
+				case 'Raleigh Park': color = 'Navy'; break;
+				case 'Ridgewood': color = 'YellowGreen'; break;
+				case 'Rock Creek': color = 'SteelBlue'; break;
+				case 'Scholls Heights': color = 'RosyBrown'; break;
+				case 'Sexton Mountain': color = 'RoyalBlue'; break;
+				case 'Springville': color = 'MediumTurquoise'; break;
+				case 'Terra Linda': color = 'SaddleBrown'; break;
+				case 'Vose': color = 'SlateGray'; break;
+				case 'West Tualatin View': color = 'Yellow'; break;
+				case 'William Walker': color = 'Salmon'; break;
+				default: console.log("Did not find elementary " + feature.getProperty('elementary'));
+			}
+		}
+
         return { editable: false, draggable: false, strokeWeight: 0, fillColor: color };
     });
 
