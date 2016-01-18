@@ -122,11 +122,7 @@ app.controller('BoundaryController', function ($scope, $http) {
         }
         
         $http.post('/Solution', queryString).then(function (response) {
-
             $scope.data.solutions = response.data;
-            $scope.$apply();
-
-
         });
     };
 
@@ -145,13 +141,8 @@ app.controller('BoundaryController', function ($scope, $http) {
             mapGrids = features;
 
             results = Results(geoJson.features, schoolData);
-            $scope.data.total_transitions = results.transitions;
-            for (var i = 0; i < results.schools.length; i++) {
-                $scope.data.students[0][i] = results.schools[i].students;
-            }
-            $scope.data.milesTraveled = milePerMeter * results.distance;
+            UpdateScopeData($scope, results);
             Configure($scope);
-            $scope.$apply();
         });
     };
 
@@ -200,19 +191,8 @@ app.controller('BoundaryController', function ($scope, $http) {
                 grid.properties.proposedHigh = grid.properties.high;
             });
 
-            // FIXME: we do this assignment in a few places, need to refactor
             results = Results(response.data, schoolData);
-            for(var i=0; i<results.schools.length; i++)
-            {
-                $scope.data.students[0][i] = results.schools[i].students;
-                $scope.data.capacity_p[0][i] = (100*results.schools[i].students/capacity[i]).toFixed(2);
-                $scope.data.distance[0][i] = results.schools[i].distance;
-                $scope.data.transitions[0][i] = results.schools[i].transitions;
-                $scope.data.frl_p[0][i] = results.schools[i].frl_p;
-            }
-            $scope.data.milesTraveled = results.distance;
-            $scope.data.total_transitions = results.transitions;
-
+            UpdateScopeData($scope, results);
             RefreshFromGrids(response.data);
             Configure($scope);
         });
@@ -244,6 +224,18 @@ function RefreshFromGrids(grids) {
     }
 };
 
+/* Update all the $scope.data from the calculated results */
+function UpdateScopeData($scope, results) {
+    for (var i = 0; i < results.schools.length; i++) {
+        $scope.data.students[0][i] = results.schools[i].students;
+        $scope.data.capacity_p[0][i] = results.schools[i].capacity_p;
+        $scope.data.distance[0][i] = results.schools[i].distance;
+        $scope.data.transitions[0][i] = results.schools[i].transitions;
+        $scope.data.frl_p[0][i] = results.schools[i].frl_p;
+    }
+    $scope.data.milesTraveled = results.distance;
+    $scope.data.total_transitions = results.transitions;
+}
 
 function Configure($scope) {
     // Initialise the map.
@@ -310,17 +302,8 @@ function Configure($scope) {
 
             console.log("click elementary grids=" + numEsGrids);
             
-            // FIXME: This is done multiple places
             results = MapResults(mapGrids, schoolData);
-            for (var i = 0; i < results.schools.length; i++) {
-                $scope.data.students[0][i] = results.schools[i].students;
-                $scope.data.capacity_p[0][i] = results.schools[i].capacity_p;
-                $scope.data.distance[0][i] = results.schools[i].distance;
-                $scope.data.transitions[0][i] = results.schools[i].transitions;
-                $scope.data.frl_p[0][i] = results.schools[i].frl_p;
-            }
-            $scope.data.milesTraveled = results.distance;
-            $scope.data.total_transitions = results.transitions;            
+            UpdateScopeData($scope, results);
             $scope.$apply();
         }
     });
