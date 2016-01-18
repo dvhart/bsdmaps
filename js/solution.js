@@ -277,19 +277,19 @@ function Configure($scope) {
             map.data.revertStyle();
         }
     });
-    
+
     map.data.addListener('click', selectGrid = function (event) {
         map.data.revertStyle();
-        
+
         var proposedHigh = $scope.data.proposedHigh;
         if (proposedHigh) {
             // Record selected grid and grid data
             selectedGrid = event.feature;
             selectedGrid.setProperty('proposedHigh', proposedHigh);
             selectedES = selectedGrid.getProperty('elementary');
-            
+
             console.log("click proposedHigh=" + proposedHigh + " elementary=" + selectedES);
-            
+
             var numEsGrids = 0;
             if ($scope.data.paintBy == "ES") {
                 mapGrids.forEach(function (grid) {
@@ -301,8 +301,11 @@ function Configure($scope) {
             }
 
             console.log("click elementary grids=" + numEsGrids);
-            
-            results = MapResults(mapGrids, schoolData);
+
+            map.data.toGeoJson(function (geoJson) {
+                results = Results(geoJson.features, schoolData);
+            });
+
             UpdateScopeData($scope, results);
             $scope.$apply();
         }
@@ -341,54 +344,6 @@ function JsonToSolution(solution, gridData)
             console.log("Unexpected grid code index " + solution.grids[i].gc);
         }
     }
-}
-
-function MapResults(mapGrids, schoolData) {
-    var numSchools = schoolData.schools.length;
-    var results = { transitions: 0, distance: 0, schools: [] };
-    for (var i = 0; i < numSchools; i++) {
-        results.schools[i] = { dbname: schoolData.schools[i].dbName, students: 0, capacity_p: 0, distance: 0, transitions: 0, frl: 0, frl_p: 0 };
-    }
-    
-    mapGrids.forEach(function (grid) {
-        var proposedHs = grid.getProperty('proposedHigh') ;
-        var distance = grid.getProperty('distance');
-        for (var i = 0; i < numSchools; i++) {
-            // Compute proposed school stats
-            var projectedStudents = grid.getProperty('hs2020');
-            if (proposedHs == schoolData.schools[i].dbName) {
-                results.schools[i].students += projectedStudents;
-                results.schools[i].distance += projectedStudents * distance[i] ;
-                results.schools[i].frl += grid.getProperty('reducedLunch');
-            }
-            // Compute transitions by existing school
-            var currentHs = grid.getProperty('high');
-            if (currentHs == schoolData.schools[i].dbName && proposedHs != currentHs) {
-                results.schools[i].transitions += projectedStudents;
-            }
-        }
-    });
-    
-    // Calculate per results from grid totals calculated above
-    // Convert native results distance to miles
-    for (var i = 0; i < numSchools; i++) {
-        results.schools[i].capacity_p = 100 * results.schools[i].students / schoolData.schools[i].capacity;
-        results.schools[i].distance *= milePerMeter;
-        results.distance += results.schools[i].distance;
-        results.transitions += results.schools[i].transitions;
-        if (results.schools[i].students) {
-            results.schools[i].frl_p = 100 * results.schools[i].frl / (results.schools[i].students);
-        }
-        
-        
-        // Reduce decimal places to 2 (FIXME this is formatting and should be elsewhere)
-        results.schools[i].capacity_p = (results.schools[i].capacity_p).toFixed(2);
-        results.schools[i].distance = (results.schools[i].distance).toFixed(2);
-        results.schools[i].frl_p = (results.schools[i].frl_p).toFixed(2);
-    }
-    results.distance = results.distance.toFixed(2);
-    
-    return results;
 }
 
 function Results(grids, schoolData)
@@ -430,7 +385,6 @@ function Results(grids, schoolData)
         if (results.schools[i].students) {
             results.schools[i].frl_p = 100*results.schools[i].frl/(results.schools[i].students);
         }
-
 
         // Reduce decimal places to 2 (FIXME this is formatting and should be elsewhere)
         results.schools[i].capacity_p = (results.schools[i].capacity_p).toFixed(2);
