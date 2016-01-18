@@ -231,10 +231,10 @@ app.post('/NewSolution', function (request, res) {
                 assert.equal(err, null);
                 
                 if (err != null) {
-                    console.log("/NewSolution error" + err);
+                    console.log("/NewSolution error " + err);
                 }
                 else {
-                    console.log("/NewSolution result" + result);
+                    console.log("/NewSolution result " + result);
                     
                     var features = dbGrid.collection('solutions').find().toArray(function (err, items) {
                         if (err) {

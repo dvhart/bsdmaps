@@ -8,9 +8,15 @@
     <script src="https://maps.googleapis.com/maps/api/js?v=3.exp"></script>
     <script src="fillgriddb.js"></script>
     <link href="style.css" rel="stylesheet" />
+    <style type="text/css">
+        #container {height: 100%; width:100%; font-size: 0;}
+        #panel, #map-container {display: inline-block; *display: inline; zoom: 1; vertical-align: top; font-size: 12px;}
+        #panel {width: 25%}
+        #map-container {width: 75%}
+    </style>
 </head>
 <body ng-app="BoundaryEntry">
-    <div ng-controller="BoundaryController">
+    <div id="container" ng-controller="BoundaryController">
         <div id="panel">
             <div id="panel-content">
                 <form novalidate class="css-form">
