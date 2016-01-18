@@ -347,17 +347,17 @@ function SolutionToJson(formData, gridData, resultsData)
 
 function JsonToSolution(solution, gridData)
 {
-	for(var i=0; i< solution.grids.length; i++)
-	{
-		if(gridData[i].properties.gc = solution.grids[i].gc)
-		{
-			gridData[i].properties.proposedHigh = solution.grids[i].proposedHigh;
-		}
-		else
-		{
-			console.log("Unexpected grid code index " + solution.grids[i].gc);
-		}
-	}
+    for(var i=0; i< solution.grids.length; i++)
+    {
+        if(gridData[i].properties.gc == solution.grids[i].gc)
+        {
+            gridData[i].properties.proposedHigh = solution.grids[i].proposedHigh;
+        }
+        else
+        {
+            console.log("Unexpected grid code index " + solution.grids[i].gc);
+        }
+    }
 }
 
 function MapResults(mapGrids, schoolData) {
