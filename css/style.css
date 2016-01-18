@@ -129,6 +129,7 @@ div.form-row textarea {
 --------------------------*/
 .chart-row {
   width: 100%;
+  padding-bottom: 15px;
 }
 
 .chart-panel {
@@ -136,7 +137,7 @@ div.form-row textarea {
   /* This is said not to work in IE, unfortunately, inline-block doesn't work
    * for us */
   display: table-cell;
-  padding: 15px;
+  padding-right: 15px;
 }
 
 .chart-header {
@@ -166,6 +167,36 @@ div.form-row textarea {
   padding-top: 5px;
 }
 
+
+/*-------------------------
+	Stats Table Styles
+--------------------------*/
+.stats-table {
+  width: 100%;
+  background: #eee;
+  border-radius: 6px 6px 0px 0px;
+  border: 1px solid black;
+  display: table;
+}
+.stats-header-row {
+  height: 30px;
+  line-height: 30px;
+  border-bottom: 1px solid black;
+  display: table-row;
+}
+.stats-row {
+  background: white;
+  display: table-row;
+}
+.stats-header-cell {
+  font-weight: bold;
+  border-bottom: 1px solid black;
+  display: table-cell;
+}
+.stats-cell {
+  display: table-cell;
+  border-bottom: 1px solid black;
+}
 
 /*-------------------------
 	Map Styles

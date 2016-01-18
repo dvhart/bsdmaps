@@ -19,7 +19,17 @@ var schoolData = {schools:[
     {id:5, dbName:'Westview', displayName:'Westview', color:'pink', capacity:2421, location:{ lat: 45.55027, lng: -122.8682147}},
     ]};
 
-app.controller('BoundaryController', function ($scope, $http) {
+/*
+ * This filter permits the printing of dynamically generated html that sce would
+ * otherwise prevent. This is used, for example, by the GenStatsTable function.
+ */
+app.filter('html', function($sce) {
+    return function(val) {
+        return $sce.trustAsHtml(val);
+    };
+});
+
+app.controller('BoundaryController', function ($scope, $http, $sce) {
     $scope.data = {
         "proposedHigh":"Cooper",
         "paintBy":"ES",
@@ -146,6 +156,31 @@ app.controller('BoundaryController', function ($scope, $http) {
         });
     };
 
+
+    /* Dynamically generate the stats table. This requires the angular sce
+     * filter to trust the output as html */
+    $scope.GenStatsTable = function () {
+        var out="";
+        out += '<div class="stats-table">';
+        out += '<div class="stats-header-row">';
+        out += '    <div class="stats-header-cell">School</div>';
+        out += '    <div class="stats-header-cell">Capacity</div>';
+        out += '    <div class="stats-header-cell">Distance</div>';
+        out += '    <div class="stats-header-cell">Transitions</div>';
+        out += '    <div class="stats-header-cell">Equity</div>';
+        out += '</div>';
+        for (var i = 0; i < $scope.data.schools.length; i++) {
+            out += '<div class="stats-row">';
+            out += '    <div class="stats-cell">' + $scope.data.schools[i] + '</div>';
+            out += '    <div class="stats-cell">' + $scope.data.capacity_p[0][i] + '%</div>';
+            out += '    <div class="stats-cell">' + $scope.data.distance[0][i] + '</div>';
+            out += '    <div class="stats-cell">' + $scope.data.transitions[0][i] + '</div>';
+            out += '    <div class="stats-cell">' + $scope.data.frl_p[0][i] + '%</div>';
+            out += '</div>';
+        }
+        out += '</div> <!-- Stats Table -->';
+        return out;
+    };
 
     $scope.series = ['Students', 'Capacity 35/90'];
 
@@ -425,5 +460,3 @@ function Transitions(db)
     });
     return transitions;
 }
-
-
