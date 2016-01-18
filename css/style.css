@@ -1,59 +1,175 @@
 /*-------------------------
-	Simple resetactive
+	Printing Styles
 --------------------------*/
+@media print {
+  .no-print, .no-print * { display: none !important; }
+  .no-break { page-break-inside: avoid; }
+}
 
 
 /*-------------------------
 	General Styles
 --------------------------*/
 html, body {
-  height: 100%;
-  width: 100%;
   margin: 0;
   padding: 0;
 }
 
 body {
   font-family: "Arial", "Helvetica", sans-serif;
-  color: #222;
   font-size: 13px;
   -webkit-tap-highlight-color: rgba(0,0,0,0);
   overflow-y: scroll;
+  background: #eee;
+  color: black;
+}
+
+h1 {
+  font-size: 36px;
+}
+
+h1, h2, h3 {
+  font-weight: 500;
+  line-height: 1.1;
+  color: black;
+}
+
+hr {
+  color: black;
+}
+
+
+/*-------------------------
+	Panel Styles
+--------------------------*/
+.panel-left {
+  height: 100%;
+  width: 350px;
+  background: white;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  outline: 1px solid rgba(0,0,0,0.2);
+  display: inline-block;
+  margin-right: 10px;
+  vertical-align: top;
+}
+.panel-right {
+  height: 100%;
+  width: 350px;
+  background: white;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  outline: 1px solid rgba(0,0,0,0.2);
+  display: inline-block;
+  margin-left: 10px;
+  vertical-align: top;
+}
+
+.form-panel {
+  margin: 5px
+}
+
+.form-header {
+  height: 30px;
+  line-height: 30px;
+  text-align: center;
+  font-weight: bold;
+  background: #eee;
+  border-radius: 6px 6px 0px 0px;
+  border: 1px solid black;
+}
+
+.form-body {
+  padding: 10px;
+  border-left: 1px solid black;
+  border-right: 1px solid black;
+  border-bottom: 1px solid black;
+}
+
+/* label [input] row formatting */
+div.form-row {
+  padding-bottom: 1.25em;
+}
+div.form-row label {
+  width: 10em;
+  padding-top: .1em; 
+  padding-right: .25em; 
+  text-align: right;
+  display: block;
+  float: left;
+}
+div.form-row input,
+div.form-row textarea {
+  display: block;
+}
+
+
+/*-------------------------
+	Page Structure
+--------------------------*/
+.report {
+  height: 100%;
+  background: white;
+  display: inline-block;
+  vertical-align: top;
+  text-align: center;
+}
+
+.page {
+  margin: 25px;
 }
 
 /* Map styles. */
-#map-container {
-  width: 64.9%;
-  height: 800px;
-  /*  height: 100%; */
-  margin-left: auto;
-  margin-right: auto;
-  position: relative;
-  float: right;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-  outline: 1px solid rgba(0,0,0,0.2);
-  z-index: 0;
+#map-holder {
+  height: 850px;
+  width: 700px;
 }
 
-#map-holder {
-  height: 100%;
+
+/*-------------------------
+	Chart Styles
+--------------------------*/
+.chart-row {
   width: 100%;
 }
 
-/* Panel styles. */
-#panel {
-  float: left;
-  width: 35%;
-  height: 100%;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-  outline: 1px solid rgba(0,0,0,0.2);
-  z-index: 100;
+.chart-panel {
+  width: 50%;
+  /* This is said not to work in IE, unfortunately, inline-block doesn't work
+   * for us */
+  display: table-cell;
+  padding: 15px;
 }
 
-#panel-content {
-  padding: 8.5px;
+.chart-header {
+  height: 30px;
+  line-height: 30px;
+  text-align: center;
+  font-weight: bold;
+  background: #eee;
+  border-radius: 6px 6px 0px 0px;
+  border: 1px solid black;
 }
 
+.chart-box {
+  border-left: 1px solid black;
+  border-right: 1px solid black;
+  border-bottom: 1px solid black;
+}
+
+.chart-caption {
+  text-align: left;
+  padding: 5px;
+}
+
+.chart-container {
+  padding-left: 5px;
+  padding-right: 5px;
+  padding-top: 5px;
+}
+
+
+/*-------------------------
+	Map Styles
+--------------------------*/
 #geojson-controls {
   padding-bottom: 8px;
 }
@@ -77,10 +193,6 @@ body {
 .subtitle {
   font-size: 16px;
   color: #222222;
-}
-
-hr {
-  color: #ebebeb;
 }
 
 #geojson-input {
