@@ -129,23 +129,23 @@ app.controller('BoundaryController', function ($scope, $http) {
 
         });
     };
-    
+
     $scope.SelectSolution = function () {
         var selectedSolution = $scope.data.selectedSolution;
 
         map.data.toGeoJson(function (geoJson) {
             JsonToSolution(selectedSolution[0], geoJson.features);
-            
+
             var newData = new google.maps.Data({ map: map });
             var features = newData.addGeoJson(geoJson);
-            
+
             // No error means GeoJSON was valid!
             map.data.setMap(null);
             map.data = newData;
             mapGrids = features;
-            
+
             results = Results(geoJson.features, schoolData);
-            $scope.data.transitions = results.transitions;
+            $scope.data.total_transitions = results.transitions;
             for (var i = 0; i < results.schools.length; i++) {
                 $scope.data.students[0][i] = results.schools[i].students;
             }
@@ -154,8 +154,8 @@ app.controller('BoundaryController', function ($scope, $http) {
             $scope.$apply();
         });
     };
-      	
-	
+
+
     $scope.series = ['Students', 'Capacity 35/90'];
 
 
