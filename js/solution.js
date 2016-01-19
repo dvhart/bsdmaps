@@ -43,8 +43,11 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
         "schools": [],
         "distance":[[0, 0, 0, 0, 0, 0]],
         "time": [0, 0, 0, 0, 0, 0],
-        "total_transitions": 0,
+        "total_students": 0,
+        "total_capacity_p": 0,
         "milesTraveled":0,
+        "total_transitions": 0,
+        "total_frl_p": 0,
         "students": [
             [2500, 2500, 2500, 2500, 2500, 2500],  // student count
             [0, 0, 0, 0, 0, 0]],                   // school capacity
@@ -165,7 +168,7 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
         out += '<div class="stats-header-row">';
         out += '    <div class="stats-header-cell">School</div>';
         out += '    <div class="stats-header-cell">Capacity</div>';
-        out += '    <div class="stats-header-cell">Distance</div>';
+        out += '    <div class="stats-header-cell">Proximity</div>';
         out += '    <div class="stats-header-cell">Transitions</div>';
         out += '    <div class="stats-header-cell">Equity</div>';
         out += '</div>';
@@ -178,6 +181,13 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
             out += '    <div class="stats-cell">' + $scope.data.frl_p[0][i] + '%</div>';
             out += '</div>';
         }
+        out += '<div class="stats-footer-row">';
+        out += '    <div class="stats-footer-cell">District Total</div>';
+        out += '    <div class="stats-footer-cell">' + $scope.data.total_capacity_p + '%</div>';
+        out += '    <div class="stats-footer-cell">' + $scope.data.milesTraveled + '</div>';
+        out += '    <div class="stats-footer-cell">' + $scope.data.total_transitions + '</div>';
+        out += '    <div class="stats-footer-cell">' + $scope.data.total_frl_p + '%</div>';
+        out += '</div>';
         out += '</div> <!-- Stats Table -->';
         return out;
     };
@@ -218,6 +228,7 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
             capacity[i] = schoolData.schools[i].capacity;
         }
 
+        /* save immutable data - doesn't change with boundary changes */
         $scope.data.schools = schools;
         $scope.data.students[1] = capacity;
 
@@ -261,15 +272,26 @@ function RefreshFromGrids(grids) {
 
 /* Update all the $scope.data from the calculated results */
 function UpdateScopeData($scope, results) {
+    var cap = 0;
+    var students = 0;
+    var frl = 0;
+
     for (var i = 0; i < results.schools.length; i++) {
         $scope.data.students[0][i] = results.schools[i].students;
         $scope.data.capacity_p[0][i] = results.schools[i].capacity_p;
         $scope.data.distance[0][i] = results.schools[i].distance;
         $scope.data.transitions[0][i] = results.schools[i].transitions;
         $scope.data.frl_p[0][i] = results.schools[i].frl_p;
+
+        students += $scope.data.students[0][i];
+        cap += $scope.data.students[1][i];
+        frl += results.schools[i].frl;
     }
+
+    $scope.data.total_capacity_p = (100 * students/cap).toFixed(2);
     $scope.data.milesTraveled = results.distance;
     $scope.data.total_transitions = results.transitions;
+    $scope.data.total_frl_p = (100 * frl/students).toFixed(2);
 }
 
 function Configure($scope) {
