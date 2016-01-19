@@ -188,6 +188,11 @@ div.form-row textarea {
   background: white;
   display: table-row;
 }
+.stats-footer-row {
+  height: 30px;
+  line-height: 30px;
+  display: table-row;
+}
 .stats-header-cell {
   font-weight: bold;
   border-bottom: 1px solid black;
@@ -196,6 +201,10 @@ div.form-row textarea {
 .stats-cell {
   display: table-cell;
   border-bottom: 1px solid black;
+}
+.stats-footer-cell {
+  font-weight: bold;
+  display: table-cell;
 }
 
 /*-------------------------
