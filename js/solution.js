@@ -128,15 +128,15 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
         if ($scope.data.searchName) {
             queryString.solutionName = $scope.data.searchName;
         }
-        if ($scope.data.searcDescription) {
-            queryString.searcDescription = $scope.data.searcDescription;
+        if ($scope.data.searchDescription) {
+            queryString.solutionDescription = $scope.data.searchDescription;
         }
         if ($scope.data.searchUsername) {
-            queryString.searchUsername = $scope.data.searchUsername;
+            queryString.solutionUsername = $scope.data.searchUsername;
         }
         
         if ($scope.data.searchEmail) {
-            queryString.searchEmail = $scope.data.searchEmail;
+            queryString.email = $scope.data.searchEmail;
         }
         
         $http.post('/Solution', queryString).then(function (response) {
