@@ -44,10 +44,13 @@
             </div> <!-- BSD Solution Editor -->
 
             <div class="form-panel">
-                <div class="form-header"><a href="#" ng-click="loadForm = ! loadForm">Load Solution</a></div>
+                <div class="form-header">Load Map</div>
                 <div class="procedure-details form-body">
-                    <form class="css-form" ng-show="loadForm">
-                        <p>Enter solution search terms:</p>
+                    <form class="css-form">
+                        <p>Enter search terms and press  'Find
+                        Maps'. Click on a map name in the list to load it. To
+                        list all maps, leave the search terms blank and press
+                        'Find Maps'.</p>
 
                         <div class="form-row">
                             <label>Solution Name</label>
@@ -65,18 +68,20 @@
                             <label>Email</label>
                             <input type="email" ng-model="data.searchEmail" />
                         </div>
-                        <input type="button" ng-click="LoadFromDB()" value="Find Solutions" /><br>
+                        <input type="button" ng-click="LoadFromDB()" value="Find Maps" /><br>
                         <select id="myselection" multiple ng-multiple="false" ng-model="data.selectedSolution" ng-change="SelectSolution()" ng-options="c.solutionName for c in data.solutions"></select>
                     </form>
-                    (Click Title to Open/Close Form)
                 </div>
             </div> <!-- Load Panel -->
 
             <div class="form-panel">
-                <div class="form-header"><a href="#" ng-click="saveForm = !  saveForm">Save Solution</a></div>
+                <div class="form-header">Save Map</div>
                 <div class="procedure-details form-body">
-                    <form class="css-form" ng-submit="SaveSolution()" ng-show="saveForm">
-                        <p>Simple clear saving instructions</p>
+                    <form class="css-form" ng-submit="SaveSolution()">
+                        <p>To save your map for others to find an review, please
+                        fill in the required fields (*) and select your primary
+                        and secondary objections from the list. Use Control or
+                        Command to select multiple entries.</p>
 
                         <div class="form-row">
                             <label>* Solution Name</label>
@@ -119,9 +124,7 @@
                             </select>
                         </div>
                         <input type="submit" value="Save Solution" /> 
-                        <p>{{data.solutionSaveResponse}}</p>
                     </form>
-                    (Click Title to Open/Close Form)
                 </div>
             </div> <!-- Save Panel -->
 
