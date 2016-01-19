@@ -6,6 +6,9 @@ var selectedFeature; //  JSON selected grid
 var results;
 var milePerMeter = 0.000621371;
 
+var defaultMapName = "Unnamed Map";
+var defaultMapDescription = "No Description";
+
 // Google Map Overlays
 var bsdOverlay;
 var mapGrids;
@@ -66,7 +69,9 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
         "solutions":[],
         "primaryObjectives": [],
         "otherObjectives": [],
-        "solutionSaveResponse":""
+        "solutionSaveResponse":"",
+        "mapName":defaultMapName,
+        "mapDescription":defaultMapDescription
     };
 
     $scope.DBRefresh = function () {
@@ -141,6 +146,8 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
 
     $scope.SelectSolution = function () {
         var selectedSolution = $scope.data.selectedSolution;
+        $scope.data.mapName = selectedSolution[0]["solutionName"];
+        $scope.data.mapDescription = selectedSolution[0]["solutionDescription"];
 
         map.data.toGeoJson(function (geoJson) {
             JsonToSolution(selectedSolution[0], geoJson.features);
@@ -362,6 +369,9 @@ function Configure($scope) {
             map.data.toGeoJson(function (geoJson) {
                 results = Results(geoJson.features, schoolData);
             });
+
+            $scope.data.mapName = defaultMapName;
+            $scope.data.mapDescription = defaultMapDescription;
 
             UpdateScopeData($scope, results);
             $scope.$apply();
