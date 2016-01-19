@@ -138,6 +138,11 @@
             <div class="no-print"><hr/></div>
 
             <div class="page no-break">
+
+                <div class="chart-row">
+                    <div ng-bind-html="GenStatsTable()|html"></div>
+                </div>
+
                 <div class="chart-row">
                     <div class="chart-panel">
                         <div class="chart-header">Percent Capacity</div>
@@ -162,7 +167,6 @@
                                               chart-series="schools">
                             </canvas>
                             <div class="chart-caption">
-                                Travel Distance (miles): {{data.milesTraveled}}
                             </div>
                         </div>
                     </div>
@@ -179,7 +183,6 @@
                                               chart-series="schools">
                             </canvas>
                             <div class="chart-caption">
-                                Student Transitions: {{data.total_transitions}}
                             </div>
                         </div>
                     </div>
@@ -197,10 +200,6 @@
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <div class="chart-row">
-                    <div ng-bind-html="GenStatsTable()|html"></div>
                 </div>
 
                 <hr/>
