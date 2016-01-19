@@ -168,9 +168,9 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
         out += '<div class="stats-header-row">';
         out += '    <div class="stats-header-cell">School</div>';
         out += '    <div class="stats-header-cell">Capacity</div>';
-        out += '    <div class="stats-header-cell">Proximity</div>';
+        out += '    <div class="stats-header-cell">Proximity (miles)</div>';
         out += '    <div class="stats-header-cell">Transitions</div>';
-        out += '    <div class="stats-header-cell">Equity</div>';
+        out += '    <div class="stats-header-cell">FRL</div>';
         out += '</div>';
         for (var i = 0; i < $scope.data.schools.length; i++) {
             out += '<div class="stats-row">';
