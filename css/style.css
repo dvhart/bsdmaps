@@ -100,6 +100,16 @@ div.form-row input,
 div.form-row textarea {
   display: block;
 }
+div.form-row select {
+  display: block;
+}
+div.form-row .select-objectives {
+  height: 110px;
+}
+div.form-row .select-maps {
+  width: 100%;
+  height: 110px;
+}
 
 
 /*-------------------------

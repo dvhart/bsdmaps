@@ -68,8 +68,16 @@
                             <label>Email</label>
                             <input type="email" ng-model="data.searchEmail" />
                         </div>
-                        <input type="button" ng-click="LoadFromDB()" value="Find Maps" /><br>
-                        <select id="myselection" multiple ng-multiple="false" ng-model="data.selectedSolution" ng-change="SelectSolution()" ng-options="c.solutionName for c in data.solutions"></select>
+                        <div class="form-row">
+                            <label></label>
+                            <input type="button" ng-click="LoadFromDB()" value="Find Maps" />
+                        </div>
+                        <div class="form-row">
+                            <select class='select-maps' multiple ng-multiple="false"
+                                ng-model="data.selectedSolution" ng-change="SelectSolution()"
+                                ng-options="c.solutionName for c in data.solutions">
+                            </select>
+                        </div>
                     </form>
                 </div>
             </div> <!-- Load Panel -->
@@ -105,7 +113,9 @@
                         </div>
                         <div class="form-row">
                             <label>Primary Objectives</label>
-                            <select name="PrimaryObjectives" id="primaryObjectives" ng-model="data.submission.primaryObjectives" value="data.solution.primaryObjectives" multiple>
+                            <select name="PrimaryObjectives" class="select-objectives" id="primaryObjectives"
+                                ng-model="data.submission.primaryObjectives"
+                                value="data.solution.primaryObjectives" multiple>
                                 <option value="Space">Space</option>
                                 <option value="Proximity">Proximity</option>
                                 <option value="Safety">Safety</option>
@@ -114,7 +124,9 @@
                         </div>
                         <div class="form-row">
                             <label>Other Objectives</label>
-                            <select name="OtherObjectives" id="otherObjectives" ng-model="data.submission.otherObjectives" value="data.solution.otherObjectives" multiple>
+                            <select name="OtherObjectives" class="select-objectives" id="otherObjectives"
+                                ng-model="data.submission.otherObjectives"
+                                value="data.solution.otherObjectives" multiple>
                                 <option value="minTransitions">Minimize Transitions</option>
                                 <option value="education">Education</option>
                                 <option value="transportCost">Transportation Cost</option>
