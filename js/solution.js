@@ -6,6 +6,9 @@ var selectedFeature; //  JSON selected grid
 var results;
 var milePerMeter = 0.000621371;
 
+var defaultMapName = "Unnamed Map";
+var defaultMapDescription = "No Description";
+
 // Google Map Overlays
 var bsdOverlay;
 var mapGrids;
@@ -19,7 +22,17 @@ var schoolData = {schools:[
     {id:5, dbName:'Westview', displayName:'Westview', color:'pink', capacity:2421, location:{ lat: 45.55027, lng: -122.8682147}},
     ]};
 
-app.controller('BoundaryController', function ($scope, $http) {
+/*
+ * This filter permits the printing of dynamically generated html that sce would
+ * otherwise prevent. This is used, for example, by the GenStatsTable function.
+ */
+app.filter('html', function($sce) {
+    return function(val) {
+        return $sce.trustAsHtml(val);
+    };
+});
+
+app.controller('BoundaryController', function ($scope, $http, $sce) {
     $scope.data = {
         "proposedHigh":"Cooper",
         "paintBy":"ES",
@@ -33,8 +46,11 @@ app.controller('BoundaryController', function ($scope, $http) {
         "schools": [],
         "distance":[[0, 0, 0, 0, 0, 0]],
         "time": [0, 0, 0, 0, 0, 0],
-        "total_transitions": 0,
+        "total_students": 0,
+        "total_capacity_p": 0,
         "milesTraveled":0,
+        "total_transitions": 0,
+        "total_frl_p": 0,
         "students": [
             [2500, 2500, 2500, 2500, 2500, 2500],  // student count
             [0, 0, 0, 0, 0, 0]],                   // school capacity
@@ -53,7 +69,9 @@ app.controller('BoundaryController', function ($scope, $http) {
         "solutions":[],
         "primaryObjectives": [],
         "otherObjectives": [],
-        "solutionSaveResponse":""
+        "solutionSaveResponse":"",
+        "mapName":defaultMapName,
+        "mapDescription":defaultMapDescription
     };
 
     $scope.DBRefresh = function () {
@@ -64,7 +82,10 @@ app.controller('BoundaryController', function ($scope, $http) {
                 grid.properties.proposedHigh = grid.properties.high;
             });
             // FIXME: is this still necessary?
+            // Perhaps we should call UpdateScopeData here instead?
             $scope.data.students[0] = ComputeStudents(response.data);
+            $scope.data.solutionSaveResponse = "";
+
             RefreshFromGrids(response.data);
             Configure($scope);
         });
@@ -98,7 +119,11 @@ app.controller('BoundaryController', function ($scope, $http) {
         map.data.toGeoJson(function (geoJson) {
             var solution = SolutionToJson($scope.data, geoJson.features, results);
             $http.post('/NewSolution', solution).then(function (response) {
-                $scope.data.solutionSaveResponse = response.toString();
+                if (response.statusText == "OK") {
+                    $scope.data.solutionSaveResponse = "Map saved successfully";
+                } else {
+                    $scope.data.solutionSaveResponse = "Failed to save map: " + response.statusText;
+                }
             });
         });
     };
@@ -110,43 +135,77 @@ app.controller('BoundaryController', function ($scope, $http) {
         if ($scope.data.searchName) {
             queryString.solutionName = $scope.data.searchName;
         }
-        if ($scope.data.searcDescription) {
-            queryString.searcDescription = $scope.data.searcDescription;
+        if ($scope.data.searchDescription) {
+            queryString.solutionDescription = $scope.data.searchDescription;
         }
         if ($scope.data.searchUsername) {
-            queryString.searchUsername = $scope.data.searchUsername;
+            queryString.solutionUsername = $scope.data.searchUsername;
         }
         
         if ($scope.data.searchEmail) {
-            queryString.searchEmail = $scope.data.searchEmail;
+            queryString.email = $scope.data.searchEmail;
         }
         
         $http.post('/Solution', queryString).then(function (response) {
             $scope.data.solutions = response.data;
         });
     };
-    
+
     $scope.SelectSolution = function () {
         var selectedSolution = $scope.data.selectedSolution;
+        $scope.data.mapName = selectedSolution[0]["solutionName"];
+        $scope.data.mapDescription = selectedSolution[0]["solutionDescription"];
 
         map.data.toGeoJson(function (geoJson) {
             JsonToSolution(selectedSolution[0], geoJson.features);
-            
+
             var newData = new google.maps.Data({ map: map });
             var features = newData.addGeoJson(geoJson);
-            
+
             // No error means GeoJSON was valid!
             map.data.setMap(null);
             map.data = newData;
             mapGrids = features;
-            
+
             results = Results(geoJson.features, schoolData);
             UpdateScopeData($scope, results);
             Configure($scope);
         });
     };
-      	
-	
+
+
+    /* Dynamically generate the stats table. This requires the angular sce
+     * filter to trust the output as html */
+    $scope.GenStatsTable = function () {
+        var out="";
+        out += '<div class="stats-table">';
+        out += '<div class="stats-header-row">';
+        out += '    <div class="stats-header-cell">School</div>';
+        out += '    <div class="stats-header-cell">Capacity</div>';
+        out += '    <div class="stats-header-cell">Proximity (miles)</div>';
+        out += '    <div class="stats-header-cell">Transitions</div>';
+        out += '    <div class="stats-header-cell">FRL</div>';
+        out += '</div>';
+        for (var i = 0; i < $scope.data.schools.length; i++) {
+            out += '<div class="stats-row">';
+            out += '    <div class="stats-cell">' + $scope.data.schools[i] + '</div>';
+            out += '    <div class="stats-cell">' + $scope.data.capacity_p[0][i] + '%</div>';
+            out += '    <div class="stats-cell">' + $scope.data.distance[0][i] + '</div>';
+            out += '    <div class="stats-cell">' + $scope.data.transitions[0][i] + '</div>';
+            out += '    <div class="stats-cell">' + $scope.data.frl_p[0][i] + '%</div>';
+            out += '</div>';
+        }
+        out += '<div class="stats-footer-row">';
+        out += '    <div class="stats-footer-cell">District Total</div>';
+        out += '    <div class="stats-footer-cell">' + $scope.data.total_capacity_p + '%</div>';
+        out += '    <div class="stats-footer-cell">' + $scope.data.milesTraveled + '</div>';
+        out += '    <div class="stats-footer-cell">' + $scope.data.total_transitions + '</div>';
+        out += '    <div class="stats-footer-cell">' + $scope.data.total_frl_p + '%</div>';
+        out += '</div>';
+        out += '</div> <!-- Stats Table -->';
+        return out;
+    };
+
     $scope.series = ['Students', 'Capacity 35/90'];
 
 
@@ -183,6 +242,7 @@ app.controller('BoundaryController', function ($scope, $http) {
             capacity[i] = schoolData.schools[i].capacity;
         }
 
+        /* save immutable data - doesn't change with boundary changes */
         $scope.data.schools = schools;
         $scope.data.students[1] = capacity;
 
@@ -226,15 +286,28 @@ function RefreshFromGrids(grids) {
 
 /* Update all the $scope.data from the calculated results */
 function UpdateScopeData($scope, results) {
+    var cap = 0;
+    var students = 0;
+    var frl = 0;
+
     for (var i = 0; i < results.schools.length; i++) {
         $scope.data.students[0][i] = results.schools[i].students;
         $scope.data.capacity_p[0][i] = results.schools[i].capacity_p;
         $scope.data.distance[0][i] = results.schools[i].distance;
         $scope.data.transitions[0][i] = results.schools[i].transitions;
         $scope.data.frl_p[0][i] = results.schools[i].frl_p;
+
+        students += $scope.data.students[0][i];
+        cap += $scope.data.students[1][i];
+        frl += results.schools[i].frl;
     }
+
+    $scope.data.total_capacity_p = (100 * students/cap).toFixed(2);
     $scope.data.milesTraveled = results.distance;
     $scope.data.total_transitions = results.transitions;
+    $scope.data.total_frl_p = (100 * frl/students).toFixed(2);
+
+    $scope.data.solutionSaveResponse = "";
 }
 
 function Configure($scope) {
@@ -277,19 +350,19 @@ function Configure($scope) {
             map.data.revertStyle();
         }
     });
-    
+
     map.data.addListener('click', selectGrid = function (event) {
         map.data.revertStyle();
-        
+
         var proposedHigh = $scope.data.proposedHigh;
         if (proposedHigh) {
             // Record selected grid and grid data
             selectedGrid = event.feature;
             selectedGrid.setProperty('proposedHigh', proposedHigh);
             selectedES = selectedGrid.getProperty('elementary');
-            
+
             console.log("click proposedHigh=" + proposedHigh + " elementary=" + selectedES);
-            
+
             var numEsGrids = 0;
             if ($scope.data.paintBy == "ES") {
                 mapGrids.forEach(function (grid) {
@@ -301,8 +374,14 @@ function Configure($scope) {
             }
 
             console.log("click elementary grids=" + numEsGrids);
-            
-            results = MapResults(mapGrids, schoolData);
+
+            map.data.toGeoJson(function (geoJson) {
+                results = Results(geoJson.features, schoolData);
+            });
+
+            $scope.data.mapName = defaultMapName;
+            $scope.data.mapDescription = defaultMapDescription;
+
             UpdateScopeData($scope, results);
             $scope.$apply();
         }
@@ -332,7 +411,7 @@ function JsonToSolution(solution, gridData)
 {
 	for(var i=0; i< solution.grids.length; i++)
 	{
-        if(gridData[i].properties.gc == solution.grids[i].gc)
+		if(gridData[i].properties.gc == solution.grids[i].gc)
 		{
 			gridData[i].properties.proposedHigh = solution.grids[i].proposedHigh;
 		}
@@ -341,54 +420,6 @@ function JsonToSolution(solution, gridData)
 			console.log("Unexpected grid code index " + solution.grids[i].gc);
 		}
 	}
-}
-
-function MapResults(mapGrids, schoolData) {
-    var numSchools = schoolData.schools.length;
-    var results = { transitions: 0, distance: 0, schools: [] };
-    for (var i = 0; i < numSchools; i++) {
-        results.schools[i] = { dbname: schoolData.schools[i].dbName, students: 0, capacity_p: 0, distance: 0, transitions: 0, frl: 0, frl_p: 0 };
-    }
-    
-    mapGrids.forEach(function (grid) {
-        var proposedHs = grid.getProperty('proposedHigh') ;
-        var distance = grid.getProperty('distance');
-        for (var i = 0; i < numSchools; i++) {
-            // Compute proposed school stats
-            var projectedStudents = grid.getProperty('hs2020');
-            if (proposedHs == schoolData.schools[i].dbName) {
-                results.schools[i].students += projectedStudents;
-                results.schools[i].distance += projectedStudents * distance[i] ;
-                results.schools[i].frl += grid.getProperty('reducedLunch');
-            }
-            // Compute transitions by existing school
-            var currentHs = grid.getProperty('high');
-            if (currentHs == schoolData.schools[i].dbName && proposedHs != currentHs) {
-                results.schools[i].transitions += projectedStudents;
-            }
-        }
-    });
-    
-    // Calculate per results from grid totals calculated above
-    // Convert native results distance to miles
-    for (var i = 0; i < numSchools; i++) {
-        results.schools[i].capacity_p = 100 * results.schools[i].students / schoolData.schools[i].capacity;
-        results.schools[i].distance *= milePerMeter;
-        results.distance += results.schools[i].distance;
-        results.transitions += results.schools[i].transitions;
-        if (results.schools[i].students) {
-            results.schools[i].frl_p = 100 * results.schools[i].frl / (results.schools[i].students);
-        }
-        
-        
-        // Reduce decimal places to 2 (FIXME this is formatting and should be elsewhere)
-        results.schools[i].capacity_p = (results.schools[i].capacity_p).toFixed(2);
-        results.schools[i].distance = (results.schools[i].distance).toFixed(2);
-        results.schools[i].frl_p = (results.schools[i].frl_p).toFixed(2);
-    }
-    results.distance = results.distance.toFixed(2);
-    
-    return results;
 }
 
 function Results(grids, schoolData)
@@ -431,7 +462,6 @@ function Results(grids, schoolData)
             results.schools[i].frl_p = 100*results.schools[i].frl/(results.schools[i].students);
         }
 
-
         // Reduce decimal places to 2 (FIXME this is formatting and should be elsewhere)
         results.schools[i].capacity_p = (results.schools[i].capacity_p).toFixed(2);
         results.schools[i].distance = (results.schools[i].distance).toFixed(2);
@@ -473,17 +503,9 @@ function Transitions(db)
 }
 
 function FrlFit(frl, total2020) {
-	//var m = 0.95
-	//var b = 0.14;
-	//var k = 1.25;
-	
-	//var m = 0.85
-	//var b = 0.0
-	//var k = 0.5;
-	
-	var m = 0.94
-	var b = -0.12;
-	var k = 0.4;
+	var m = 0.95
+	var b = 0.14;
+	var k = 1.25;
 	
 	var frlFit = 0;
 	if (total2020 > 0) {
@@ -495,6 +517,3 @@ function FrlFit(frl, total2020) {
 	
 	return frlFit;
 }
-
-
-
