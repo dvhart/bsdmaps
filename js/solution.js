@@ -82,7 +82,10 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
                 grid.properties.proposedHigh = grid.properties.high;
             });
             // FIXME: is this still necessary?
+            // Perhaps we should call UpdateScopeData here instead?
             $scope.data.students[0] = ComputeStudents(response.data);
+            $scope.data.solutionSaveResponse = "";
+
             RefreshFromGrids(response.data);
             Configure($scope);
         });
@@ -116,7 +119,11 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
         map.data.toGeoJson(function (geoJson) {
             var solution = SolutionToJson($scope.data, geoJson.features, results);
             $http.post('/NewSolution', solution).then(function (response) {
-                $scope.data.solutionSaveResponse = response.toString();
+                if (response.statusText == "OK") {
+                    $scope.data.solutionSaveResponse = "Map saved successfully";
+                } else {
+                    $scope.data.solutionSaveResponse = "Failed to save map: " + response.statusText;
+                }
             });
         });
     };
@@ -299,6 +306,8 @@ function UpdateScopeData($scope, results) {
     $scope.data.milesTraveled = results.distance;
     $scope.data.total_transitions = results.transitions;
     $scope.data.total_frl_p = (100 * frl/students).toFixed(2);
+
+    $scope.data.solutionSaveResponse = "";
 }
 
 function Configure($scope) {
