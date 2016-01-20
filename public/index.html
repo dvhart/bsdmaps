@@ -10,11 +10,11 @@
     <script src="https://maps.googleapis.com/maps/api/js?v=3.exp"></script>
     <script src="solution.js"></script>
     <link href="style.css" rel="stylesheet" />
-    <link href="angular-chart.min.css" rel="stylesheet" />
+    <link href="angular-chart.min.css" rel="stylesheet"/>
 </head>
 <body ng-app="BoundaryEntry">
     <div ng-controller="BoundaryController">
-        <div class="panel-left" class="no-print">
+        <div class="panel-left no-print">
 
             <div class="form-panel">
                 <div class="form-header">BSD Solution Editor</div>
@@ -44,10 +44,13 @@
             </div> <!-- BSD Solution Editor -->
 
             <div class="form-panel">
-                <div class="form-header"><a href="#" ng-click="loadForm = ! loadForm">Load Solution</a></div>
+                <div class="form-header">Load Map</div>
                 <div class="procedure-details form-body">
-                    <form class="css-form" ng-show="loadForm">
-                        <p>Enter solution search terms:</p>
+                    <form class="css-form">
+                        <p>Enter search terms and press  'Find
+                        Maps'. Click on a map name in the list to load it. To
+                        list all maps, leave the search terms blank and press
+                        'Find Maps'.</p>
 
                         <div class="form-row">
                             <label>Solution Name</label>
@@ -65,18 +68,28 @@
                             <label>Email</label>
                             <input type="email" ng-model="data.searchEmail" />
                         </div>
-                        <input type="button" ng-click="LoadFromDB()" value="Find Solutions" /><br>
-                        <select id="myselection" multiple ng-multiple="false" ng-model="data.selectedSolution" ng-change="SelectSolution()" ng-options="c.solutionName for c in data.solutions"></select>
+                        <div class="form-row">
+                            <label></label>
+                            <input type="button" ng-click="LoadFromDB()" value="Find Maps" />
+                        </div>
+                        <div class="form-row">
+                            <select class='select-maps' multiple ng-multiple="false"
+                                ng-model="data.selectedSolution" ng-change="SelectSolution()"
+                                ng-options="c.solutionName for c in data.solutions">
+                            </select>
+                        </div>
                     </form>
-                    (Click Title to Open/Close Form)
                 </div>
             </div> <!-- Load Panel -->
 
             <div class="form-panel">
-                <div class="form-header"><a href="#" ng-click="saveForm = !  saveForm">Save Solution</a></div>
+                <div class="form-header">Save Map</div>
                 <div class="procedure-details form-body">
-                    <form class="css-form" ng-submit="SaveSolution()" ng-show="saveForm">
-                        <p>Simple clear saving instructions</p>
+                    <form class="css-form" ng-submit="SaveSolution()">
+                        <p>To save your map for others to find an review, please
+                        fill in the required fields (*) and select your primary
+                        and secondary objections from the list. Use Control or
+                        Command to select multiple entries.</p>
 
                         <div class="form-row">
                             <label>* Solution Name</label>
@@ -100,7 +113,9 @@
                         </div>
                         <div class="form-row">
                             <label>Primary Objectives</label>
-                            <select name="PrimaryObjectives" id="primaryObjectives" ng-model="data.submission.primaryObjectives" value="data.solution.primaryObjectives" multiple>
+                            <select name="PrimaryObjectives" class="select-objectives" id="primaryObjectives"
+                                ng-model="data.submission.primaryObjectives"
+                                value="data.solution.primaryObjectives" multiple>
                                 <option value="Space">Space</option>
                                 <option value="Proximity">Proximity</option>
                                 <option value="Safety">Safety</option>
@@ -109,7 +124,9 @@
                         </div>
                         <div class="form-row">
                             <label>Other Objectives</label>
-                            <select name="OtherObjectives" id="otherObjectives" ng-model="data.submission.otherObjectives" value="data.solution.otherObjectives" multiple>
+                            <select name="OtherObjectives" class="select-objectives" id="otherObjectives"
+                                ng-model="data.submission.otherObjectives"
+                                value="data.solution.otherObjectives" multiple>
                                 <option value="minTransitions">Minimize Transitions</option>
                                 <option value="education">Education</option>
                                 <option value="transportCost">Transportation Cost</option>
@@ -118,48 +135,61 @@
                                 <option value="buildingEfficiency">Building Efficiency</option>
                             </select>
                         </div>
-                        <input type="submit" value="Save Solution" />
-                        <p>{{data.solutionSaveResponse}}</p>
+                        <input type="submit" value="Save Solution" /> 
                     </form>
-                    (Click Title to Open/Close Form)
                 </div>
             </div> <!-- Save Panel -->
+
             <!-- <pre>data = {{data | json}}</pre> -->
         </div> <!-- panel -->
 
         <div class="report">
             <div class="page no-break">
-                <h1>Beaverton School District</h1>
-                <h2>Community Proposed Map: {{data.mapTitle}}</h2>
+                <h1>{{data.mapName}}</h1>
+                <h2>{{data.mapDescription}}</h2>
                 <div id="map-holder"></div>
             </div> <!-- page -->
 
-            <div class="no-print"><hr /></div>
+            <div class="no-print"><hr/></div>
 
             <div class="page no-break">
+
+                <div class="chart-row">
+                    <div ng-bind-html="GenStatsTable()|html"></div>
+                </div>
+
                 <div class="chart-row">
                     <div class="chart-panel">
                         <div class="chart-header">Percent Capacity</div>
                         <div class="chart-box">
                             <canvas id="bar2" class="chart chart-bar"
-                                    height="250"
-                                    chart-data="data.capacity_p"
-                                    chart-labels="data.schools"
-                                    chart-series="schools"></canvas>
+                                              height="250"
+                                              chart-data="data.capacity_p"
+                                              chart-labels="data.schools"
+                                              chart-series="schools">
+                            </canvas>
                             <div class="chart-caption">
+                                The population data was extracted from the 'High
+                                School Boundary Springboard Proposal', where the
+                                numbers were listed per grid code. These values
+                                should match the BSD published boundary maps
+                                with little error.
                             </div>
                         </div>
                     </div>
                     <div class="chart-panel">
-                        <div class="chart-header">Proximity</div>
+                        <div class="chart-header">Proximity (miles)</div>
                         <div class="chart-box">
                             <canvas id="bar3" class="chart chart-bar"
-                                    height="250"
-                                    chart-data="data.distance"
-                                    chart-labels="data.schools"
-                                    chart-series="schools"></canvas>
+                                              height="250"
+                                              chart-data="data.distance"
+                                              chart-labels="data.schools"
+                                              chart-series="schools">
+                            </canvas>
                             <div class="chart-caption">
-                                Travel Distance (miles): {{data.milesTraveled}}
+                                Proximity is determined through the Google Maps
+                                service, calculating driving distance from each
+                                grid code centroid to the proposed high school.
                             </div>
                         </div>
                     </div>
@@ -170,94 +200,94 @@
                         <div class="chart-header">Transitions</div>
                         <div class="chart-box">
                             <canvas id="bar4" class="chart chart-bar"
-                                    height="250"
-                                    chart-data="data.transitions"
-                                    chart-labels="data.schools"
-                                    chart-series="schools"></canvas>
+                                              height="250"
+                                              chart-data="data.transitions"
+                                              chart-labels="data.schools"
+                                              chart-series="schools">
+                            </canvas>
                             <div class="chart-caption">
-                                Student Transitions: {{data.total_transitions}}
+                                Transitions are the number of students changing
+                                high schools. The number is assigned to the high
+                                school they are leaving, indicating impact to
+                                that school's existing student body.
                             </div>
                         </div>
                     </div>
                     <div class="chart-panel">
-                        <div class="chart-header">Equity</div>
+                        <div class="chart-header">Percent Free and Reduced Lunch</div>
                         <div class="chart-box">
                             <canvas id="bar5" class="chart chart-bar"
-                                    height="250"
-                                    chart-data="data.frl_p"
-                                    chart-labels="data.schools"
-                                    chart-series="schools"></canvas>
+                                              height="250"
+                                              chart-data="data.frl_p"
+                                              chart-labels="data.schools"
+                                              chart-series="schools">
+                            </canvas>
                             <div class="chart-caption">
-                                As measured by Free and Reduced Lunch Percentage
+                                This data was extracted visually from the 'K-12
+                                Students by Eligibility for Free & Reduced Lunch
+                                (SY 2014-15)' map published by the Beaverton
+                                School District on October 28, 2015.  While this
+                                data has been fit to approximate the BSD data,
+                                these values may vary significantly from the BSD
+                                published boundary maps.
                             </div>
                         </div>
                     </div>
                 </div>
-                <hr />
+
+                <hr/>
                 This is a community generated map and is not endorsed in any way
                 by the Beaverton School District.
             </div> <!-- page -->
         </div> <!-- report -->
 
-        <div class="panel-right" class="no-print">
+        <div class="panel-right no-print">
             <div class="form-panel">
                 <div class="form-header">Instructions</div>
                 <div class="form-body">
-                    <p>
-                        This is a community developed tool to generate proposed
-                        attendance boundaries for the Beaverton School District*
-                        High Schools.
-                    </p>
+                    <p>This is a community developed tool to generate proposed
+                    attendance boundaries for the Beaverton School District*
+                    High Schools.</p>
 
-                    <p>
-                        To create your own map, start with the existing
-                        boundaries, or load a previously saved map. You can reload
-                        the existing boundaries by pressing "Refresh from DB". You
-                        can search for maps that meet your criteria in the Load
-                        Solution form. Once loaded, you can make your own changes.
-                        You will not be able to modify the existing maps, but you
-                        can save your changes as a new map in the Save Solution
-                        form.
-                    </p>
+                    <p>To create your own map, start with the existing
+                    boundaries, or load a previously saved map. You can reload
+                    the existing boundaries by pressing "Refresh from DB". You
+                    can search for maps that meet your criteria in the Load
+                    Solution form. Once loaded, you can make your own changes.
+                    You will not be able to modify the existing maps, but you
+                    can save your changes as a new map in the Save Solution
+                    form.</p>
 
-                    <p>
-                        Next, select the "Proposed High School" from the drop
-                        down list. Then, in the "Apply to" drop down box, choose
-                        between applying the proposed high school to individual grid
-                        codes, or to all grid codes in the same elementary school
-                        boundary.  Finally, click on the map to assign areas to high
-                        schools.
-                    </p>
+                    <p>Next, select the "Proposed High School" from the drop
+                    down list. Then, in the "Apply to" drop down box, choose
+                    between applying the proposed high school to individual grid
+                    codes, or to all grid codes in the same elementary school
+                    boundary.  Finally, click on the map to assign areas to high
+                    schools.</p>
 
-                    <p>
-                        As you make changes, the statistics are updated in real
-                        time below the map to help you evaluate the impact.
-                    </p>
+                    <p>As you make changes, the statistics are updated in real
+                    time below the map to help you evaluate the impact.</p>
 
-                    <p>
-                        When you have created a map you feel is worth saving, you
-                        can print it using your browser's print feature. You can
-                        also save it for others to see om tje Save Solution
-                        form.
-                    </p>
+                    <p>When you have created a map you feel is worth saving, you
+                    can print it using your browser's print feature. You can
+                    also save it for others to see om tje Save Solution
+                    form.</p>
                 </div>
             </div>
             <div class="form-panel">
                 <div class="form-header">Resources</div>
                 <div class="form-body">
-                    <p>
-                        The data used in this tool was manually extracted, and may
-                        contain errors, from the following resources:
-                    </p>
+                    <p>The data used in this tool was manually extracted, and may
+                    contain errors, from the following resources:</p>
                     <a href="https://www.beaverton.k12.or.us/depts/facilities/boundary/HS%20Boundary%20Adjustment%20Process/11.12.15/Springboard%20Committee%20Table%20Map.pdf">Grid Codes</a> |
                     <a href="https://www.beaverton.k12.or.us/depts/facilities/boundary/Documents/AllFacilities.pdf">BSD School Boundaries</a>
-                    <hr />
+                    <hr/>
                     *This tool and the data provided are in no way authorized or
                     supported by the Beaverton School District.
                 </div>
             </div>
         </div>
-    </div><!-- Right Panel -->
+        </div><!-- Right Panel -->
     </div>
 </body>
 </html>
