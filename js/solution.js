@@ -12,6 +12,7 @@ var defaultMapDescription = "No Description";
 // Google Map Overlays
 var bsdOverlay;
 var mapGrids;
+var changedHS = false;
 
 var schoolData = {schools:[
     {id:0, dbName:'Aloha', displayName:'Aloha', color:'blue', capacity:2176, location:{ lat: 45.4846754, lng: -122.8711176 }},
@@ -36,6 +37,7 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
     $scope.data = {
         "proposedHigh":"Cooper",
         "paintBy":"ES",
+        "dragFunc":"pan",
         "gc": 0,
         "hs2020": 0,
         "reducedLunch": 0,
@@ -89,6 +91,11 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
             RefreshFromGrids(response.data);
             Configure($scope);
         });
+    };
+    
+    $scope.ChangeDragFunc = function () {
+        var mapOptions = { draggable: ($scope.data.dragFunc=="pan")};
+        map.setOptions(mapOptions)
     };
 	
 	var SaveJsonToFile = (function () {
@@ -341,11 +348,34 @@ function Configure($scope) {
     map.data.addListener('mouseover', function (event) {
         map.data.revertStyle();
         map.data.overrideStyle(event.feature, { strokeWeight: 1 });
+
+        if (event.Tb.buttons==1 && ($scope.data.dragFunc=="paint")) {
+            var proposedHigh = $scope.data.proposedHigh;
+            if (proposedHigh) {
+                changedHS = true;
+                // Record selected grid and grid data
+                selectedGrid = event.feature;
+                selectedGrid.setProperty('proposedHigh', proposedHigh);
+                selectedES = selectedGrid.getProperty('elementary');
+                
+                var numEsGrids = 0;
+                if ($scope.data.paintBy == "ES") {
+                    mapGrids.forEach(function (grid) {
+                        if (grid.getProperty('elementary') == selectedES) {
+                            grid.setProperty('proposedHigh', proposedHigh);
+                            numEsGrids++;
+                        }
+                    });
+                }
+            }
+
+        }
     });
     
     map.data.addListener('mouseout', function (event) {
         map.data.revertStyle();
     });
+    
 
     map.data.addListener('click', selectGrid = function (event) {
         var proposedHigh = $scope.data.proposedHigh;
@@ -354,8 +384,6 @@ function Configure($scope) {
             selectedGrid = event.feature;
             selectedGrid.setProperty('proposedHigh', proposedHigh);
             selectedES = selectedGrid.getProperty('elementary');
-
-            console.log("click proposedHigh=" + proposedHigh + " elementary=" + selectedES);
 
             var numEsGrids = 0;
             if ($scope.data.paintBy == "ES") {

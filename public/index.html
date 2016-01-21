@@ -38,7 +38,15 @@
                                 <option value="ES">Elementary Boundary</option>
                             </select>
                         </div>
-                        <input type="button" ng-click="DBRefresh()" value="Refresh from DB" />
+                        <div class="form-row">
+                            <label>Drag on Map</label>
+                            <select name="DragFunc" id="dragFunc"
+                                ng-model="data.dragFunc" value="data.dragFunc"
+                                ng-change="ChangeDragFunc()">
+                                <option value="pan">Moves Map</option>
+                                <option value="paint">Applies High School</option>
+                            </select>
+                        </div>
                     </form>
                 </div>
             </div> <!-- BSD Solution Editor -->
