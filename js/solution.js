@@ -339,21 +339,15 @@ function Configure($scope) {
     });
 
     map.data.addListener('mouseover', function (event) {
-        if (selectedGrid == null) {
-            map.data.revertStyle();
-            map.data.overrideStyle(event.feature, { strokeWeight: 1 });
-        }
+        map.data.revertStyle();
+        map.data.overrideStyle(event.feature, { strokeWeight: 1 });
     });
     
     map.data.addListener('mouseout', function (event) {
-        if (selectedGrid == null) {
-            map.data.revertStyle();
-        }
+        map.data.revertStyle();
     });
 
     map.data.addListener('click', selectGrid = function (event) {
-        map.data.revertStyle();
-
         var proposedHigh = $scope.data.proposedHigh;
         if (proposedHigh) {
             // Record selected grid and grid data
