@@ -6,7 +6,7 @@
 
     <script src="angular.min.js"></script>
     <script src="https://maps.googleapis.com/maps/api/js?v=3.exp"></script>
-    <script src="fillgriddbdev.js"></script>
+    <script src="fillgriddb.js"></script>
     <link href="style.css" rel="stylesheet" />
 </head>
 <body ng-app="BoundaryEntry">
@@ -22,11 +22,15 @@
                         </div>
                         <div class="form-row">
                             <label>Projected Students</label>
-                            <input type="number" ng-model="data.hs2020" required /><br />
+                            <input type="number" ng-model="data.hs2020" required />
                         </div>
                         <div class="form-row">
-                            <label>Reduced Lunch Students</label>
-                            <input type="number" ng-model="data.reducedLunch" /><br />
+                            <label>Yellow Dot</label>
+                            <input type="number" ng-model="data.reducedLunch" />
+                        </div>
+                        <div class="form-row">
+                            <label>Blue Dot</label>
+                            <input type="number" ng-model="data.notFRL" />  
                         </div>
                         <div class="form-row">
                             <label> Current High School: </label>
@@ -89,9 +93,9 @@
                                 <option value="William Walker">William Walker</option>
                             </select>
                         </div>
-                        <input type="button" ng-click="NewGrid(data)" value="Add Selected Grid" disabled/>
-                        <input type="button" ng-click="EditGrid(data)" value="Update Selected Grid" disabled/>
-                        <input type="button" ng-click="DeleteGrid(data)" value="Delete Selected Grid" disabled/>
+                        <input type="button" ng-click="NewGrid(data)" value="Add Selected Grid"/>
+                        <input type="button" ng-click="EditGrid(data)" value="Update Selected Grid"/>
+                        <input type="button" ng-click="DeleteGrid(data)" value="Delete Selected Grid"/>
                         <input type="button" ng-click="DBRefresh()" value="Refresh from DB" />
                     </form>
                 </div>

@@ -85,8 +85,6 @@ app.post('/SetFeatures', function (request, res) {
 			
 			dbGrid.collection('features').remove({}); // remove features from database
 			dbGrid.collection('features').insert(newFeatures, function (err, result) {
-				assert.equal(err, null);
-				
 				if (err != null) {
 					console.log("/SetFeatures error" + err);
 				}
@@ -96,7 +94,6 @@ app.post('/SetFeatures', function (request, res) {
 				}
 			});
 		}
-
 	});
 });
 
@@ -115,8 +112,6 @@ app.post('/NewGrid', function (request, res) {
         if (putFeature != '') {
             var newFeature = JSON.parse(putFeature);
             dbGrid.collection('features').insertOne(newFeature, function (err, result) {
-                assert.equal(err, null);
-
                 if (err != null) {
                     console.log("/NewGrid error" + err);
                 }
@@ -125,7 +120,7 @@ app.post('/NewGrid', function (request, res) {
 
                     var features = dbGrid.collection('features').find().toArray(function (err, items) {
                         if (err) {
-                            console.log("/GetFeatures error" + err);
+                            console.log("/NewGrid error" + err);
                             return next(err);
                         }
                         res.send(JSON.stringify(items));
@@ -154,7 +149,7 @@ app.post('/DeleteGrid', function (request, res) {
             //console.log('DeleteGrid: ' + putFeature);
             var grid = JSON.parse(putFeature);
             dbGrid.collection('features').deleteOne(
-                grid,
+                grid._id,
                 function (err, results)
                 {
                     if (err != null) {
@@ -181,34 +176,29 @@ app.post('/DeleteGrid', function (request, res) {
 app.post('/EditGrid', function (request, res) {
     console.time("/EditGrid");
     var putFeature = '';
-
+    
     request.on('data', function (data) {
         putFeature += data;
         if (putFeature.length > 1e6)
             request.connection.destroy();
     });
-
+    
     request.on('end', function () {
-
         if (putFeature != '') {
-            //console.log('/EditGrid: ' + putFeature);
             var edit = JSON.parse(putFeature);
-            dbGrid.collection('features').deleteOne(
-                edit.remove,
-                function (err, results) {
-                    assert.equal(err, null);
-                    dbGrid.collection('features').insertOne(edit.add, function (err, result) {
+            dbGrid.collection('features').replaceOne({ "_id" : edit._id }, edit, function (err, results) {
+                if (err != null) {
+                    console.log("/EditGrid set properties error: " + err);
+                    res.send(JSON.stringify(err));
+                }
+                else {
+                    var features = dbGrid.collection('features').find().toArray(function (err, items) {
                         assert.equal(err, null);
-                        console.log("/EditGrid add new result" + result);
-
-                        var features = dbGrid.collection('features').find().toArray(function (err, items) {
-                            assert.equal(err, null);
-                            res.send(JSON.stringify(items));
-                            console.timeEnd("/EditGrid");
-                        });
+                        res.send(JSON.stringify(items));
+                        console.timeEnd("/EditGrid");
                     });
                 }
-            );
+            });
         }
     });
 });
@@ -227,9 +217,7 @@ app.post('/NewSolution', function (request, res) {
         
         if (putFeature != '') {
             var newFeature = JSON.parse(putFeature);
-            dbGrid.collection('solutions').insertOne(newFeature, function (err, result) {
-                assert.equal(err, null);
-                
+            dbGrid.collection('solutions').insertOne(newFeature, function (err, result) {               
                 if (err != null) {
                     console.log("/NewSolution error " + err);
                 }

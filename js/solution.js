@@ -14,14 +14,14 @@ var bsdOverlay;
 var mapGrids;
 var changedHS = false;
 
-var schoolData = {schools:[
-    {id:0, dbName:'Aloha', displayName:'Aloha', color:'blue', capacity:2176, location:{ lat: 45.4846754, lng: -122.8711176 }},
-    {id:1, dbName:'Beaverton', displayName:'Beaverton', color:'orange', capacity:2122, location:{ lat: 45.4862466, lng: -122.8127043 }},
-    {id:2, dbName:'Cooper', displayName:'Cooper Mtn', color:'green', capacity:2176, location:{ lat: 45.4246773, lng: -122.8589781 }},
-    {id:3, dbName:'Southridge', displayName:'Southridge', color:'red', capacity:1850, location:{ lat: 45.450176, lng: -122.8097826 }},
-    {id:4, dbName:'Sunset', displayName:'Sunset', color:'purple', capacity:2203, location:{ lat: 45.5275796, lng: -122.8188543 }},
-    {id:5, dbName:'Westview', displayName:'Westview', color:'pink', capacity:2421, location:{ lat: 45.55027, lng: -122.8682147}},
-    ]};
+var schools = [ 
+    { id: 0, dbName: 'Aloha', displayName: 'Aloha', color: 'blue', capacity: 2176, location: { lat: 45.4857177, lng: -122.8695357 } },
+    { id: 1, dbName: 'Beaverton', displayName: 'Beaverton', color: 'orange', capacity: 2122, location: { lat: 45.4862121, lng: -122.8111987 } },
+    { id: 2, dbName: 'Cooper', displayName: 'Cooper Mtn', color: 'green', capacity: 2176, location: { lat: 45.4263618, lng: -122.853657 } }, 
+    { id: 3, dbName: 'Southridge', displayName: 'Southridge', color: 'red', capacity: 1850, location: { lat: 45.4507757, lng: -122.8063213 } },
+    { id: 4, dbName: 'Sunset', displayName: 'Sunset', color: 'purple', capacity: 2203, location: { lat: 45.5275752, lng: -122.8188107 } },
+    { id: 5, dbName: 'Westview', displayName: 'Westview', color: 'pink', capacity: 2421, location: { lat: 45.5489509, lng: -122.8663216 } }
+];
 
 /*
  * This filter permits the printing of dynamically generated html that sce would
