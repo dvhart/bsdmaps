@@ -92,9 +92,9 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
             Configure($scope);
         });
     };
-    
-    $scope.ChangeDragFunc = function () {
-        var mapOptions = { draggable: ($scope.data.dragFunc=="pan")};
+	
+    $scope.TogglePan = function () {
+        var mapOptions = { draggable: !$scope.data.drawSchool};
         map.setOptions(mapOptions)
     };
 	
@@ -346,10 +346,10 @@ function Configure($scope) {
     });
 
     map.data.addListener('mouseover', function (event) {
-        map.data.revertStyle();
-        map.data.overrideStyle(event.feature, { strokeWeight: 1 });
-
-        if (event.Tb.buttons==1 && ($scope.data.dragFunc=="paint")) {
+            map.data.revertStyle();
+            map.data.overrideStyle(event.feature, { strokeWeight: 1 });
+        
+        if (event.Tb.buttons==1 && $scope.data.drawSchool) {
             var proposedHigh = $scope.data.proposedHigh;
             if (proposedHigh) {
                 changedHS = true;
@@ -373,9 +373,9 @@ function Configure($scope) {
     });
     
     map.data.addListener('mouseout', function (event) {
-        map.data.revertStyle();
+            map.data.revertStyle();
     });
-    
+
 
     map.data.addListener('click', selectGrid = function (event) {
         var proposedHigh = $scope.data.proposedHigh;

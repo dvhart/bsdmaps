@@ -49,15 +49,7 @@
                                 <option value="ES">Elementary Boundary</option>
                             </select>
                         </div>
-                        <div class="form-row">
-                            <label>Drag on Map</label>
-                            <select name="DragFunc" id="dragFunc"
-                                ng-model="data.dragFunc" value="data.dragFunc"
-                                ng-change="ChangeDragFunc()">
-                                <option value="pan">Moves Map</option>
-                                <option value="paint">Applies High School</option>
-                            </select>
-                        </div>
+                        Selct to draw, deselct to pan <input type="checkbox" ng-click="TogglePan()" ng-model="data.drawSchool"/> 
                     </form>
                 </div>
             </div> <!-- BSD Solution Editor -->
