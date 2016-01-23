@@ -7,17 +7,26 @@ var newFeature;
 var localOverlay;
 
 
-var AlohaHS = { lat: 45.4846754, lng: -122.8711176 };
-var BeavertonHS = { lat: 45.4862466, lng: -122.8127043 };
-var CooperMtHS = { lat: 45.4246773, lng: -122.8589781 };
-var SouthridgeHS = { lat: 45.450176, lng: -122.8097826 };
-var SunsetHS = { lat: 45.5275796, lng: -122.8188543 };
-var WestviewHS = { lat: 45.55027, lng: -122.8682147 };
-var destination = [AlohaHS, BeavertonHS, CooperMtHS, SouthridgeHS, SunsetHS, WestviewHS];
+
+
+var schools = [ 
+    { id: 0, dbName: 'Aloha', displayName: 'Aloha', color: 'blue', capacity: 2176, location: { lat: 45.4857177, lng: -122.8695357 } },
+    { id: 1, dbName: 'Beaverton', displayName: 'Beaverton', color: 'orange', capacity: 2122, location: { lat: 45.4862121, lng: -122.8111987 } },
+    { id: 2, dbName: 'Cooper', displayName: 'Cooper Mtn', color: 'green', capacity: 2176, location: { lat: 45.4263618, lng: -122.853657 } }, 
+    { id: 3, dbName: 'Southridge', displayName: 'Southridge', color: 'red', capacity: 1850, location: { lat: 45.4507757, lng: -122.8063213 } },
+    { id: 4, dbName: 'Sunset', displayName: 'Sunset', color: 'purple', capacity: 2203, location: { lat: 45.5275752, lng: -122.8188107 } },
+    { id: 5, dbName: 'Westview', displayName: 'Westview', color: 'pink', capacity: 2421, location: { lat: 45.5489509, lng: -122.8663216 } }
+];
+
+
+var destination = [];
+schools.forEach(function (school) {
+    destination.push(school.location);
+});
 
 
 app.controller('BoundaryController', function ($scope, $http) {
-    $scope.data = { "gc": 12, "hs2020": 10, "reducedLunch": 0, "high": "Westview", "middle": "Meadow Park", "elementary": "Beaver Acres", "centroid": [0,0], "distance":[0,0,0,0,0,0], "time": [0, 0, 0, 0, 0, 0] };
+    $scope.data = { "gc": 12, "hs2020": 10, "reducedLunch": 0, "notFRL": 0, "high": "Westview", "middle": "Meadow Park", "elementary": "Beaver Acres", "centroid": [0,0], "distance":[0,0,0,0,0,0], "time": [0, 0, 0, 0, 0, 0] };
     $scope.master = {};
 
     $scope.update = function (user) {
@@ -59,6 +68,7 @@ app.controller('BoundaryController', function ($scope, $http) {
                         "gc": $scope.data.gc,
                         "hs2020": $scope.data.hs2020,
                         "reducedLunch": $scope.data.reducedLunch,
+                        "notFRL": $scope.data.notFRL,
                         "high": $scope.data.high,
                         "middle": $scope.data.middle,
                         "elementary": $scope.data.elementary,
@@ -109,11 +119,17 @@ app.controller('BoundaryController', function ($scope, $http) {
                         for (var i = 0; i < response.rows[0].elements.length; i++) {
                             schoolDistance[i] = response.rows[0].elements[i].distance.value; //distance in meters
                         }
+                        
+                        if (grid.properties.id) {
+                            grid._id = grid.properties.id;
+                            delete grid.properties.id;
+                        }
 
                         grid.properties = {
                             "gc": $scope.data.gc,
                             "hs2020": $scope.data.hs2020,
                             "reducedLunch": $scope.data.reducedLunch,
+                            "notFRL": $scope.data.notFRL,
                             "high": $scope.data.high,
                             "middle": $scope.data.middle,
                             "elementary": $scope.data.elementary,
@@ -122,9 +138,7 @@ app.controller('BoundaryController', function ($scope, $http) {
                             "time": [0, 0, 0, 0, 0, 0]
                         }
 
-
-                        var editData = { "remove": selectedFeature, "add": grid };
-                        $http.post('/EditGrid', editData).then(function (response) {
+                        $http.post('/EditGrid', grid).then(function (response) {
                             RefreshFromDB(response);
                             Configure($scope);
                         });
@@ -137,6 +151,13 @@ app.controller('BoundaryController', function ($scope, $http) {
     $scope.DeleteGrid = function (formData) {
         if (selectedGrid != null) {
             selectedGrid.toGeoJson(function (geoJson) {
+                
+                // move id to top level from properties
+                if (geoJson.properties.id) {
+                    geoJson._id = grid.properties.id;
+                    delete geoJson.properties.id;
+                }
+
                 $http.post('/DeleteGrid', geoJson).then(function (response) {
                     RefreshFromDB(response);
                     Configure($scope);
@@ -187,7 +208,15 @@ app.controller('BoundaryController', function ($scope, $http) {
 
 function RefreshFromDB(dbData) {
     try {
+       
         var geoJsonData = { "type": "FeatureCollection", "features": dbData.data };
+        
+        // Database ID does not survive going to and from google maps unless it is copied into properties
+        geoJsonData.features.forEach(function (grid) {
+            if (grid._id) {
+                grid.properties.id = grid._id;
+            }
+        });
 
         var newData = new google.maps.Data({map: map});
         newData.addGeoJson(geoJsonData);
@@ -310,6 +339,7 @@ function Configure($scope) {
             $scope.data.gc = grid.properties.gc;
             $scope.data.hs2020 = grid.properties.hs2020;
             $scope.data.reducedLunch = grid.properties.reducedLunch;
+            $scope.data.notFRL = grid.properties.notFRL;
             $scope.data.high = grid.properties.high;
             $scope.data.middle = grid.properties.middle;
             $scope.data.elementary = grid.properties.elementary;
