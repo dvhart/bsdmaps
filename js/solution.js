@@ -14,14 +14,16 @@ var bsdOverlay;
 var mapGrids;
 var changedHS = false;
 
-var schools = [ 
-    { id: 0, dbName: 'Aloha', displayName: 'Aloha', color: 'blue', capacity: 2176, location: { lat: 45.4857177, lng: -122.8695357 } },
-    { id: 1, dbName: 'Beaverton', displayName: 'Beaverton', color: 'orange', capacity: 2122, location: { lat: 45.4862121, lng: -122.8111987 } },
-    { id: 2, dbName: 'Cooper', displayName: 'Cooper Mtn', color: 'green', capacity: 2176, location: { lat: 45.4263618, lng: -122.853657 } }, 
-    { id: 3, dbName: 'Southridge', displayName: 'Southridge', color: 'red', capacity: 1850, location: { lat: 45.4507757, lng: -122.8063213 } },
-    { id: 4, dbName: 'Sunset', displayName: 'Sunset', color: 'purple', capacity: 2203, location: { lat: 45.5275752, lng: -122.8188107 } },
-    { id: 5, dbName: 'Westview', displayName: 'Westview', color: 'pink', capacity: 2421, location: { lat: 45.5489509, lng: -122.8663216 } }
-];
+var schoolData = {
+    schools: [
+        { id: 0, dbName: 'Aloha', displayName: 'Aloha', color: 'blue', capacity: 2176, location: { lat: 45.4857177, lng: -122.8695357 } },
+        { id: 1, dbName: 'Beaverton', displayName: 'Beaverton', color: 'orange', capacity: 2122, location: { lat: 45.4862121, lng: -122.8111987 } },
+        { id: 2, dbName: 'Cooper', displayName: 'Cooper Mtn', color: 'green', capacity: 2176, location: { lat: 45.4263618, lng: -122.853657 } }, 
+        { id: 3, dbName: 'Southridge', displayName: 'Southridge', color: 'red', capacity: 1850, location: { lat: 45.4507757, lng: -122.8063213 } },
+        { id: 4, dbName: 'Sunset', displayName: 'Sunset', color: 'purple', capacity: 2203, location: { lat: 45.5275752, lng: -122.8188107 } },
+        { id: 5, dbName: 'Westview', displayName: 'Westview', color: 'pink', capacity: 2421, location: { lat: 45.5489509, lng: -122.8663216 } }
+    ]
+};
 
 /*
  * This filter permits the printing of dynamically generated html that sce would
@@ -437,9 +439,20 @@ function JsonToSolution(solution, gridData)
 		{
 			gridData[i].properties.proposedHigh = solution.grids[i].proposedHigh;
 		}
-		else
-		{
-			console.log("Unexpected grid code index " + solution.grids[i].gc);
+        else { // Exhaustive search is definately not the best method but did not see a better search build in to JS
+            var findGC = gridData[i].properties.gc;
+            var solutionLength = solution.grids.length;
+            var match = false;
+            for (var index = 0; index < solutionLength && !match; index++) {
+                if (gridData[i].properties.gc == solution.grids[index].gc) {
+                    match = true;
+                    gridData[i].properties.proposedHigh = solution.grids[index].proposedHigh;
+                }
+            }
+            if (match == false) {
+                gridData[i].properties.proposedHigh = gridData[i].properties.high;
+                console.log("Grid code index " + solution.grids[i].gc + " not found");
+            }
 		}
 	}
 }
