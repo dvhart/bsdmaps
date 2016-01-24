@@ -5,7 +5,7 @@
     <title>School Boundary Explorer</title>
 
     <script src="angular.min.js"></script>
-    <script src="https://maps.googleapis.com/maps/api/js?v=3.exp"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&libraries=visualization"></script>
     <script src="fillgriddb.js"></script>
     <link href="style.css" rel="stylesheet" />
 </head>
@@ -16,6 +16,16 @@
                 <div class="form-header">Grid Code Data Entry</div>
                 <div class="form-body">
                     <form novalidate class="css-form">
+                         <div class="form-row">
+                            <label>Color map by</label>
+                            <select name="View" id="view" ng-model="data.view" value="data.view" ng-change="ChangeView()">
+                                <option value="high">High School</option>
+                                <option value="middle">Middle School</option>
+                                <option value="elementary">Elementary School</option>
+                                <option value="frl">FRL Heat Map</option>
+                                <option value="accident">Accident Rate Heat Map</option>
+                            </select>
+                        </div>
                         <div class="form-row">
                             <label>Grid Code</label>
                             <input type="number" ng-model="data.gc" required />
@@ -25,11 +35,11 @@
                             <input type="number" ng-model="data.hs2020" required />
                         </div>
                         <div class="form-row">
-                            <label>Yellow Dot</label>
+                            <label>Blue Dot</label>
                             <input type="number" ng-model="data.reducedLunch" />
                         </div>
                         <div class="form-row">
-                            <label>Blue Dot</label>
+                            <label>Yellow Dot</label>
                             <input type="number" ng-model="data.notFRL" />  
                         </div>
                         <div class="form-row">
