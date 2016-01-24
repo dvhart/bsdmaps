@@ -26,7 +26,7 @@ schools.forEach(function (school) {
 
 
 app.controller('BoundaryController', function ($scope, $http) {
-    $scope.data = { "gc": 12, "hs2020": 10, "reducedLunch": 0, "notFRL": 0, "high": "Westview", "middle": "Meadow Park", "elementary": "Beaver Acres", "centroid": [0,0], "distance":[0,0,0,0,0,0], "time": [0, 0, 0, 0, 0, 0] };
+    $scope.data = { "gc": 12, "hs2020": 10, "reducedLunch": 0, "notFRL": 0, "high": "Westview", "middle": "Meadow Park", "elementary": "Beaver Acres", "centroid": [0,0], "distance":[0,0,0,0,0,0], "time": [0, 0, 0, 0, 0, 0], "view":"high" };
     $scope.master = {};
 
     $scope.update = function (user) {
@@ -165,7 +165,10 @@ app.controller('BoundaryController', function ($scope, $http) {
             });
         }
     };
-
+    
+    $scope.ChangeView = function (formData) {
+        Configure($scope);
+    }
 
 
     function initMap() {
@@ -244,8 +247,28 @@ function Configure($scope) {
     map.data.setStyle(function (feature) {		
 		var view = "elementary";
 
-		var color = 'grey';
-		if (view == "high") {
+        var color = 'grey';
+        if ($scope.data.view == "frl") {
+ 
+            var hs2020 = feature.getProperty("hs2020");
+            var frlCount = feature.getProperty("reducedLunch");
+            var nonFrl = feature.getProperty("notFRL");
+            
+            var percentFRL = 0;
+            if (nonFrl) {
+                var den = frlCount + nonFrl
+                if (den > 0) {
+                    percentFRL = frlCount / den;
+                }
+            }
+            else if(hs2020 > 0){
+                percentFRL = frlCount / hs2020;
+            }
+
+            color = HeatMap(0, 1, percentFRL);
+
+        }
+		else if ($scope.data.view == "high") {
 			switch (feature.getProperty('high')) {
 				case 'Sunset': color = 'purple'; break;
 				case 'Beaverton': color = 'orange'; break;
@@ -255,7 +278,7 @@ function Configure($scope) {
 				case 'Cooper': color = 'green'; break;
 			}
 		}
-		else if (view == "middle") {
+		else if ($scope.data.view == "middle") {
 			switch (feature.getProperty('middle')) {
 				case 'Cedar Park': color = 'purple'; break;
 				case 'Conestoga': color = 'orange'; break;
@@ -302,7 +325,7 @@ function Configure($scope) {
 				case 'Vose': color = 'SlateGray'; break;
 				case 'West Tualatin View': color = 'Yellow'; break;
 				case 'William Walker': color = 'Salmon'; break;
-				default: console.log("Did not find elementary " + feature.getProperty('elementary'));
+				default: console.log("Did not find elementary gc:"+ +feature.getProperty('gc')+ " elementary:" + feature.getProperty('elementary'));
 			}
 		}
 
@@ -376,3 +399,20 @@ function deleteMarkers(markersArray) {
     }
     markersArray = [];
 }
+
+function HeatMap(minimum, maximum, value)
+{
+    var ratio = 2 * (value - minimum) / (maximum - minimum);
+    var b = Math.max(0, 255 * (1 - ratio));
+    var r = Math.max(0, 255 * (ratio - 1));
+    var g = 255 - b - r;
+    return rgb(r, g, b);
+}
+
+function rgb(r, g, b) {
+    r = Math.floor(r);
+    g = Math.floor(g);
+    b = Math.floor(b);
+    return ["rgb(", r, ",", g, ",", b, ")"].join("");
+}
+
