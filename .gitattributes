@@ -1,0 +1,14 @@
+# Define whitespace rules for the repository. Normalize new lines in the
+# repository, and use Windows CRLF upon checkout. Warn (red background)
+# in git # diff and git show on whitespace violations.
+# see gitattributes(5) for details
+
+# Normalize and use CRLF in working dir
+*	eol=crlf
+
+# Whitespace issues for diff and apply
+*	whitespace=trailing-space,tabwidth=4,tab-in-indent
+
+*.png	binary
+*.pdf	binary
+
