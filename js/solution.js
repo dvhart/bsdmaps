@@ -125,11 +125,12 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
     };	
     
     $scope.SaveSolution = function () {
+        $scope.data.solutionSaveResponse = "Saving ..."
         map.data.toGeoJson(function (geoJson) {
             var solution = SolutionToJson($scope.data, geoJson.features, results);
             $http.post('/NewSolution', solution).then(function (response) {
                 if (response.statusText == "OK") {
-                    $scope.data.solutionSaveResponse = "Map saved successfully";
+                    $scope.data.solutionSaveResponse = response.data;
                 } else {
                     $scope.data.solutionSaveResponse = "Failed to save map: " + response.statusText;
                 }
