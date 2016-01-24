@@ -184,26 +184,26 @@ app.post('/EditGrid', function (request, res) {
 app.post('/NewSolution', function (request, res) {
     console.time("/NewSolution");
     var putFeature = '';
-    
+
     request.on('data', function (data) {
         putFeature += data;
         if (putFeature.length > 1e6)
             request.connection.destroy();
     });
-    
+
     request.on('end', function () {
-        
+
         if (putFeature != '') {
             var newFeature = JSON.parse(putFeature);
             dbGrid.collection('solutions').insertOne(newFeature, function (err, result) {
                 assert.equal(err, null);
-                
+
                 if (err != null) {
                     console.log("/NewSolution error " + err);
                 }
                 else {
                     console.log("/NewSolution result " + result);
-                    
+
                     var features = dbGrid.collection('solutions').find().toArray(function (err, items) {
                         if (err) {
                             console.log("/NewSolution error" + err);
@@ -222,15 +222,15 @@ app.post('/NewSolution', function (request, res) {
 app.post('/Solution', function (request, response) {
     console.time("/Solution");
     var queryString = '';
-    
+
     request.on('data', function (data) {
         queryString += data;
         if (queryString.length > 1e6)
             request.connection.destroy();
     });
-    
+
     request.on('end', function () {
-        
+
         if (queryString != '') {
             var query = JSON.parse(queryString);
             var solutionsObj = dbGrid.collection('solutions').find(query);
