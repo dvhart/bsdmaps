@@ -58,7 +58,7 @@ try {
 
 app.get('/GetFeatures', function (request, response) {
     console.time("/GetFeatures");
-    var features = dbGrid.collection('features').find().toArray(function (err, items) {
+    dbGrid.collection('features').find().toArray(function (err, items) {
         if (err) {
             console.log("/GetFeatures error" + err);
             return next(err);
@@ -205,32 +205,50 @@ app.post('/EditGrid', function (request, res) {
 
 app.post('/NewSolution', function (request, res) {
     console.time("/NewSolution");
-    var putFeature = '';
+    var solutionString = '';
     
     request.on('data', function (data) {
-        putFeature += data;
-        if (putFeature.length > 1e6)
+        solutionString += data;
+        if (solutionString.length > 1e6)
             request.connection.destroy();
     });
     
     request.on('end', function () {
         
-        if (putFeature != '') {
-            var newFeature = JSON.parse(putFeature);
-            dbGrid.collection('solutions').insertOne(newFeature, function (err, result) {               
-                if (err != null) {
-                    console.log("/NewSolution error " + err);
+        if (solutionString != '') {
+            var newSolution = JSON.parse(solutionString);
+            
+            if (!newSolution.solutionName || newSolution.solutionName == "") {
+                res.send("Soluiton must be named");
+            }          
+
+            dbGrid.collection('solutions').find({"solutionName": newSolution.solutionName}).toArray(function (err, items) {
+                if (err) {
+                    console.log("/NewSolution error" + err);
+                    res.send("Database find error");
                 }
-                else {
-                    console.log("/NewSolution result " + result);
-                    
-                    var features = dbGrid.collection('solutions').find().toArray(function (err, items) {
-                        if (err) {
-                            console.log("/NewSolution error" + err);
-                            return next(err);
+                else if(SolutionInDb(newSolution, items)) {
+                    console.log("/NewSolution Solution already in Db" + err);
+                    res.send("Solution " + newSolution.solutionName+ " already in Database");
+                }
+                else{
+                    dbGrid.collection('solutions').insertOne(newSolution, function (err, result) {
+                        if (err != null) {
+                            console.log("/NewSolution error " + err);
+                            res.send("Database insert error");
                         }
-                        res.send(JSON.stringify(result));
-                        console.timeEnd("/NewSolution");
+                        else {
+                            console.log("/NewSolution result " + result);
+                            
+                            if (result.result.ok && result.insertedCount == 1) {
+                                res.send("Map saved successfully");
+
+                            }
+                            else {
+                                res.send("Save error");
+                            }
+                            console.timeEnd("/NewSolution");
+                        }
                     });
                 }
             });
@@ -238,6 +256,28 @@ app.post('/NewSolution', function (request, res) {
 
     });
 });
+
+function SolutionInDb(newSolution, items)
+{
+    var match = false;
+    for (var i = 0; i < items.length && match == false; i++) {
+        var numGrids = newSolution.grids.length;
+        if (numGrids == items[i].grids.length) {
+            var assumeSame = true;
+            for (var j = 0; j < numGrids && assumeSame == true; j++) {
+                if (newSolution.grids[j].gc != items[i].grids[j].gc || newSolution.grids[j].proposedHigh != items[i].grids[j].proposedHigh) {
+                    assumeSame = false;
+                }
+            }
+            if (assumeSame) {
+                match = true;
+            }
+        }
+
+    }
+
+    return match;
+}
 
 app.post('/Solution', function (request, response) {
     console.time("/Solution");
