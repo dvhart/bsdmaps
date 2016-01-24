@@ -358,14 +358,14 @@ function Configure($scope) {
                 changedHS = true;
                 // Record selected grid and grid data
                 selectedGrid = event.feature;
-                selectedGrid.setProperty('proposedHigh', proposedHigh);
+                selectedGrid.setProperty('proposedHigh', ProposedHigh(proposedHigh, ProposedHigh(proposedHigh, selectedGrid)));
                 selectedES = selectedGrid.getProperty('elementary');
                 
                 var numEsGrids = 0;
                 if ($scope.data.paintBy == "ES") {
                     mapGrids.forEach(function (grid) {
                         if (grid.getProperty('elementary') == selectedES) {
-                            grid.setProperty('proposedHigh', proposedHigh);
+                            grid.setProperty('proposedHigh', ProposedHigh(proposedHigh, ProposedHigh(proposedHigh, grid)));
                             numEsGrids++;
                         }
                     });
@@ -385,14 +385,14 @@ function Configure($scope) {
         if (proposedHigh) {
             // Record selected grid and grid data
             selectedGrid = event.feature;
-            selectedGrid.setProperty('proposedHigh', proposedHigh);
+            selectedGrid.setProperty('proposedHigh', ProposedHigh(proposedHigh, selectedGrid));
             selectedES = selectedGrid.getProperty('elementary');
 
             var numEsGrids = 0;
             if ($scope.data.paintBy == "ES") {
                 mapGrids.forEach(function (grid) {
                     if (grid.getProperty('elementary') == selectedES) {
-                        grid.setProperty('proposedHigh', proposedHigh);
+                        grid.setProperty('proposedHigh', ProposedHigh(proposedHigh, grid));
                         numEsGrids++;
                     }
                 });
@@ -552,4 +552,25 @@ function FrlFit(frl, total2020) {
 	}
 	
 	return frlFit;
+}
+
+function ProposedHigh(inProposedHigh, grid) {
+    var proposedHigh = inProposedHigh;
+
+    if (proposedHigh == 'Closest') {
+        var distance = grid.getProperty('distance');
+        if (distance && distance.length > 1) {
+            var minDistance = distance[0];
+            var proposedHigh = schoolData.schools[0].dbName;
+
+            for (var i = 0; i < distance.length; i++) {
+                if (distance[i] < minDistance) {
+                    minDistance = distance[i];
+                    proposedHigh = schoolData.schools[i].dbName;
+                }
+            }
+        }
+    }
+
+    return proposedHigh;
 }
