@@ -18,7 +18,7 @@ var schoolData = {
     schools: [
         { id: 0, dbName: 'Aloha', displayName: 'Aloha', color: 'blue', capacity: 2176, location: { lat: 45.4857177, lng: -122.8695357 } },
         { id: 1, dbName: 'Beaverton', displayName: 'Beaverton', color: 'orange', capacity: 2122, location: { lat: 45.4862121, lng: -122.8111987 } },
-        { id: 2, dbName: 'Cooper', displayName: 'Cooper Mtn', color: 'green', capacity: 2176, location: { lat: 45.4263618, lng: -122.853657 } },
+        { id: 2, dbName: 'Cooper', displayName: 'Cooper Mtn', color: 'green', capacity: 2176, location: { lat: 45.4263618, lng: -122.853657 } }, 
         { id: 3, dbName: 'Southridge', displayName: 'Southridge', color: 'red', capacity: 1850, location: { lat: 45.4507757, lng: -122.8063213 } },
         { id: 4, dbName: 'Sunset', displayName: 'Sunset', color: 'purple', capacity: 2203, location: { lat: 45.5275752, lng: -122.8188107 } },
         { id: 5, dbName: 'Westview', displayName: 'Westview', color: 'pink', capacity: 2421, location: { lat: 45.5489509, lng: -122.8663216 } }
@@ -94,36 +94,36 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
             Configure($scope);
         });
     };
-
-    $scope.ChangeDragFunc = function () {
-        var mapOptions = { draggable: ($scope.data.dragFunc=="pan")};
+	
+    $scope.TogglePan = function () {
+        var mapOptions = { draggable: !$scope.data.drawSchool};
         map.setOptions(mapOptions)
     };
-
-    var SaveJsonToFile = (function () {
-        var a = document.createElement("a");
-        document.body.appendChild(a);
-        a.style = "display: none";
-        return function (data, defaultFileName) {
-            var json = JSON.stringify(data),
-            blob = new Blob([json], {type: "octet/stream"}),
-            url = window.URL.createObjectURL(blob);
-            a.href = url;
-            a.download = defaultFileName;
-            a.click();
-            window.URL.revokeObjectURL(url);
-        };
-    }());
-
+	
+	var SaveJsonToFile = (function () {
+		var a = document.createElement("a");
+		document.body.appendChild(a);
+		a.style = "display: none";
+		return function (data, defaultFileName) {
+			var json = JSON.stringify(data),
+				blob = new Blob([json], {type: "octet/stream"}),
+				url = window.URL.createObjectURL(blob);
+			a.href = url;
+			a.download = defaultFileName;
+			a.click();
+			window.URL.revokeObjectURL(url);
+		};
+	}());	
+	
     $scope.SaveToFile = function() {
 
-        map.data.toGeoJson(function (geoJson) {
-            var solution = SolutionToJson($scope.data, geoJson.features, results);
+		map.data.toGeoJson(function (geoJson) {
+			var solution = SolutionToJson($scope.data, geoJson.features, results);
             var defaultFileName = "solution.json";
-            SaveJsonToFile(solution, defaultFileName);
-        }); 
-    };
-
+			SaveJsonToFile(solution, defaultFileName);
+		}); 		
+    };	
+    
     $scope.SaveSolution = function () {
         $scope.data.solutionSaveResponse = "Saving ..."
         map.data.toGeoJson(function (geoJson) {
@@ -138,10 +138,10 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
         });
     };
 
-
+    
     $scope.LoadFromDB = function () {
         var queryString = {};
-
+        
         if ($scope.data.searchName) {
             queryString.solutionName = $scope.data.searchName;
         }
@@ -151,11 +151,11 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
         if ($scope.data.searchUsername) {
             queryString.solutionUsername = $scope.data.searchUsername;
         }
-
+        
         if ($scope.data.searchEmail) {
             queryString.email = $scope.data.searchEmail;
         }
-
+        
         $http.post('/Solution', queryString).then(function (response) {
             $scope.data.solutions = response.data;
         });
@@ -349,23 +349,23 @@ function Configure($scope) {
     });
 
     map.data.addListener('mouseover', function (event) {
-        map.data.revertStyle();
-        map.data.overrideStyle(event.feature, { strokeWeight: 1 });
-
-        if (event.Tb.buttons==1 && ($scope.data.dragFunc=="paint")) {
+            map.data.revertStyle();
+            map.data.overrideStyle(event.feature, { strokeWeight: 1 });
+        
+        if (event.Tb.buttons==1 && $scope.data.drawSchool) {
             var proposedHigh = $scope.data.proposedHigh;
             if (proposedHigh) {
                 changedHS = true;
                 // Record selected grid and grid data
                 selectedGrid = event.feature;
-                selectedGrid.setProperty('proposedHigh', ProposedHigh(proposedHigh, selectedGrid));
+                selectedGrid.setProperty('proposedHigh', proposedHigh);
                 selectedES = selectedGrid.getProperty('elementary');
-
+                
                 var numEsGrids = 0;
                 if ($scope.data.paintBy == "ES") {
                     mapGrids.forEach(function (grid) {
                         if (grid.getProperty('elementary') == selectedES) {
-                            grid.setProperty('proposedHigh', ProposedHigh(proposedHigh, grid));
+                            grid.setProperty('proposedHigh', proposedHigh);
                             numEsGrids++;
                         }
                     });
@@ -374,9 +374,9 @@ function Configure($scope) {
 
         }
     });
-
+    
     map.data.addListener('mouseout', function (event) {
-        map.data.revertStyle();
+            map.data.revertStyle();
     });
 
 
@@ -385,14 +385,14 @@ function Configure($scope) {
         if (proposedHigh) {
             // Record selected grid and grid data
             selectedGrid = event.feature;
-            selectedGrid.setProperty('proposedHigh', ProposedHigh(proposedHigh, selectedGrid));
+            selectedGrid.setProperty('proposedHigh', proposedHigh);
             selectedES = selectedGrid.getProperty('elementary');
 
             var numEsGrids = 0;
             if ($scope.data.paintBy == "ES") {
                 mapGrids.forEach(function (grid) {
                     if (grid.getProperty('elementary') == selectedES) {
-                        grid.setProperty('proposedHigh', ProposedHigh(proposedHigh, grid));
+                        grid.setProperty('proposedHigh', proposedHigh);
                         numEsGrids++;
                     }
                 });
@@ -416,12 +416,12 @@ function Configure($scope) {
 function SolutionToJson(formData, gridData, resultsData)
 {
     var solution = {
-        solutionName: formData.solutionName,
-        solutionDescription: formData.solutionDescription,
-        solutionUsername: formData.solutionUsername,
-        email: formData.solutionEmail,
+        solutionName: formData.solutionName, 
+        solutionDescription: formData.solutionDescription, 
+        solutionUsername: formData.solutionUsername, 
+        email: formData.solutionEmail, 
         url: formData.solutionUrl,
-        grids: [],
+        grids: [], 
         results: resultsData
     };
 	for(var i=0; i<gridData.length; i++)
@@ -539,38 +539,17 @@ function Transitions(db)
 }
 
 function FrlFit(frl, total2020) {
-    var m = 0.95
-        var b = 0.14;
-    var k = 1.25;
-
-    var frlFit = 0;
-    if (total2020 > 0) {
-        frlFit = (m * Math.pow(frl / total2020, k) + b) * total2020;
-        if (frlFit > total2020) {
-            frlFit = total2020;
-        }
-    }
-
-    return frlFit;
-}
-
-function ProposedHigh(inProposedHigh, grid) {
-    var proposedHigh = inProposedHigh;
-
-    if (proposedHigh == 'Closest') {
-        var distance = grid.getProperty('distance');
-        if (distance && distance.length > 1) {
-            var minDistance = distance[0];
-            var proposedHigh = schoolData.schools[0].dbName;
-
-            for (var i = 0; i < distance.length; i++) {
-                if (distance[i] < minDistance) {
-                    minDistance = distance[i];
-                    proposedHigh = schoolData.schools[i].dbName;
-                }
-            }
-        }
-    }
-
-    return proposedHigh;
+	var m = 0.95
+	var b = 0.14;
+	var k = 1.25;
+	
+	var frlFit = 0;
+	if (total2020 > 0) {
+		frlFit = (m * Math.pow(frl / total2020, k) + b) * total2020;
+		if (frlFit > total2020) {
+			frlFit = total2020;
+		}
+	}
+	
+	return frlFit;
 }

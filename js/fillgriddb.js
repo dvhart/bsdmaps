@@ -9,10 +9,10 @@ var localOverlay;
 
 
 
-var schools = [
+var schools = [ 
     { id: 0, dbName: 'Aloha', displayName: 'Aloha', color: 'blue', capacity: 2176, location: { lat: 45.4857177, lng: -122.8695357 } },
     { id: 1, dbName: 'Beaverton', displayName: 'Beaverton', color: 'orange', capacity: 2122, location: { lat: 45.4862121, lng: -122.8111987 } },
-    { id: 2, dbName: 'Cooper', displayName: 'Cooper Mtn', color: 'green', capacity: 2176, location: { lat: 45.4263618, lng: -122.853657 } },
+    { id: 2, dbName: 'Cooper', displayName: 'Cooper Mtn', color: 'green', capacity: 2176, location: { lat: 45.4263618, lng: -122.853657 } }, 
     { id: 3, dbName: 'Southridge', displayName: 'Southridge', color: 'red', capacity: 1850, location: { lat: 45.4507757, lng: -122.8063213 } },
     { id: 4, dbName: 'Sunset', displayName: 'Sunset', color: 'purple', capacity: 2203, location: { lat: 45.5275752, lng: -122.8188107 } },
     { id: 5, dbName: 'Westview', displayName: 'Westview', color: 'pink', capacity: 2421, location: { lat: 45.5489509, lng: -122.8663216 } }
@@ -119,7 +119,7 @@ app.controller('BoundaryController', function ($scope, $http) {
                         for (var i = 0; i < response.rows[0].elements.length; i++) {
                             schoolDistance[i] = response.rows[0].elements[i].distance.value; //distance in meters
                         }
-
+                        
                         if (grid.properties.id) {
                             grid._id = grid.properties.id;
                             delete grid.properties.id;
@@ -151,7 +151,7 @@ app.controller('BoundaryController', function ($scope, $http) {
     $scope.DeleteGrid = function (formData) {
         if (selectedGrid != null) {
             selectedGrid.toGeoJson(function (geoJson) {
-
+                
                 // move id to top level from properties
                 if (geoJson.properties.id) {
                     geoJson._id = grid.properties.id;
@@ -165,7 +165,7 @@ app.controller('BoundaryController', function ($scope, $http) {
             });
         }
     };
-
+    
     $scope.ChangeView = function (formData) {
         Configure($scope);
     }
@@ -211,9 +211,9 @@ app.controller('BoundaryController', function ($scope, $http) {
 
 function RefreshFromDB(dbData) {
     try {
-
+       
         var geoJsonData = { "type": "FeatureCollection", "features": dbData.data };
-
+        
         // Database ID does not survive going to and from google maps unless it is copied into properties
         geoJsonData.features.forEach(function (grid) {
             if (grid._id) {
@@ -245,15 +245,15 @@ function Configure($scope) {
     map.data.setControls(['Polygon']);
 
     map.data.setStyle(function (feature) {		
-        var view = "elementary";
+		var view = "elementary";
 
         var color = 'grey';
         if ($scope.data.view == "frl") {
-
+ 
             var hs2020 = feature.getProperty("hs2020");
             var frlCount = feature.getProperty("reducedLunch");
             var nonFrl = feature.getProperty("notFRL");
-
+            
             var percentFRL = 0;
             if (nonFrl) {
                 var den = frlCount + nonFrl
@@ -268,66 +268,66 @@ function Configure($scope) {
             color = HeatMap(0, 1, percentFRL);
 
         }
-        else if ($scope.data.view == "high") {
-            switch (feature.getProperty('high')) {
-                case 'Sunset': color = 'purple'; break;
-                case 'Beaverton': color = 'orange'; break;
-                case 'Westview': color = 'pink'; break;
-                case 'Aloha': color = 'blue'; break;
-                case 'Southridge': color = 'red'; break;
-                case 'Cooper': color = 'green'; break;
-            }
-        }
-        else if ($scope.data.view == "middle") {
-            switch (feature.getProperty('middle')) {
-                case 'Cedar Park': color = 'purple'; break;
-                case 'Conestoga': color = 'orange'; break;
-                case 'Five Oaks': color = 'pink'; break;
-                case 'Highland Park': color = 'blue'; break;
-                case 'Meadow Park': color = 'red'; break;
-                case 'Mountain View': color = 'green'; break;
-                case 'Stoller': color = 'Peru'; break;
-                case 'Whitford': color = 'PaleVioletRed'; break;
-            }
-        }
-        else {
-            switch (feature.getProperty('elementary')) {
-                case 'Aloha-Huber Park': color = 'AliceBlue'; break;
-                case 'Barnes': color = 'Brown'; break;
-                case 'Beaver Acres': color = 'Chartreuse'; break;
-                case 'Bethany': color = 'Coral'; break;
-                case 'Bonny Slope': color = 'DarkGreen'; break;
-                case 'Cedar Mill': color = 'DarkMagenta'; break;
-                case 'Chehalem': color = 'DeepSkyBlue'; break;
-                case 'Cooper Mountain': color = 'DarkOrange'; break;
-                case 'Elmonica': color = 'Gold'; break;
-                case 'Errol Hassell': color = 'HotPink'; break;
-                case 'Findley': color = 'Tomato'; break;
-                case 'Fir Grove': color = 'MediumOrchid'; break;
-                case 'Greenway': color = 'Peru'; break;
-                case 'Hazeldale': color = 'OrangeRed'; break;
-                case 'Hiteon': color = 'PaleGreen'; break;
-                case 'Jacob Wismer': color = 'PaleVioletRed'; break;
-                case 'Kinnaman': color = 'LightBlue'; break;
-                case 'Mckay': color = 'PaleVioletRed'; break;
-                case 'Mckinley': color = 'Red'; break;
-                case 'Montclair': color = 'Sienna'; break;
-                case 'Nancy Ryles': color = 'SeaGreen'; break;
-                case 'Oak Hills': color = 'Teal'; break;
-                case 'Raleigh Hills': color = 'MediumVioletRed'; break;
-                case 'Raleigh Park': color = 'Navy'; break;
-                case 'Ridgewood': color = 'YellowGreen'; break;
-                case 'Rock Creek': color = 'SteelBlue'; break;
-                case 'Scholls Heights': color = 'RosyBrown'; break;
-                case 'Sexton Mountain': color = 'RoyalBlue'; break;
-                case 'Springville': color = 'MediumTurquoise'; break;
-                case 'Terra Linda': color = 'SaddleBrown'; break;
-                case 'Vose': color = 'SlateGray'; break;
-                case 'West Tualatin View': color = 'Yellow'; break;
-                case 'William Walker': color = 'Salmon'; break;
-                default: console.log("Did not find elementary gc:"+ +feature.getProperty('gc')+ " elementary:" + feature.getProperty('elementary'));
-            }
-        }
+		else if ($scope.data.view == "high") {
+			switch (feature.getProperty('high')) {
+				case 'Sunset': color = 'purple'; break;
+				case 'Beaverton': color = 'orange'; break;
+				case 'Westview': color = 'pink'; break;
+				case 'Aloha': color = 'blue'; break;
+				case 'Southridge': color = 'red'; break;
+				case 'Cooper': color = 'green'; break;
+			}
+		}
+		else if ($scope.data.view == "middle") {
+			switch (feature.getProperty('middle')) {
+				case 'Cedar Park': color = 'purple'; break;
+				case 'Conestoga': color = 'orange'; break;
+				case 'Five Oaks': color = 'pink'; break;
+				case 'Highland Park': color = 'blue'; break;
+				case 'Meadow Park': color = 'red'; break;
+				case 'Mountain View': color = 'green'; break;
+				case 'Stoller': color = 'Peru'; break;
+				case 'Whitford': color = 'PaleVioletRed'; break;
+			}
+		}
+		else {
+			switch (feature.getProperty('elementary')) {
+				case 'Aloha-Huber Park': color = 'AliceBlue'; break;
+				case 'Barnes': color = 'Brown'; break;
+				case 'Beaver Acres': color = 'Chartreuse'; break;
+				case 'Bethany': color = 'Coral'; break;
+				case 'Bonny Slope': color = 'DarkGreen'; break;
+				case 'Cedar Mill': color = 'DarkMagenta'; break;
+				case 'Chehalem': color = 'DeepSkyBlue'; break;
+				case 'Cooper Mountain': color = 'DarkOrange'; break;
+				case 'Elmonica': color = 'Gold'; break;
+				case 'Errol Hassell': color = 'HotPink'; break;
+				case 'Findley': color = 'Tomato'; break;
+				case 'Fir Grove': color = 'MediumOrchid'; break;
+				case 'Greenway': color = 'Peru'; break;
+				case 'Hazeldale': color = 'OrangeRed'; break;
+				case 'Hiteon': color = 'PaleGreen'; break;
+				case 'Jacob Wismer': color = 'PaleVioletRed'; break;
+				case 'Kinnaman': color = 'LightBlue'; break;
+				case 'Mckay': color = 'PaleVioletRed'; break;
+				case 'Mckinley': color = 'Red'; break;
+				case 'Montclair': color = 'Sienna'; break;
+				case 'Nancy Ryles': color = 'SeaGreen'; break;
+				case 'Oak Hills': color = 'Teal'; break;
+				case 'Raleigh Hills': color = 'MediumVioletRed'; break;
+				case 'Raleigh Park': color = 'Navy'; break;
+				case 'Ridgewood': color = 'YellowGreen'; break;
+				case 'Rock Creek': color = 'SteelBlue'; break;
+				case 'Scholls Heights': color = 'RosyBrown'; break;
+				case 'Sexton Mountain': color = 'RoyalBlue'; break;
+				case 'Springville': color = 'MediumTurquoise'; break;
+				case 'Terra Linda': color = 'SaddleBrown'; break;
+				case 'Vose': color = 'SlateGray'; break;
+				case 'West Tualatin View': color = 'Yellow'; break;
+				case 'William Walker': color = 'Salmon'; break;
+				default: console.log("Did not find elementary gc:"+ +feature.getProperty('gc')+ " elementary:" + feature.getProperty('elementary'));
+			}
+		}
 
         return { editable: false, draggable: false, strokeWeight: 0, fillColor: color };
     });
