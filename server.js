@@ -69,32 +69,32 @@ app.get('/GetFeatures', function (request, response) {
 });
 
 app.post('/SetFeatures', function (request, res) {
-	console.time("/SetFeatures");
-	var putFeatures = '';
-	
-	request.on('data', function (data) {
-		putFeatures += data;
-		if (putFeatures.slength > 1e6)
-			request.connection.destroy();
-	});
-	
-	request.on('end', function () {
-		
-		if (putFeatures != '') {
-			var newFeatures = JSON.parse(putFeatures);
-			
-			dbGrid.collection('features').remove({}); // remove features from database
-			dbGrid.collection('features').insert(newFeatures, function (err, result) {
-				if (err != null) {
-					console.log("/SetFeatures error" + err);
-				}
-				else {
-					res.send(JSON.stringify(result));
-					console.timeEnd("/SetFeatures");
-				}
-			});
-		}
-	});
+    console.time("/SetFeatures");
+    var putFeatures = '';
+
+    request.on('data', function (data) {
+        putFeatures += data;
+        if (putFeatures.slength > 1e6)
+            request.connection.destroy();
+    });
+
+    request.on('end', function () {
+
+        if (putFeatures != '') {
+            var newFeatures = JSON.parse(putFeatures);
+
+            dbGrid.collection('features').remove({}); // remove features from database
+            dbGrid.collection('features').insert(newFeatures, function (err, result) {
+                if (err != null) {
+                    console.log("/SetFeatures error" + err);
+                }
+                else {
+                    res.send(JSON.stringify(result));
+                    console.timeEnd("/SetFeatures");
+                }
+            });
+        }
+    });
 });
 
 app.post('/NewGrid', function (request, res) {
@@ -176,13 +176,13 @@ app.post('/DeleteGrid', function (request, res) {
 app.post('/EditGrid', function (request, res) {
     console.time("/EditGrid");
     var putFeature = '';
-    
+
     request.on('data', function (data) {
         putFeature += data;
         if (putFeature.length > 1e6)
             request.connection.destroy();
     });
-    
+
     request.on('end', function () {
         if (putFeature != '') {
             var edit = JSON.parse(putFeature);
@@ -206,21 +206,21 @@ app.post('/EditGrid', function (request, res) {
 app.post('/NewSolution', function (request, res) {
     console.time("/NewSolution");
     var solutionString = '';
-    
+
     request.on('data', function (data) {
         solutionString += data;
         if (solutionString.length > 1e6)
             request.connection.destroy();
     });
-    
+
     request.on('end', function () {
-        
+
         if (solutionString != '') {
             var newSolution = JSON.parse(solutionString);
-            
+
             if (!newSolution.solutionName || newSolution.solutionName == "") {
                 res.send("Soluiton must be named");
-            }          
+            }
 
             dbGrid.collection('solutions').find({"solutionName": newSolution.solutionName}).toArray(function (err, items) {
                 if (err) {
@@ -239,7 +239,7 @@ app.post('/NewSolution', function (request, res) {
                         }
                         else {
                             console.log("/NewSolution result " + result);
-                            
+
                             if (result.result.ok && result.insertedCount == 1) {
                                 res.send("Map saved successfully");
 
@@ -282,15 +282,15 @@ function SolutionInDb(newSolution, items)
 app.post('/Solution', function (request, response) {
     console.time("/Solution");
     var queryString = '';
-    
+
     request.on('data', function (data) {
         queryString += data;
         if (queryString.length > 1e6)
             request.connection.destroy();
     });
-    
+
     request.on('end', function () {
-        
+
         if (queryString != '') {
             var query = JSON.parse(queryString);
             var solutionsObj = dbGrid.collection('solutions').find(query);
