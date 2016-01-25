@@ -358,14 +358,14 @@ function Configure($scope) {
                 changedHS = true;
                 // Record selected grid and grid data
                 selectedGrid = event.feature;
-                selectedGrid.setProperty('proposedHigh', ProposedHigh(proposedHigh, ProposedHigh(proposedHigh, selectedGrid)));
+                selectedGrid.setProperty('proposedHigh', ProposedHigh(proposedHigh, selectedGrid));
                 selectedES = selectedGrid.getProperty('elementary');
 
                 var numEsGrids = 0;
                 if ($scope.data.paintBy == "ES") {
                     mapGrids.forEach(function (grid) {
                         if (grid.getProperty('elementary') == selectedES) {
-                            grid.setProperty('proposedHigh', ProposedHigh(proposedHigh, ProposedHigh(proposedHigh, grid)));
+                            grid.setProperty('proposedHigh', ProposedHigh(proposedHigh, grid));
                             numEsGrids++;
                         }
                     });
