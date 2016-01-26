@@ -274,6 +274,23 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
         bsdOverlay = new google.maps.GroundOverlay('http://bsdmaps.monkeyblade.net/bsd-boundary-existing-overlay.png', imageBounds);
         bsdOverlay.setMap(map);
 
+        /*
+         * Add google markers for each high school
+         * Include the first letter of the name in the pin icon
+         * Use the displayName in a tooltip
+         * Set clickable to false and pass clicks through to the underlying GC
+         */
+        var hs_markers = new Array(schoolData.schools.length);
+        for (var i = 0; i < schoolData.schools.length; i++) {
+            hs_markers[i] = new google.maps.Marker({
+                position: schoolData.schools[i].location,
+                map: map,
+                clickable: false,
+                label: schoolData.schools[i].displayName,
+                title: schoolData.schools[i].displayName
+            });
+        }
+
         panel = document.getElementById('panel');
 
         var schools = [];
