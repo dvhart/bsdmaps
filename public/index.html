@@ -296,6 +296,13 @@
             </div> <!-- Instructions -->
 
             <div class="form-panel">
+                <div class="form-header">Stats Summary</div>
+                <div class="form-body">
+                    <div ng-bind-html="GenStatsSummaryTable()|html"></div>
+                </div>
+            </div> <!-- Stats Summary -->
+
+            <div class="form-panel">
                 <div class="form-header">Resources</div>
                 <div class="form-body">
                     <p>The data used in this tool was manually extracted, and may
