@@ -216,6 +216,39 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
         return out;
     };
 
+    /* Dynamically generate the stats summary table. This uses less precision
+     * and a more compact layout to fit in the unprinted right panel. This
+     * requires the angular sce filter to trust the output as html */
+    $scope.GenStatsSummaryTable = function () {
+        var out="";
+        out += '<div class="stats-summary-table">';
+        out += '<div class="stats-header-row">';
+        out += '    <div class="stats-header-cell">School</div>';
+        out += '    <div class="stats-header-cell">Cap %</div>';
+        out += '    <div class="stats-header-cell">Proximity</div>';
+        out += '    <div class="stats-header-cell">Transitions</div>';
+        out += '    <div class="stats-header-cell">FRL %</div>';
+        out += '</div>';
+        for (var i = 0; i < $scope.data.schools.length; i++) {
+            out += '<div class="stats-row">';
+            out += '    <div class="stats-cell">' + $scope.data.schools[i] + '</div>';
+            out += '    <div class="stats-cell">' + Math.round($scope.data.capacity_p[0][i]) + '</div>';
+            out += '    <div class="stats-cell">' + Math.round($scope.data.distance[0][i]) + '</div>';
+            out += '    <div class="stats-cell">' + $scope.data.transitions[0][i] + '</div>';
+            out += '    <div class="stats-cell">' + Math.round($scope.data.frl_p[0][i]) + '</div>';
+            out += '</div>';
+        }
+        out += '<div class="stats-footer-row">';
+        out += '    <div class="stats-footer-cell">Total</div>';
+        out += '    <div class="stats-footer-cell">' + Math.round($scope.data.total_capacity_p) + '</div>';
+        out += '    <div class="stats-footer-cell">' + Math.round($scope.data.milesTraveled) + '</div>';
+        out += '    <div class="stats-footer-cell">' + $scope.data.total_transitions + '</div>';
+        out += '    <div class="stats-footer-cell">' + Math.round($scope.data.total_frl_p) + '</div>';
+        out += '</div>';
+        out += '</div> <!-- Stats Table -->';
+        return out;
+    };
+
     $scope.series = ['Students', 'Capacity 35/90'];
 
 
@@ -240,6 +273,23 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
 
         bsdOverlay = new google.maps.GroundOverlay('http://bsdmaps.monkeyblade.net/bsd-boundary-existing-overlay.png', imageBounds);
         bsdOverlay.setMap(map);
+
+        /*
+         * Add google markers for each high school
+         * Include the first letter of the name in the pin icon
+         * Use the displayName in a tooltip
+         * Set clickable to false and pass clicks through to the underlying GC
+         */
+        var hs_markers = new Array(schoolData.schools.length);
+        for (var i = 0; i < schoolData.schools.length; i++) {
+            hs_markers[i] = new google.maps.Marker({
+                position: schoolData.schools[i].location,
+                map: map,
+                clickable: false,
+                label: schoolData.schools[i].displayName,
+                title: schoolData.schools[i].displayName
+            });
+        }
 
         panel = document.getElementById('panel');
 

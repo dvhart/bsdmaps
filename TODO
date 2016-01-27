@@ -1,0 +1,89 @@
+THe following are a collection of bug fixes, improvements, and feature requests.
+
+Format:
+Issue Title (less than 80 characters)
+Reporter (First Last - no email)
+Description
+Two CRLF
+
+Correct FRL data with raw data from BSD
+Darren Hart
+The FRL data was mined from a visually noisy data source and contains
+significant errors.
+
+
+Ability to change elementary school boundaries at the same time
+Jim Weider
+Given that elementary school boundaries are going to change in the near future,
+it would be nice to be able to make changes to them now which would feed into
+the high school boundary exercise by keeping the new elementary boundaries
+contiguous in the new high school boundaries.
+
+
+Map comparison feature
+Amber Christensen (and others)
+Be able to compare a map with another map, or at least the latest BSD/Committee
+map. Some kind of overlay, or hashing in the changed grid codes, would help
+visualize the differences.
+
+
+Per User Login
+Darren Hart (and others)
+The lack of individual login was the cost of initial velocity. It blocks a
+number of features, including voting, editing maps, and deleting maps. We
+work to enable login via facebook, google, or local accounts.
+
+
+Admin page
+Darren Hart
+Create an administration page that allows for viewing the full solutions data
+and to remove duplicate or offensive maps.
+
+
+Rethink distance data
+Karen Hohndel
+For example:
+  Students     w/in 2 mi.     Median Distance     Max Dist
+  Aloha HS     600                 2.75 mi        5 mi
+  West view    500                 1.3 mi         3 mi
+I would also be inclined to use Cartesian distance rather than Google's routing
+for two reasons; the weights applied to Google's routing preferences may not
+produce the shortest linear path (weighting travel time more heavily than
+distance) and school buses collect groups of kids from discrete catchments not
+one by one from home to school 
+
+
+Map Legend
+Karen Hohndel
+Your map doesn't have a legend. Bad cartographer! No cookie!! :-) You really
+should add one, especially if users are printing the maps.
+
+
+Make high school icons and labels easier to read
+Karen Hohndel
+The maps would be easier to read if the high school point symbols were larger.
+I expect that not all users know exactly where all of the high schools are
+located. Right now it can be difficult to tell where they are in relation to
+the edges of their attendance boundaries.
+
+
+Label all neighborhood equally
+Karen Hohndel
+The annotation for "West Haven Sylvan", "Raleigh Hills" and "Garden
+Home-Whitford" seems to be strangely oversized compared to the rest of the map
+annotation. It is also odd that as one moves south and east across the map
+toward Aloha and the new high school no other communities rated named
+recognition.
+
+
+Sort maps by stats
+Darren Hart
+It would be useful to sort maps by a statistic that you care about, such as
+proximity or transitions. Those two are easy to quantify and sort.
+
+
+Provide for comments
+Darren Hart
+As maps are discussed in various groups, it would be nice if the comments can be
+captured someplace so the same ideas aren't rehashed over and over.
+Depends on per user login.

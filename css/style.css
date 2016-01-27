@@ -189,6 +189,10 @@ div.form-row .select-maps {
   border: 1px solid black;
   display: table;
 }
+.stats-summary-table {
+  width: 100%;
+  display: table;
+}
 .stats-header-row {
   height: 30px;
   line-height: 30px;
