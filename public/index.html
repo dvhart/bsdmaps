@@ -39,7 +39,6 @@
                                 <option value="Southridge">Southridge</option>
                                 <option value="Sunset">Sunset</option>
                                 <option value="Westview">Westview</option>
-                                <option value="Closest">Closest High School</option>
                             </select>
                         </div>
                         <div class="form-row">
@@ -49,15 +48,7 @@
                                 <option value="ES">Elementary Boundary</option>
                             </select>
                         </div>
-                        <div class="form-row">
-                            <label>Drag on Map</label>
-                            <select name="DragFunc" id="dragFunc"
-                                ng-model="data.dragFunc" value="data.dragFunc"
-                                ng-change="ChangeDragFunc()">
-                                <option value="pan">Moves Map</option>
-                                <option value="paint">Applies High School</option>
-                            </select>
-                        </div>
+                        Selct to draw, deselct to pan <input type="checkbox" ng-click="TogglePan()" ng-model="data.drawSchool"/> 
                     </form>
                 </div>
             </div> <!-- BSD Solution Editor -->
@@ -154,7 +145,7 @@
                                 <option value="buildingEfficiency">Building Efficiency</option>
                             </select>
                         </div>
-                        <input type="submit" value="Save Solution" />
+                        <input type="submit" value="Save Solution" /> 
                         {{data.solutionSaveResponse}}
                     </form>
                 </div>
