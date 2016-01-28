@@ -24,7 +24,7 @@
     </script>
 </head>
 <body ng-app="BoundaryEntry">
-    <div ng-controller="BoundaryController">
+    <div ng-controller="BoundaryController as bc" keyboard="bc.keys">
         <div class="panel-left no-print">
             <div class="form-panel">
                 <div class="form-header">BSD Solution Editor</div>
@@ -40,6 +40,7 @@
                                 <option value="Sunset">Sunset</option>
                                 <option value="Westview">Westview</option>
                                 <option value="Closest">Closest High School</option>
+                                <option value="Unassigned">Unassigned</option>
                             </select>
                         </div>
                         <div class="form-row">
