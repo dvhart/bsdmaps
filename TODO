@@ -87,3 +87,12 @@ Darren Hart
 As maps are discussed in various groups, it would be nice if the comments can be
 captured someplace so the same ideas aren't rehashed over and over.
 Depends on per user login.
+
+
+Build UI from schoolData model
+Darren Hart
+The Current HS select is static and should be built from the schoolData (or a DB
+equivalent). The custom values (unassigned, closest) can be added manually. The
+value should really be the id, and the id should be stored in the gc, not the
+school name. This minimizes data structure size, and avoids simple spelling
+mistakes which may be difficult to debug.
