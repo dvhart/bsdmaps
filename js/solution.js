@@ -34,7 +34,64 @@ app.filter('html', function($sce) {
     };
 });
 
+app.constant("keyCodes", {
+    ONE     : 49,
+    TWO     : 50,
+    THREE   : 51,
+    FOUR    : 52,
+    FIVE    : 53,
+    SIX     : 54,
+    SEVEN   : 55,
+    EIGHT   : 56,
+});
+
+app.directive("keyboard", function($document, keyCodes) {
+    return {
+        link: function(scope, element, attrs) {
+
+            var keysToHandle = scope.$eval(attrs.keyboard);
+            var keyHandlers  = {};
+
+            // Registers key handlers
+            angular.forEach(keysToHandle, function(callback, keyName){
+                var keyCode = keyCodes[keyName];
+                keyHandlers[keyCode] = { callback: callback, name: keyName };
+            });
+
+            // Bind to document keydown event
+            $document.on("keydown", function(event) {
+                /* Don't process hotkeys when input fields are in focus */
+                if (event.target.tagName == "INPUT") {
+                    return;
+                }
+                var keyDown = keyHandlers[event.keyCode];
+
+                // Handler is registered
+                if (keyDown) {
+                    event.preventDefault();
+
+                    // Invoke the handler and digest
+                    scope.$apply(function() {
+                        keyDown.callback(keyDown.name, event.keyCode);
+                    })
+                }
+            });
+        }
+    };
+});
+
 app.controller('BoundaryController', function ($scope, $http, $sce) {
+    this.keys = {
+        ONE    : function(name, code) { $scope.data.proposedHigh = schoolData.schools[0].dbName },
+        TWO    : function(name, code) { $scope.data.proposedHigh = schoolData.schools[1].dbName },
+        THREE  : function(name, code) { $scope.data.proposedHigh = schoolData.schools[2].dbName },
+        FOUR   : function(name, code) { $scope.data.proposedHigh = schoolData.schools[3].dbName },
+        FIVE   : function(name, code) { $scope.data.proposedHigh = schoolData.schools[4].dbName },
+        SIX    : function(name, code) { $scope.data.proposedHigh = schoolData.schools[5].dbName },
+        SEVEN  : function(name, code) { $scope.data.proposedHigh = "Closest" },
+        EIGHT  : function(name, code) { $scope.data.proposedHigh = "Unassigned" }
+    };
+
     $scope.data = {
         "proposedHigh":"Cooper",
         "paintBy":"ES",
