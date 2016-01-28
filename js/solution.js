@@ -420,6 +420,16 @@ function Configure($scope) {
                         }
                     });
                 }
+
+                map.data.toGeoJson(function (geoJson) {
+                    results = Results(geoJson.features, schoolData);
+                });
+
+                $scope.data.mapName = defaultMapName;
+                $scope.data.mapDescription = defaultMapDescription;
+
+                UpdateScopeData($scope, results);
+                $scope.$apply();
             }
 
         }
