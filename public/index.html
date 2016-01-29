@@ -24,7 +24,7 @@
     </script>
 </head>
 <body ng-app="BoundaryEntry">
-    <div ng-controller="BoundaryController">
+    <div ng-controller="BoundaryController as bc" keyboard="bc.keys">
         <div class="panel-left no-print">
             <div class="form-panel">
                 <div class="form-header">BSD Solution Editor</div>
@@ -39,6 +39,8 @@
                                 <option value="Southridge">Southridge</option>
                                 <option value="Sunset">Sunset</option>
                                 <option value="Westview">Westview</option>
+                                <option value="Closest">Closest High School</option>
+                                <option value="Unassigned">Unassigned</option>
                             </select>
                         </div>
                         <div class="form-row">
@@ -48,7 +50,15 @@
                                 <option value="ES">Elementary Boundary</option>
                             </select>
                         </div>
-                        Selct to draw, deselct to pan <input type="checkbox" ng-click="TogglePan()" ng-model="data.drawSchool"/> 
+                        <div class="form-row">
+                            <label>Drag on Map</label>
+                            <select name="DragFunc" id="dragFunc"
+                                ng-model="data.dragFunc" value="data.dragFunc"
+                                ng-change="ChangeDragFunc()">
+                                <option value="pan">Moves Map</option>
+                                <option value="paint">Applies High School</option>
+                            </select>
+                        </div>
                     </form>
                 </div>
             </div> <!-- BSD Solution Editor -->
@@ -145,7 +155,7 @@
                                 <option value="buildingEfficiency">Building Efficiency</option>
                             </select>
                         </div>
-                        <input type="submit" value="Save Solution" /> 
+                        <input type="submit" value="Save Solution" />
                         {{data.solutionSaveResponse}}
                     </form>
                 </div>
@@ -159,22 +169,20 @@
                 <h1>{{data.mapName}}</h1>
                 <h2>{{data.mapDescription}}</h2>
                 <div id="map-holder"></div>
-            </div> <!-- page -->
+                <div class="chart-row">
+                    <div ng-bind-html="GenStatsTable()|html"></div>
+                </div>
+            </div> <!-- page 1 -->
 
             <div class="no-print"><hr/></div>
 
             <div class="page no-break">
-
-                <div class="chart-row">
-                    <div ng-bind-html="GenStatsTable()|html"></div>
-                </div>
-
                 <div class="chart-row">
                     <div class="chart-panel">
                         <div class="chart-header">Percent Capacity</div>
                         <div class="chart-box">
                             <canvas id="bar2" class="chart chart-bar"
-                                              height="250"
+                                              height="225"
                                               chart-data="data.capacity_p"
                                               chart-labels="data.schools"
                                               chart-series="schools">
@@ -192,7 +200,7 @@
                         <div class="chart-header">Proximity (miles)</div>
                         <div class="chart-box">
                             <canvas id="bar3" class="chart chart-bar"
-                                              height="250"
+                                              height="225"
                                               chart-data="data.distance"
                                               chart-labels="data.schools"
                                               chart-series="schools">
@@ -211,7 +219,7 @@
                         <div class="chart-header">Transitions</div>
                         <div class="chart-box">
                             <canvas id="bar4" class="chart chart-bar"
-                                              height="250"
+                                              height="225"
                                               chart-data="data.transitions"
                                               chart-labels="data.schools"
                                               chart-series="schools">
@@ -228,19 +236,16 @@
                         <div class="chart-header">Percent Free and Reduced Lunch</div>
                         <div class="chart-box">
                             <canvas id="bar5" class="chart chart-bar"
-                                              height="250"
+                                              height="225"
                                               chart-data="data.frl_p"
                                               chart-labels="data.schools"
                                               chart-series="schools">
                             </canvas>
                             <div class="chart-caption">
-                                This data was extracted visually from the 'K-12
-                                Students by Eligibility for Free & Reduced Lunch
-                                (SY 2014-15)' map published by the Beaverton
-                                School District on October 28, 2015.  While this
-                                data has been fit to approximate the BSD data,
-                                these values may vary significantly from the BSD
-                                published boundary maps.
+                                FRL data is based on 2015 Elementary School
+                                data. It has been fit to be within 2% of the
+                                committee maps. Assume it to be within 5% for
+                                custom maps.
                             </div>
                         </div>
                     </div>
@@ -298,6 +303,16 @@
                 <div class="form-body">
                     <!-- Try to keep this under 5, and one line each -->
                     <!-- Keep for at least 48 hours, no more than a week -->
+                    <b>Jan 28, 2015</b><br/>
+                    <ul>
+                        <li>Use FRL from 2015 Elementary School data to more
+                            closely approximate the BSD committee maps (within
+                            2%).</li>
+                        <li>Add "Unassigned" as an option for proposed high
+                            school</li>
+                        <li>Add hotkeys 1-8 for proposed high school
+                            choices.</li>
+                    </ul>
                     <b>Jan 26, 2015</b><br/>
                     <ul>
                         <!-- 2016-01-26 -->

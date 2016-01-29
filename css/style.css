@@ -25,12 +25,11 @@ body {
 }
 
 h1 {
-  font-size: 36px;
+  font-size: 24;
 }
 
 h1, h2, h3 {
-  font-weight: 500;
-  line-height: 1.1;
+  font-weight: bold;
   color: black;
 }
 
@@ -130,8 +129,9 @@ div.form-row .select-maps {
 
 /* Map styles. */
 #map-holder {
-  height: 850px;
+  height: 675px;
   width: 700px;
+  margin-bottom: 25px;
 }
 
 

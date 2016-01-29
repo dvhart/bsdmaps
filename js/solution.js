@@ -12,61 +12,64 @@ var defaultMapDescription = "No Description";
 // Google Map Overlays
 var bsdOverlay;
 var mapGrids;
-var changedHS = false;
 
 var schoolData = {
-    schools: [
-        { id: 0, dbName: 'Aloha', type: 'high', displayName: 'Aloha', color: 'blue', capacity: 2176, location: { lat: 45.4857177, lng: -122.8695357 } },
-        { id: 1, dbName: 'Beaverton', type: 'high', displayName: 'Beaverton', color: 'orange', capacity: 2122, location: { lat: 45.4862121, lng: -122.8111987 } },
-        { id: 2, dbName: 'Cooper', type: 'high', displayName: 'Cooper Mtn', color: 'green', capacity: 2176, location: { lat: 45.4263618, lng: -122.853657 } }, 
-        { id: 3, dbName: 'Southridge', type: 'high', displayName: 'Southridge', color: 'red', capacity: 1850, location: { lat: 45.4507757, lng: -122.8063213 } },
-        { id: 4, dbName: 'Sunset', type: 'high', displayName: 'Sunset', color: 'purple', capacity: 2203, location: { lat: 45.5275752, lng: -122.8188107 } },
-        { id: 5, dbName: 'Westview', type: 'high', displayName: 'Westview', color: 'pink', capacity: 2421, location: { lat: 45.5489509, lng: -122.8663216 } },
+    hs: [
+        { id: 0, dbName: 'Aloha',  displayName: 'Aloha', color: 'blue', capacity: 2176, location: { lat: 45.4857177, lng: -122.8695357 } },
+        { id: 1, dbName: 'Beaverton',  displayName: 'Beaverton', color: 'orange', capacity: 2122, location: { lat: 45.4862121, lng: -122.8111987 } },
+        { id: 2, dbName: 'Cooper',  displayName: 'Cooper Mtn', color: 'green', capacity: 2176, location: { lat: 45.4263618, lng: -122.853657 } },
+        { id: 3, dbName: 'Southridge',  displayName: 'Southridge', color: 'red', capacity: 1850, location: { lat: 45.4507757, lng: -122.8063213 } },
+        { id: 4, dbName: 'Sunset',  displayName: 'Sunset', color: 'purple', capacity: 2203, location: { lat: 45.5275752, lng: -122.8188107 } },
+        { id: 5, dbName: 'Westview',  displayName: 'Westview', color: 'pink', capacity: 2421, location: { lat: 45.5489509, lng: -122.8663216 } }
+    ],
+    ms: [
 
-        { id: 6, dbName: 'Cedar Park', type: 'Middle', displayName: 'Cedar Park', color: 'purple' },
-        { id: 7, dbName: 'Conestoga', type: 'Middle', displayName: 'Conestoga', color: 'orange' },
-        { id: 8, dbName: 'Five Oaks', type: 'Middle', displayName: 'Five Oaks', color: 'pink' }, 
-        { id: 9, dbName: 'Highland Park', type: 'Middle', displayName: 'Highland Park', color: 'blue' },
-        { id: 10, dbName: 'Meadow Park', type: 'Middle', displayName: 'Meadow Park', color: 'red' },
-        { id: 11, dbName: 'Mountain View', type: 'Middle', displayName: 'Mountain View', color: 'green' }, 
-        { id: 12, dbName: 'Stoller', type: 'Middle', displayName: 'Stoller', color: 'Peru' },
-        { id: 13, dbName: 'Whitford', type: 'Middle', displayName: 'Whitford', color: 'PaleVioletRed' },
-        { id: 14, dbName: 'New Middle', type: 'Middle', displayName: 'New Middle', color: 'yellow' }, 
-
-        { id: 15, dbName: 'Aloha-Huber Park', type: 'Elementary', displayName: 'Aloha-Huber Park', color: 'AliceBlue', stats: [{ year: 2015,frl: .78}] },
-        { id: 16, dbName: 'Barnes', type: 'Elementary', displayName: 'Barnes', color: 'Brown', stats: [{ year: 2015,frl: .70}] },
-        { id: 17, dbName: 'Beaver Acres', type: 'Elementary', displayName: 'Beaver Acres', color: 'Chartreuse', stats: [{ year: 2015,frl: .60}] }, 
-        { id: 18, dbName: 'Bethany', type: 'Elementary', displayName: 'Bethany', color: 'Coral', stats: [{ year: 2015,frl: .14}] },
-        { id: 19, dbName: 'Bonny Slope', type: 'Elementary', displayName: 'Bonny Slope', color: 'DarkGreen', stats: [{ year: 2015,frl: .10}] },
-        { id: 20, dbName: 'Cedar Mill', type: 'Elementary', displayName: 'Cedar Mill', color: 'DarkMagenta', stats: [{ year: 2015,frl: .13}] }, 
-        { id: 21, dbName: 'Chehalem', type: 'Elementary', displayName: 'Chehalem', color: 'DeepSkyBlue', stats: [{ year: 2015,frl: .60}] },
-        { id: 22, dbName: 'Cooper Mountain', type: 'Elementary', displayName: 'Cooper Mountain', color: 'DarkOrange', stats: [{ year: 2015,frl: .15}] },
-        { id: 23, dbName: 'Elmonica', type: 'Elementary', displayName: 'Elmonica', color: 'Gold', stats: [{ year: 2015,frl: .45}] }, 
-        { id: 24, dbName: 'Errol Hassell', type: 'Elementary', displayName: 'Errol Hassell', color: 'HotPink', stats: [{ year: 2015,frl: .38}] },
-        { id: 25, dbName: 'Findley', type: 'Elementary', displayName: 'Findley', color: 'Tomato', stats: [{ year: 2015,frl: .03}] },
-        { id: 26, dbName: 'Fir Grove', type: 'Elementary', displayName: 'Fir Grove', color: 'MediumOrchid', stats: [{ year:2015,frl: .55}] }, 
-        { id: 27, dbName: 'Greenway', type: 'Elementary', displayName: 'Greenway', color: 'Peru', stats: [{ year: 2015,frl: .70}] },
-        { id: 28, dbName: 'Hazeldale', type: 'Elementary', displayName: 'Hazeldale', color: 'OrangeRed', stats: [{ year: 2015,frl: .49}] },
-        { id: 29, dbName: 'Hiteon', type: 'Elementary', displayName: 'Hiteon', color: 'PaleGreen', stats: [{ year: 2015,frl: .26}] }, 
-        { id: 30, dbName: 'Jacob Wismer', type: 'Elementary', displayName: 'Jacob Wismer', color: 'PaleVioletRed', stats: [{ year: 2015,frl: .06}] },
-        { id: 31, dbName: 'Kinnaman', type: 'Elementary', displayName: 'Kinnaman', color: 'LightBlue', stats: [{ year: 2015,frl: .68}] },
-        { id: 32, dbName: 'Mckay', type: 'Elementary', displayName: 'Mckay', color: 'PaleVioletRed', stats: [{ year: 2015,frl: .60}] }, 
-        { id: 33, dbName: 'Mckinley', type: 'Elementary', displayName: 'Mckinley', color: 'Red', stats: [{ year: 2015,frl: .58}] },
-        { id: 34, dbName: 'Montclair', type: 'Elementary', displayName: 'Montclair', color: 'Sienna', stats: [{ year: 2015,frl: .32}] },
-        { id: 35, dbName: 'Nancy Ryles', type: 'Elementary', displayName: 'Nancy Ryles', color: 'SeaGreen', stats: [{ year: 2015,frl: .24}] }, 
-        { id: 36, dbName: 'Oak Hills', type: 'Elementary', displayName: 'Oak Hills', color: 'Teal', stats: [{ year: 2015,frl: .16}] },
-        { id: 37, dbName: 'Raleigh Hills', type: 'Elementary', displayName: 'Raleigh Hills', color: 'MediumVioletRed', stats: [{ year: 2015,frl: .41}] },
-        { id: 38, dbName: 'Raleigh Park', type: 'Elementary', displayName: 'Raleigh Park', color: 'Navy', stats: [{ year: 2015,frl: .41}] }, 
-        { id: 39, dbName: 'Ridgewood', type: 'Elementary', displayName: 'Ridgewood', color: 'YellowGreen', stats: [{ year: 2015,frl: .22}] },
-        { id: 40, dbName: 'Rock Creek', type: 'Elementary', displayName: 'Rock Creek', color: 'SteelBlue', stats: [{ year: 2015,frl: .24}] },
-        { id: 41, dbName: 'Scholls Heights', type: 'Elementary', displayName: 'Scholls Heights', color: 'RosyBrown', stats: [{ year: 2015,frl: .14}] }, 
-        { id: 42, dbName: 'Sexton Mountain', type: 'Elementary', displayName: 'Sexton Mountain', color: 'RoyalBlue', stats: [{ year: 2015,frl: .15}] },
-        { id: 43, dbName: 'Springville', type: 'Elementary', displayName: 'Springville', color: 'MediumTurquoise', stats: [{ year: 2015,frl: .21}] },
-        { id: 44, dbName: 'Terra Linda', type: 'Elementary', displayName: 'Terra Linda', color: 'SaddleBrown', stats: [{ year: 2015,frl: .37}] }, 
-        { id: 45, dbName: 'Vose', type: 'Elementary', displayName: 'Vose', color: 'SlateGray', stats: [{ year: 2015,frl: .80}] },
-        { id: 46, dbName: 'West Tualatin View', type: 'Elementary', displayName: 'West Tualatin View', color: 'Yellow', stats: [{ year: 2015,frl: .09}] },
-        { id: 47, dbName: 'William Walker', type: 'Elementary', displayName: 'William Walker', color: 'Salmon', stats: [{ year: 2015,frl: .83}] }
-]};
+        { id: 6, dbName: 'Cedar Park',  displayName: 'Cedar Park', color: 'purple' },
+        { id: 7, dbName: 'Conestoga',  displayName: 'Conestoga', color: 'orange' },
+        { id: 8, dbName: 'Five Oaks',  displayName: 'Five Oaks', color: 'pink' },
+        { id: 9, dbName: 'Highland Park',  displayName: 'Highland Park', color: 'blue' },
+        { id: 10, dbName: 'Meadow Park',  displayName: 'Meadow Park', color: 'red' },
+        { id: 11, dbName: 'Mountain View',  displayName: 'Mountain View', color: 'green' },
+        { id: 12, dbName: 'Stoller',  displayName: 'Stoller', color: 'Peru' },
+        { id: 13, dbName: 'Whitford',  displayName: 'Whitford', color: 'PaleVioletRed' },
+        { id: 14, dbName: 'New Middle',  displayName: 'New Middle', color: 'yellow' }
+    ],
+    es: [
+        { id: 15, dbName: 'Aloha-Huber Park',  displayName: 'Aloha-Huber Park', color: 'AliceBlue', stats: [{ year: 2015,frl: .78}] },
+        { id: 16, dbName: 'Barnes',  displayName: 'Barnes', color: 'Brown', stats: [{ year: 2015,frl: .70}] },
+        { id: 17, dbName: 'Beaver Acres',  displayName: 'Beaver Acres', color: 'Chartreuse', stats: [{ year: 2015,frl: .60}] },
+        { id: 18, dbName: 'Bethany',  displayName: 'Bethany', color: 'Coral', stats: [{ year: 2015,frl: .14}] },
+        { id: 19, dbName: 'Bonny Slope',  displayName: 'Bonny Slope', color: 'DarkGreen', stats: [{ year: 2015,frl: .10}] },
+        { id: 20, dbName: 'Cedar Mill',  displayName: 'Cedar Mill', color: 'DarkMagenta', stats: [{ year: 2015,frl: .13}] },
+        { id: 21, dbName: 'Chehalem',  displayName: 'Chehalem', color: 'DeepSkyBlue', stats: [{ year: 2015,frl: .60}] },
+        { id: 22, dbName: 'Cooper Mountain',  displayName: 'Cooper Mountain', color: 'DarkOrange', stats: [{ year: 2015,frl: .15}] },
+        { id: 23, dbName: 'Elmonica',  displayName: 'Elmonica', color: 'Gold', stats: [{ year: 2015,frl: .45}] },
+        { id: 24, dbName: 'Errol Hassell',  displayName: 'Errol Hassell', color: 'HotPink', stats: [{ year: 2015,frl: .38}] },
+        { id: 25, dbName: 'Findley',  displayName: 'Findley', color: 'Tomato', stats: [{ year: 2015,frl: .03}] },
+        { id: 26, dbName: 'Fir Grove',  displayName: 'Fir Grove', color: 'MediumOrchid', stats: [{ year:2015,frl: .55}] },
+        { id: 27, dbName: 'Greenway',  displayName: 'Greenway', color: 'Peru', stats: [{ year: 2015,frl: .70}] },
+        { id: 28, dbName: 'Hazeldale',  displayName: 'Hazeldale', color: 'OrangeRed', stats: [{ year: 2015,frl: .49}] },
+        { id: 29, dbName: 'Hiteon',  displayName: 'Hiteon', color: 'PaleGreen', stats: [{ year: 2015,frl: .26}] },
+        { id: 30, dbName: 'Jacob Wismer',  displayName: 'Jacob Wismer', color: 'PaleVioletRed', stats: [{ year: 2015,frl: .06}] },
+        { id: 31, dbName: 'Kinnaman',  displayName: 'Kinnaman', color: 'LightBlue', stats: [{ year: 2015,frl: .68}] },
+        { id: 32, dbName: 'Mckay',  displayName: 'Mckay', color: 'PaleVioletRed', stats: [{ year: 2015,frl: .60}] },
+        { id: 33, dbName: 'Mckinley',  displayName: 'Mckinley', color: 'Red', stats: [{ year: 2015,frl: .58}] },
+        { id: 34, dbName: 'Montclair',  displayName: 'Montclair', color: 'Sienna', stats: [{ year: 2015,frl: .32}] },
+        { id: 35, dbName: 'Nancy Ryles',  displayName: 'Nancy Ryles', color: 'SeaGreen', stats: [{ year: 2015,frl: .24}] },
+        { id: 36, dbName: 'Oak Hills',  displayName: 'Oak Hills', color: 'Teal', stats: [{ year: 2015,frl: .16}] },
+        { id: 37, dbName: 'Raleigh Hills',  displayName: 'Raleigh Hills', color: 'MediumVioletRed', stats: [{ year: 2015,frl: .41}] },
+        { id: 38, dbName: 'Raleigh Park',  displayName: 'Raleigh Park', color: 'Navy', stats: [{ year: 2015,frl: .41}] },
+        { id: 39, dbName: 'Ridgewood',  displayName: 'Ridgewood', color: 'YellowGreen', stats: [{ year: 2015,frl: .22}] },
+        { id: 40, dbName: 'Rock Creek',  displayName: 'Rock Creek', color: 'SteelBlue', stats: [{ year: 2015,frl: .24}] },
+        { id: 41, dbName: 'Scholls Heights',  displayName: 'Scholls Heights', color: 'RosyBrown', stats: [{ year: 2015,frl: .14}] },
+        { id: 42, dbName: 'Sexton Mountain',  displayName: 'Sexton Mountain', color: 'RoyalBlue', stats: [{ year: 2015,frl: .15}] },
+        { id: 43, dbName: 'Springville',  displayName: 'Springville', color: 'MediumTurquoise', stats: [{ year: 2015,frl: .21}] },
+        { id: 44, dbName: 'Terra Linda',  displayName: 'Terra Linda', color: 'SaddleBrown', stats: [{ year: 2015,frl: .37}] },
+        { id: 45, dbName: 'Vose',  displayName: 'Vose', color: 'SlateGray', stats: [{ year: 2015,frl: .80}] },
+        { id: 46, dbName: 'West Tualatin View',  displayName: 'West Tualatin View', color: 'Yellow', stats: [{ year: 2015,frl: .09}] },
+        { id: 47, dbName: 'William Walker',  displayName: 'William Walker', color: 'Salmon', stats: [{ year: 2015,frl: .83}] }
+    ]
+};
 
 /*
  * This filter permits the printing of dynamically generated html that sce would
@@ -78,7 +81,64 @@ app.filter('html', function($sce) {
     };
 });
 
+app.constant("keyCodes", {
+    ONE     : 49,
+    TWO     : 50,
+    THREE   : 51,
+    FOUR    : 52,
+    FIVE    : 53,
+    SIX     : 54,
+    SEVEN   : 55,
+    EIGHT   : 56,
+});
+
+app.directive("keyboard", function($document, keyCodes) {
+    return {
+        link: function(scope, element, attrs) {
+
+            var keysToHandle = scope.$eval(attrs.keyboard);
+            var keyHandlers  = {};
+
+            // Registers key handlers
+            angular.forEach(keysToHandle, function(callback, keyName){
+                var keyCode = keyCodes[keyName];
+                keyHandlers[keyCode] = { callback: callback, name: keyName };
+            });
+
+            // Bind to document keydown event
+            $document.on("keydown", function(event) {
+                /* Don't process hotkeys when input fields are in focus */
+                if (event.target.tagName == "INPUT") {
+                    return;
+                }
+                var keyDown = keyHandlers[event.keyCode];
+
+                // Handler is registered
+                if (keyDown) {
+                    event.preventDefault();
+
+                    // Invoke the handler and digest
+                    scope.$apply(function() {
+                        keyDown.callback(keyDown.name, event.keyCode);
+                    })
+                }
+            });
+        }
+    };
+});
+
 app.controller('BoundaryController', function ($scope, $http, $sce) {
+    this.keys = {
+        ONE    : function(name, code) { $scope.data.proposedHigh = schoolData.hs[0].dbName },
+        TWO    : function(name, code) { $scope.data.proposedHigh = schoolData.hs[1].dbName },
+        THREE  : function(name, code) { $scope.data.proposedHigh = schoolData.hs[2].dbName },
+        FOUR   : function(name, code) { $scope.data.proposedHigh = schoolData.hs[3].dbName },
+        FIVE   : function(name, code) { $scope.data.proposedHigh = schoolData.hs[4].dbName },
+        SIX    : function(name, code) { $scope.data.proposedHigh = schoolData.hs[5].dbName },
+        SEVEN  : function(name, code) { $scope.data.proposedHigh = "Closest" },
+        EIGHT  : function(name, code) { $scope.data.proposedHigh = "Unassigned" }
+    };
+
     $scope.data = {
         "proposedHigh":"Cooper",
         "paintBy":"ES",
@@ -164,7 +224,7 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
             var solution = SolutionToJson($scope.data, geoJson.features, results);
             var defaultFileName = "solution.json";
             SaveJsonToFile(solution, defaultFileName);
-        }); 
+        });
     };
 
     $scope.SaveSolution = function () {
@@ -292,12 +352,10 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
         return out;
     };
 
-    $scope.series = ['Students', 'Capacity 35/90'];
-
-
     function initMap() {
         // Initialise the map.
-        var myLatLng = { lat: 45.4834817, lng: -122.8216516 };
+        //var myLatLng = { lat: 45.4834817, lng: -122.8216516 };
+        var myLatLng = { lat: 45.4980000, lng: -122.8216516 };
         var mapProp = {
             center: myLatLng,
             zoom: 12,
@@ -323,14 +381,14 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
          * Use the displayName in a tooltip
          * Set clickable to false and pass clicks through to the underlying GC
          */
-        var hs_markers = new Array(schoolData.schools.length);
-        for (var i = 0; i < schoolData.schools.length; i++) {
+        var hs_markers = new Array(schoolData.hs.length);
+        for (var i = 0; i < schoolData.hs.length; i++) {
             hs_markers[i] = new google.maps.Marker({
-                position: schoolData.schools[i].location,
+                position: schoolData.hs[i].location,
                 map: map,
                 clickable: false,
-                label: schoolData.schools[i].displayName,
-                title: schoolData.schools[i].displayName
+                label: schoolData.hs[i].displayName,
+                title: schoolData.hs[i].displayName
             });
         }
 
@@ -338,15 +396,10 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
 
         var schools = [];
         var capacity = [];
-        
-        var j = 0;
-        for(var i=0; i< schoolData.schools.length; i++) {
-            if (schoolData.schools[i].type == 'high') {
-                schools[j] = schoolData.schools[i].displayName;
-                capacity[j] = schoolData.schools[i].capacity;
-                j++;
-            }
 
+        for(var i=0; i< schoolData.hs.length; i++) {
+            schools[i] = schoolData.hs[i].displayName;
+            capacity[i] = schoolData.hs[i].capacity;
         }
 
         /* save immutable data - doesn't change with boundary changes */
@@ -426,10 +479,10 @@ function Configure($scope) {
         var highSchool = feature.getProperty('proposedHigh');
 
         var color = 'grey';
-        for(var i=0; i<schoolData.schools.length && color == 'grey'; i++)
+        for (var i=0; i<schoolData.hs.length && color == 'grey'; i++)
         {
-            var school = schoolData.schools[i];
-            if(highSchool == school.dbName)
+            var school = schoolData.hs[i];
+            if (highSchool == school.dbName)
             {
                 color = school.color;
             }
@@ -453,7 +506,6 @@ function Configure($scope) {
         if (event.Tb.buttons==1 && ($scope.data.dragFunc=="paint")) {
             var proposedHigh = $scope.data.proposedHigh;
             if (proposedHigh) {
-                changedHS = true;
                 // Record selected grid and grid data
                 selectedGrid = event.feature;
                 selectedGrid.setProperty('proposedHigh', ProposedHigh(proposedHigh, selectedGrid));
@@ -468,6 +520,16 @@ function Configure($scope) {
                         }
                     });
                 }
+
+                map.data.toGeoJson(function (geoJson) {
+                    results = Results(geoJson.features, schoolData);
+                });
+
+                $scope.data.mapName = defaultMapName;
+                $scope.data.mapDescription = defaultMapDescription;
+
+                UpdateScopeData($scope, results);
+                $scope.$apply();
             }
 
         }
@@ -522,22 +584,22 @@ function SolutionToJson(formData, gridData, resultsData)
         grids: [],
         results: resultsData
     };
-	for(var i=0; i<gridData.length; i++)
-	{
-		solution.grids[i] = {gc:gridData[i].properties.gc, proposedHigh:gridData[i].properties.proposedHigh};
-	}
+    for(var i=0; i<gridData.length; i++)
+    {
+        solution.grids[i] = {gc:gridData[i].properties.gc, proposedHigh:gridData[i].properties.proposedHigh};
+    }
 
-	return solution;
+    return solution;
 }
 
 function JsonToSolution(solution, gridData)
 {
-	for(var i=0; i< solution.grids.length; i++)
-	{
-		if(gridData[i].properties.gc == solution.grids[i].gc)
-		{
-			gridData[i].properties.proposedHigh = solution.grids[i].proposedHigh;
-		}
+    for(var i=0; i< solution.grids.length; i++)
+    {
+        if(gridData[i].properties.gc == solution.grids[i].gc)
+        {
+            gridData[i].properties.proposedHigh = solution.grids[i].proposedHigh;
+        }
         else { // Exhaustive search is definately not the best method but did not see a better search build in to JS
             var findGC = gridData[i].properties.gc;
             var solutionLength = solution.grids.length;
@@ -552,17 +614,17 @@ function JsonToSolution(solution, gridData)
                 gridData[i].properties.proposedHigh = gridData[i].properties.high;
                 console.log("Grid code index " + solution.grids[i].gc + " not found");
             }
-		}
-	}
+        }
+    }
 }
 
 function Results(grids, schoolData)
 {
-    var numSchools = schoolData.schools.length;
+    var numSchools = schoolData.hs.length;
     var results = {transitions:0, distance:0, schools:[]};
     for(var i=0; i<numSchools; i++)
     {
-        results.schools[i] = {dbname:schoolData.schools[i].dbName, students:0, capacity_p:0, distance:0, transitions:0, frl:0, frl_p:0};
+        results.schools[i] = {dbname:schoolData.hs[i].dbName, students:0, capacity_p:0, distance:0, transitions:0, frl:0, frl_p:0};
     }
 
     grids.forEach(function (grid){
@@ -570,14 +632,14 @@ function Results(grids, schoolData)
         for(var i=0; i<numSchools; i++)
         {
             // Compute proposed school stats
-            if(hs == schoolData.schools[i].dbName)
+            if(hs == schoolData.hs[i].dbName)
             {
                 results.schools[i].students += grid.properties.hs2020;
                 results.schools[i].distance += grid.properties.hs2020*grid.properties.distance[i];
                 results.schools[i].frl += FrlFit(grid.properties);
             }
             // Compute transitions by existing school
-            if(grid.properties.high == schoolData.schools[i].dbName && hs != grid.properties.high)
+            if(grid.properties.high == schoolData.hs[i].dbName && hs != grid.properties.high)
             {
                 results.schools[i].transitions += grid.properties.hs2020;
             }
@@ -588,7 +650,7 @@ function Results(grids, schoolData)
     // Convert native results distance to miles
     for(var i=0; i<numSchools; i++)
     {
-        results.schools[i].capacity_p = 100*results.schools[i].students/schoolData.schools[i].capacity;
+        results.schools[i].capacity_p = 100*results.schools[i].students/schoolData.hs[i].capacity;
         results.schools[i].distance *= milePerMeter;
         results.distance += results.schools[i].distance;
         results.transitions += results.schools[i].transitions;
@@ -608,14 +670,14 @@ function Results(grids, schoolData)
 
 function ComputeStudents(db)
 {
-    var numSchools = schoolData.schools.length;
+    var numSchools = schoolData.hs.length;
     var students = Array.apply(null, new Array(numSchools)).map(Number.prototype.valueOf,0);
 
     db.forEach(function (grid){
         var hs = grid.properties.proposedHigh;
         for(var i=0; i<numSchools; i++)
         {
-            if(hs == schoolData.schools[i].dbName)
+            if(hs == schoolData.hs[i].dbName)
             {
                 students[i] += grid.properties.hs2020;
             }
@@ -638,13 +700,12 @@ function Transitions(db)
 
 function FrlFit(properties) {
     var frlFit = 0;
-    
-    for (var i = 0; i < schoolData.schools.length && frlFit==0; i++) {
-        if (schoolData.schools[i].dbName == properties.elementary) {
-            frlFit = schoolData.schools[i].stats[0].frl;
+
+    for (var i = 0; i < schoolData.es.length && frlFit==0; i++) {
+        if (schoolData.es[i].dbName == properties.elementary) {
+            frlFit = schoolData.es[i].stats[0].frl;
         }
-    }    
-    
+    }
 
     return frlFit*properties.hs2020;
 }
@@ -656,12 +717,12 @@ function ProposedHigh(inProposedHigh, grid) {
         var distance = grid.getProperty('distance');
         if (distance && distance.length > 1) {
             var minDistance = distance[0];
-            var proposedHigh = schoolData.schools[0].dbName;
+            var proposedHigh = schoolData.hs[0].dbName;
 
             for (var i = 0; i < distance.length; i++) {
                 if (distance[i] < minDistance) {
                     minDistance = distance[i];
-                    proposedHigh = schoolData.schools[i].dbName;
+                    proposedHigh = schoolData.hs[i].dbName;
                 }
             }
         }
