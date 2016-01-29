@@ -354,7 +354,8 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
 
     function initMap() {
         // Initialise the map.
-        var myLatLng = { lat: 45.4834817, lng: -122.8216516 };
+        //var myLatLng = { lat: 45.4834817, lng: -122.8216516 };
+        var myLatLng = { lat: 45.4980000, lng: -122.8216516 };
         var mapProp = {
             center: myLatLng,
             zoom: 12,

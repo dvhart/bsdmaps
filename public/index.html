@@ -169,16 +169,14 @@
                 <h1>{{data.mapName}}</h1>
                 <h2>{{data.mapDescription}}</h2>
                 <div id="map-holder"></div>
-            </div> <!-- page -->
+                <div class="chart-row">
+                    <div ng-bind-html="GenStatsTable()|html"></div>
+                </div>
+            </div> <!-- page 1 -->
 
             <div class="no-print"><hr/></div>
 
             <div class="page no-break">
-
-                <div class="chart-row">
-                    <div ng-bind-html="GenStatsTable()|html"></div>
-                </div>
-
                 <div class="chart-row">
                     <div class="chart-panel">
                         <div class="chart-header">Percent Capacity</div>
