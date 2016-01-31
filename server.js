@@ -310,6 +310,93 @@ app.post('/Solution', function (request, response) {
     });
 });
 
+app.get('/GetSection', function (request, response) {
+    console.time("/GetSection");
+    dbGrid.collection('sections').find().toArray(function (err, items) {
+        if (err) {
+            console.log("/GetSection error" + err);
+            return next(err);
+        }
+        response.send(JSON.stringify(items));
+        console.timeEnd("/GetSection")
+    });
+});
+
+app.post('/NewSection', function (request, res) {
+    console.time("/NewSection");
+    var putSection = '';
+    
+    request.on('data', function (data) {
+        putSection += data;
+        if (putSection.length > 1e6)
+            request.connection.destroy();
+    });
+    
+    request.on('end', function () {
+        
+        if (putSection != '') {
+            var newSection = JSON.parse(putSection);
+            dbGrid.collection('sections').insertOne(newSection, function (err, result) {
+                if (err != null) {
+                    console.log("/NewSection error" + err);
+                }
+                else {
+                    console.log("/NewSection result" + result);
+                    
+                    var features = dbGrid.collection('sections').find().toArray(function (err, items) {
+                        if (err) {
+                            console.log("/NewSection error" + err);
+                            return next(err);
+                        }
+                        res.send(JSON.stringify(items));
+                        console.timeEnd("/NewSection");
+                    });
+                }
+            });
+        }
+
+    });
+});
+
+app.post('/DeleteSection', function (request, res) {
+    console.time("/DeleteSection");
+    var putSection = '';
+    
+    request.on('data', function (data) {
+        putSection += data;
+        if (putSection.length > 1e6)
+            request.connection.destroy();
+    });
+    
+    request.on('end', function () {
+        
+        if (putSection != '') {
+            //console.log('DeleteGrid: ' + putSection);
+            var section = JSON.parse(putSection);
+            dbGrid.collection('sections').deleteOne(
+                section._id,
+                function (err, results) {
+                    if (err != null) {
+                        console.log("/DeleteSection error: " + err);
+                    }
+                    else {
+                        console.log("/DeleteSection " + results.deletedCount + " deleted, result: " + results.result);
+                        
+                        var features = dbGrid.collection('sections').find().toArray(function (err, items) {
+                            if (err) {
+                                console.log("/DeleteSection error" + err);
+                                return next(err);
+                            }
+                            res.send(JSON.stringify(items));
+                            console.timeEnd("/DeleteSection");
+                        });
+                    }
+                }
+            );
+        }
+    });
+});
+
 // spin up server
 MongoClient.connect(urlBsdGrid, function (err1, database1) {
     if (err1) throw err1;

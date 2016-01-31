@@ -6,6 +6,8 @@ var geocoder;
 var infowindow;
 var panel;
 var points = []; // selected feature object
+var newRoute;
+var selectedRoute;
 var routes = [];
 var selectedFeature; //  JSON selected grid
 var results;
@@ -30,17 +32,40 @@ app.controller('BoundaryController', function ($scope, $http) {
         "accidentRate": 0,
         "accidents": 0,
         "period": 0,
-        "traffic": ""
+        "aadt": 0,
+        "sectionLength":0
     };
 	
     $scope.NewRoute = function () {
-        points.forEach(function(point){
-            console.log("latlng=" + point.getGeometry().get());
-        });
-        clearMarkers();
-        Configure($scope);
+        if (newRoute != null) {
+            var length = milePerMeter * google.maps.geometry.spherical.computeLength(newRoute.getPath());
+            var section = {
+                rate: $scope.data.accidentRate, 
+                accidents: $scope.data.accidents, 
+                period: $scope.data.period, 
+                aadt: $scope.data.aadt, 
+                length: length, 
+                polyline: newRoute.getPath()
+            };
+            
+            $scope.data.sectionLength = length;
+            newRoute.setMap(null);
+            newRoute = null;
 
-
+            if (section.rate == 0) {
+                section.rate = AccidentRate(section.accidents, section.period, section.aadt, section.length);
+            }
+            $http.post('/NewSection', section).then(function (response) {
+                RefreshFromDB(response);
+                clearMarkers();
+                Configure($scope);
+                $scope.data.accidentRate = 0;
+                $scope.data.accidents = 0;
+                $scope.data.period = 0;
+                $scope.data.aadt = 0;
+                $scope.data.response = "Stored Route";
+            });
+        }
     };
 
     $scope.DeleteRoute = function () {
@@ -75,8 +100,11 @@ app.controller('BoundaryController', function ($scope, $http) {
         bsdOverlay.setMap(map);
 
 		panel = document.getElementById('panel');
-	
-        Configure($scope);
+        
+        $http.get('/GetSection').then(function (response) {
+            RefreshFromDB(response);
+            Configure($scope);
+        });
     };
 
     initMap();
@@ -105,32 +133,78 @@ function Configure($scope) {
     //    map.data.revertStyle();
     //});
     
+    // Adds a marker to the map and push to the array.
+    function addMarker(location) {
+        var marker = new google.maps.Marker({
+            position: location,
+            map: map,
+            draggable: true
+        });
+        marker.addListener('dragend', function (event) {
+            if (points.length == 2) {
+                FindRoute(function (length) {
+                    $scope.data.sectionLength = length;
+                    $scope.$apply();
+                });
+            }
+        });
+        points.push(marker);
+    }
+    
     map.addListener('click', function (event) {
         
         if (points.length < 2) {
             addMarker(event.latLng);
         }
         if (points.length == 2) {
-            FindPath(map, points[0].position, points[1].position, departDate, function (polyline) {
-                // Algorithm to find and measure polyline overlap
-                //routes.forEach(function (route) {
-                //    var points = [];
-                //    route.getPath().forEach(function (point) {
-                //        if (google.maps.geometry.poly.isLocationOnEdge(point, polyline)) {
-                //            points.push(point);
-                //        }
-                //    });
-                //    var distanceMeters = google.maps.geometry.spherical.computeLength(points);
-                //    var overlapPolyline = new google.maps.Polyline({ path: points, clickable: false, strokeColor: '#FF0000', strokeWeight: 8, map : map })
-                //});
-                polyline.setMap(map);
-                routes.push(polyline);
-                //deleteMarkers();
+            FindRoute(function (length) {
+                $scope.data.sectionLength = length;
+                $scope.$apply();
             });
         }
+
     });
     //map.addListener('removefeature', function (event) { });
 };
+
+function RefreshFromDB(dbData) {
+    try {
+        
+        routes = dbData.data;
+        
+        // Find max accident rate
+        var maxRate = 0;
+        routes.forEach(function (route) {
+            if (route.rate > maxRate) {
+                maxRate = route.rate;
+            }
+        });
+        
+        // Set visible with color based on heat map
+        routes.forEach(function (route) {
+            var color = HeatMap(0, maxRate, route.rate);
+            var polyline = new google.maps.Polyline({
+                path: route.polyline.j,
+                strokeColor: color,
+                strokeWeight: 2
+            });
+            route.polyline = polyline;  
+            route.polyline.setMap(map);
+        });
+        
+    } catch (error) {
+        newData.setMap(null);
+        if (geoJsonInput.value !== "") {
+            setGeoJsonValidity(false);
+        } else {
+            setGeoJsonValidity(true);
+        }
+        return;
+    }
+};
+
+// Loading routes from database
+// routes.push(polyline);
 
 //computeDistanceBetween(from:LatLng, to:LatLng, radius?:number)
 //google.maps.geometry.poly 
@@ -181,13 +255,10 @@ function FindPath(map, origin, destination, departureTime, callback) {
             
             var polyline = new google.maps.Polyline({
                 path: [],
-                clickable: false,
                 strokeColor: '#000000',
                 strokeWeight: 2
             });
                                 
-            var bounds = new google.maps.LatLngBounds();
-            var path = result.routes[0].overview_path;
             var legs = result.routes[0].legs;
             for (i = 0; i < legs.length; i++) {
                 var steps = legs[i].steps;
@@ -195,7 +266,6 @@ function FindPath(map, origin, destination, departureTime, callback) {
                     var nextSegment = steps[j].path;
                     for (k = 0; k < nextSegment.length; k++) {
                         polyline.getPath().push(nextSegment[k]);
-                        bounds.extend(nextSegment[k]);
                     }
                 }
             }
@@ -207,38 +277,30 @@ function FindPath(map, origin, destination, departureTime, callback) {
 	});
 }
 
-// Adds a marker to the map and push to the array.
-function addMarker(location) {
-    var marker = new google.maps.Marker({
-        position: location,
-        map: map,
-        draggable:true
-    });
-    marker.addListener('dragend', MarkerDrag);
-    points.push(marker);
-}
 
-function MarkerDrag(event) {
-    if (points.length == 2) {
-        var last = routes.pop();
-        last.setMap(null);
-        FindPath(map, points[0].position, points[1].position, departDate, function (polyline) {
-            // Algorithm to find and measure polyline overlap
-            //routes.forEach(function (route) {
-            //    var points = [];
-            //    route.getPath().forEach(function (point) {
-            //        if (google.maps.geometry.poly.isLocationOnEdge(point, polyline)) {
-            //            points.push(point);
-            //        }
-            //    });
-            //    var distanceMeters = google.maps.geometry.spherical.computeLength(points);
-            //    var overlapPolyline = new google.maps.Polyline({ path: points, clickable: false, strokeColor: '#FF0000', strokeWeight: 8, map : map })
-            //});
-            polyline.setMap(map);
-            routes.push(polyline);
-                //deleteMarkers();
-        });
+
+function FindRoute(callback) {
+    if (newRoute) {
+        newRoute.setMap(null);
     }
+    FindPath(map, points[0].position, points[1].position, departDate, function (polyline) {
+        var points = [];
+        // Algorithm to find and measure polyline overlap
+        //routes.forEach(function (route) {
+        //    var points = [];
+        //    route.getPath().forEach(function (point) {
+        //        if (google.maps.geometry.poly.isLocationOnEdge(point, polyline)) {
+        //            points.push(point);
+        //        }
+        //    });
+        //    var distanceMeters = google.maps.geometry.spherical.computeLength(points);
+        //    var overlapPolyline = new google.maps.Polyline({ path: points, clickable: false, strokeColor: '#FF0000', strokeWeight: 8, map : map })
+        //});
+        newRoute = polyline;
+        newRoute.setMap(map);
+        sectionLength = milePerMeter * google.maps.geometry.spherical.computeLength(newRoute.getPath());
+        callback(sectionLength);
+    });
 };
 
 // Sets the map on all points in the array.
@@ -278,6 +340,34 @@ function LocationOnEdge(point, route, tolerance) {
         }
     }  
     return onEdge;
+}
+
+function HeatMap(minimum, maximum, value) {
+    var ratio = 2 * (value - minimum) / (maximum - minimum);
+    var b = Math.max(0, 255 * (1 - ratio));
+    var r = Math.max(0, 255 * (ratio - 1));
+    var g = 255 - b - r;
+    return rgb(r, g, b);
+}
+
+function rgb(r, g, b) {
+    r = Math.floor(r);
+    g = Math.floor(g);
+    b = Math.floor(b);
+    return ["rgb(", r, ",", g, ",", b, ")"].join("");
+}
+
+function AccidentRate(totalAccidents, studyYears, averageAnnualDailyTraffice, sectionLength){
+    var rate = 0;
+    
+    if (totalAccidents > 0 && studyYears > 0 && averageAnnualDailyTraffice > 0 && sectionLength > 0) {
+        rate = totalAccidents*1e6 / (365*studyYears*averageAnnualDailyTraffice*sectionLength);
+    }
+    else {
+        console.log("AccidentRate incorrect paramters totalAccidents:" + totalAccidents + " studyYears:" + studyYears + " averageAnnualDailyTraffice:" + averageAnnualDailyTraffice + " sectionLength:" + sectionLength);
+    }
+
+    return rate;
 }
 
 
