@@ -53,7 +53,8 @@
                         <label>Time Period (years)</label>
                         <input type="number" ng-model="data.period" /><br>
                         <label>Average Annual Daily Traffic</label>
-                        <input type="number" ng-model="data.traffic" /><br>
+                        <input type="number" ng-model="data.aadt" /><br>
+                        Section Length: {{data.sectionLength}}<br />
                     <input type="button" ng-click="NewRoute(data)" value="Add Route" />
                     <input type="button" ng-click="DeleteRoute(data)" value="Delete Selected Route" />
                     <br>
