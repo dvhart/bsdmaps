@@ -5,7 +5,8 @@ var directionsDisplay;
 var geocoder;
 var infowindow;
 var panel;
-var selectedGrid; // selected feature object
+var points = []; // selected feature object
+var routes = [];
 var selectedFeature; //  JSON selected grid
 var results;
 var milePerMeter = 0.000621371;
@@ -26,62 +27,39 @@ var schools = [
 
 app.controller('BoundaryController', function ($scope, $http) {
     $scope.data = {
-        "gc": 0,
-        "hs2020": 0,
-        "reducedLunch": 0,
-        "high": "",
-        "middle": "",
-        "elementary": "",
-        "centroid": [0,0],
-        "distance":[0, 0, 0, 0, 0, 0],
-		"time": [0, 0, 0, 0, 0, 0],
-		"timeInTraffic": [0, 0, 0, 0, 0, 0]
+        "accidentRate": 0,
+        "accidents": 0,
+        "period": 0,
+        "traffic": ""
     };
 	
-	$scope.Recalculate = function () {
+    $scope.NewRoute = function () {
+        points.forEach(function(point){
+            console.log("latlng=" + point.getGeometry().get());
+        });
+        clearMarkers();
+        Configure($scope);
+
+
+    };
+
+    $scope.DeleteRoute = function () {
 		
-		var destinations = [];
-		schools.forEach(function (school) {
-			destinations.push(school.location);
-		});
-		
-		$http.get('/GetFeatures').then(function (response) {
-			var end = response.data.length;
-			//end = 3; // Testing
-			var j = 0;
-			var grids = [];
-			
-			var intervalID = setInterval(function () {
-				while (j < end - 1 && response.data[j].properties.time[0] != 0) {
-					grids.push(response.data[j]);
-					j++;
-				}
-				FindDistance(map, response.data[j], destinations, departDate, function (newGrid) {
-					grids.push(newGrid);
-					j++;
-					if (j >= end) {
-						clearInterval(intervalID);
-						$http.post('/SetFeatures', grids);
-						console.log("Recalculate Complete");
-					}
-				});
-			}, 2000);
-		});
-	};
+    };    
 	
     function initMap() {
         // Initialise the map.
-        var myLatLng = { lat: 45.4834817, lng: -122.8216516 };
+        var myLatLng = { lat: 45.4980000, lng: -122.8216516 };
         var mapProp = {
             center: myLatLng,
             zoom: 12,
             mapTypeId: google.maps.MapTypeId.ROADMAP
         };
 
-		map = new google.maps.Map(document.getElementById('map-holder'), mapProp);
+		map = new google.maps.Map(document.getElementById('safety-map-holder'), mapProp);
 		directionsService = new google.maps.DirectionsService;		
 		var renderOptions = { preserveViewport: true };
-        directionsDisplay = new google.maps.DirectionsRenderer(renderOptions);
+        //directionsDisplay = new google.maps.DirectionsRenderer(renderOptions);
         geocoder = new google.maps.Geocoder;
         infowindow = new google.maps.InfoWindow;
 
@@ -93,223 +71,213 @@ app.controller('BoundaryController', function ($scope, $http) {
             west: -122.921350,
         };
 
-        bsdOverlay = new google.maps.GroundOverlay('http://bsdmaps.monkeyblade.net/bsd-boundary-existing-overlay.png', imageBounds);
+        bsdOverlay = new google.maps.GroundOverlay('http://bsdmaps.monkeyblade.net/bsd-boundary-existing-overlay.png', imageBounds, {clickable:false});
         bsdOverlay.setMap(map);
 
 		panel = document.getElementById('panel');
 	
-        $http.get('/GetFeatures').then(function (response) {
-            RefreshFromGrids(response.data);
-            Configure($scope);
-        });
+        Configure($scope);
     };
 
     initMap();
 });
 
-function RefreshFromGrids(grids) {
-    try {
-        var geoJsonData = { "type": "FeatureCollection", "features": grids };
-
-        var newData = new google.maps.Data({map: map});
-        var features = newData.addGeoJson(geoJsonData);
-
-        // No error means GeoJSON was valid!
-        map.data.setMap(null);
-        map.data = newData;
-        mapGrids = features;
-
-    } catch (error) {
-        newData.setMap(null);
-        if (geoJsonInput.value !== "") {
-            setGeoJsonValidity(false);
-        } else {
-            setGeoJsonValidity(true);
-        }
-        return;
-    }
-};
-
-
 function Configure($scope) {
     // Initialise the map.
-    map.data.setControls(['LineString', 'Polygon']);
+    map.data.setControls([]);
 
     map.data.setStyle(function (feature) {
-        var highSchool = feature.getProperty('high');
-
-		var color;
-		var school = FindSchool(highSchool, schools);
-		if (school) {
-			color = school.color;
-		}
-		else {
-			color = 'grey';
-		}
-
-        return { editable: false, draggable: false, strokeWeight: 0, fillColor: color };
+		var color = 'grey';
+        return { editable: true, draggable: true, strokeWeight: 0, fillColor: color };
     });
 
-    map.data.addListener('addfeature' , function (ev) {
-        map.data.revertStyle();
-        newFeature = null;
-        ev.feature.toGeoJson(function (grid) {
-            newFeature = grid;
-        });
-    });
+    //map.addListener('addfeature' , function (ev) {
+    //    var geo = ev.feature.getGeometry();
+    //    points.push(ev.feature);
+    //});
 
-    map.data.addListener('mouseover', function (event) {
-        if (selectedGrid == null) {
-            map.data.revertStyle();
-            map.data.overrideStyle(event.feature, { strokeWeight: 1 });
+    //map.addListener('mouseover', function (event) {
+    //    map.data.revertStyle();
+    //    map.data.overrideStyle(event.feature, { strokeWeight: 1 });
+    //});
+    
+    //map.addListener('mouseout', function (event) {
+    //    map.data.revertStyle();
+    //});
+    
+    map.addListener('click', function (event) {
+        
+        if (points.length < 2) {
+            addMarker(event.latLng);
+        }
+        if (points.length == 2) {
+            FindPath(map, points[0].position, points[1].position, departDate, function (polyline) {
+                // Algorithm to find and measure polyline overlap
+                //routes.forEach(function (route) {
+                //    var points = [];
+                //    route.getPath().forEach(function (point) {
+                //        if (google.maps.geometry.poly.isLocationOnEdge(point, polyline)) {
+                //            points.push(point);
+                //        }
+                //    });
+                //    var distanceMeters = google.maps.geometry.spherical.computeLength(points);
+                //    var overlapPolyline = new google.maps.Polyline({ path: points, clickable: false, strokeColor: '#FF0000', strokeWeight: 8, map : map })
+                //});
+                polyline.setMap(map);
+                routes.push(polyline);
+                //deleteMarkers();
+            });
         }
     });
-    
-    map.data.addListener('mouseout', function (event) {
-        if (selectedGrid == null) {
-            map.data.revertStyle();
-        }
-    });
-    
-    map.data.addListener('click', selectGrid = function (event) {
-        map.data.revertStyle();
-		selectedGrid = event.feature;
-		event.feature.toGeoJson(function (grid) {
-			selectedFeature = grid;
-			$scope.data.gc = grid.properties.gc;
-			$scope.data.hs2020 = grid.properties.hs2020;
-			$scope.data.reducedLunch = grid.properties.reducedLunch;
-			$scope.data.high = grid.properties.high;
-			$scope.data.middle = grid.properties.middle;
-			$scope.data.elementary = grid.properties.elementary;
-			$scope.data.centroid = grid.properties.centroid;
-			$scope.data.distance = grid.properties.distance;
-			$scope.data.time = grid.properties.time;
-			
-			if (grid.properties.timeInTraffic) {
-				$scope.data.timeInTraffic = grid.properties.timeInTraffic;
-            }
-            var school = FindSchool(grid.properties.high, schools);
-            FindPath(map, grid, school.location, departDate, function () { });
-		});
-		
-		map.data.overrideStyle(event.feature, { strokeWeight: 1 });		
-			
-		$scope.$apply();
-    });
+    //map.addListener('removefeature', function (event) { });
 };
 
-function Center(grid) {
-	var maxLat, minLat, maxLong, minLong;
+//computeDistanceBetween(from:LatLng, to:LatLng, radius?:number)
+//google.maps.geometry.poly 
+//bool containsLocation(point:LatLng, polygon:Polygon)
+//isLocationOnEdge(point:LatLng, poly:Polygon|Polyline, tolerance?:number) // Computes whether the given point lies inside the specified polygon.
+//LatLngBounds contains, intersects, union
 
-	maxLong = minLong = grid.geometry.coordinates[0][0][0];
-	maxLat = minLat = grid.geometry.coordinates[0][0][1];
+//function Center(grid) {
+//	var maxLat, minLat, maxLong, minLong;
+
+//	maxLong = minLong = grid.geometry.coordinates[0][0][0];
+//	maxLat = minLat = grid.geometry.coordinates[0][0][1];
 	
-	for (var i=1; i < grid.geometry.coordinates[0].length; i++) {
-		if (grid.geometry.coordinates[0][i][0] < minLong) {
-			minLong = grid.geometry.coordinates[0][i][0]
-		}
-		if (grid.geometry.coordinates[0][i][0] > maxLong) {
-			maxLong = grid.geometry.coordinates[0][i][0]
-		}
-		if (grid.geometry.coordinates[0][i][1] < minLat) {
-			minLat = grid.geometry.coordinates[0][i][1]
-		}
-		if (grid.geometry.coordinates[0][i][1] > maxLat) {
-			maxLat = grid.geometry.coordinates[0][i][1]
-		}
-	}
+//	for (var i=1; i < grid.geometry.coordinates[0].length; i++) {
+//		if (grid.geometry.coordinates[0][i][0] < minLong) {
+//			minLong = grid.geometry.coordinates[0][i][0]
+//		}
+//		if (grid.geometry.coordinates[0][i][0] > maxLong) {
+//			maxLong = grid.geometry.coordinates[0][i][0]
+//		}
+//		if (grid.geometry.coordinates[0][i][1] < minLat) {
+//			minLat = grid.geometry.coordinates[0][i][1]
+//		}
+//		if (grid.geometry.coordinates[0][i][1] > maxLat) {
+//			maxLat = grid.geometry.coordinates[0][i][1]
+//		}
+//	}
 	
-	var center = {lat:(maxLat+minLat)/2, lng: (maxLong+minLong)/2};
+//	var center = {lat:(maxLat+minLat)/2, lng: (maxLong+minLong)/2};
 
-	return center;
-}
+//	return center;
+//}
 
-function FindDistance(map, grid, destinations, departureTime, callback) {
-	var service = new google.maps.DistanceMatrixService;
-	var newGrid = JSON.parse(JSON.stringify(grid));  // Make a deep copy
 
-	service.getDistanceMatrix({
-		origins: [Center(grid)],
-		destinations: destinations,
-		travelMode: google.maps.TravelMode.DRIVING,
-		drivingOptions: { departureTime: departureTime, trafficModel: google.maps.TrafficModel.BEST_GUESS }
-	}, 
-		function (response, status) {
-		if (status !== google.maps.DistanceMatrixStatus.OK) {
-			console.log("Grid "+ newGrid.properties.gc +" Error:" + status + " grid:" + newGrid);
-		} else {
-			var travelDistance = [];
-			var travelTimeNoTraffic = [];
-			var travelTimeInTraffic = [];
-			response.rows[0].elements.forEach(function (travel) {
-				travelDistance.push(travel.distance.value);
-				travelTimeNoTraffic.push(travel.duration.value);
-				if (travel.duration_in_traffic) {
-					travelTimeInTraffic.push(travel.duration_in_traffic.value);
-				}
-			});
-			newGrid.properties.distance = travelDistance;
-			newGrid.properties.time = travelTimeNoTraffic;
-			newGrid.properties.timeInTraffic = travelTimeInTraffic;
-			console.log("Grid " + newGrid.properties.gc + 
-				" distance=" + newGrid.properties.distance + 
-				" time="+ newGrid.properties.time + 
-				" trafficTime=" + newGrid.properties.timeInTraffic);
+function FindPath(map, origin, destination, departureTime, callback) {
+       
+    var request = {
+        origin: origin,
+        destination: destination,
+        travelMode: google.maps.TravelMode.DRIVING,
+        drivingOptions: { departureTime: departureTime }
+    };
 
-		}
-		callback(newGrid);
-	});
-}
-
-function FindPath(map, grid, destination, departureTime, callback) {
-	
-	directionsDisplay.setMap(map);
-	
-	directionsService.route({
-		origin: Center(grid),
-		destination: destination,
-		travelMode: google.maps.TravelMode.DRIVING,
-		drivingOptions: {departureTime: departureTime}
-	}, function (response, status) {
+	//directionsDisplay.setMap(map);
+	directionsService.route(request, function (result, status) {
 		if (status === google.maps.DirectionsStatus.OK) {
-            directionsDisplay.setDirections(response);
+            //directionsDisplay.setDirections(result);
             
-            var location = response.routes[0].legs[0].steps[0].start_point;
-            var latlng = { lat: location.lat(), lng: location.lng() };
-            geocoder.geocode({ 'location': location }, function (results, status) {
-                if (status === google.maps.GeocoderStatus.OK) {
-                    if (results[0]) {
-                        var marker = new google.maps.Marker({
-                            position: latlng,
-                            map: map
-                        });
-                        infowindow.setContent(results[0].formatted_address);
-                        infowindow.open(map, marker);
-                    } else {
-                        window.alert('No results found');
+            var polyline = new google.maps.Polyline({
+                path: [],
+                clickable: false,
+                strokeColor: '#000000',
+                strokeWeight: 2
+            });
+                                
+            var bounds = new google.maps.LatLngBounds();
+            var path = result.routes[0].overview_path;
+            var legs = result.routes[0].legs;
+            for (i = 0; i < legs.length; i++) {
+                var steps = legs[i].steps;
+                for (j = 0; j < steps.length; j++) {
+                    var nextSegment = steps[j].path;
+                    for (k = 0; k < nextSegment.length; k++) {
+                        polyline.getPath().push(nextSegment[k]);
+                        bounds.extend(nextSegment[k]);
                     }
-                } else {
-                    window.alert('Geocoder failed due to: ' + status);
                 }
-            });            
+            }
 
-
-			callback(response);
+			callback(polyline);
 		} else {
 			window.alert('Directions request failed due to ' + status);
 		}
 	});
 }
 
-function FindSchool(schoolName, schoolsData) {
-	var school;
-	for (var i = 0; i < schoolsData.length && school == null; i++) {
-		if (schoolName == schoolsData[i].dbName) {
-			school = schoolsData[i];
-		}
-	}
-	return school;
+// Adds a marker to the map and push to the array.
+function addMarker(location) {
+    var marker = new google.maps.Marker({
+        position: location,
+        map: map,
+        draggable:true
+    });
+    marker.addListener('dragend', MarkerDrag);
+    points.push(marker);
+}
+
+function MarkerDrag(event) {
+    if (points.length == 2) {
+        var last = routes.pop();
+        last.setMap(null);
+        FindPath(map, points[0].position, points[1].position, departDate, function (polyline) {
+            // Algorithm to find and measure polyline overlap
+            //routes.forEach(function (route) {
+            //    var points = [];
+            //    route.getPath().forEach(function (point) {
+            //        if (google.maps.geometry.poly.isLocationOnEdge(point, polyline)) {
+            //            points.push(point);
+            //        }
+            //    });
+            //    var distanceMeters = google.maps.geometry.spherical.computeLength(points);
+            //    var overlapPolyline = new google.maps.Polyline({ path: points, clickable: false, strokeColor: '#FF0000', strokeWeight: 8, map : map })
+            //});
+            polyline.setMap(map);
+            routes.push(polyline);
+                //deleteMarkers();
+        });
+    }
+};
+
+// Sets the map on all points in the array.
+function setMapOnAll(map) {
+    for (var i = 0; i < points.length; i++) {
+        points[i].setMap(map);
+    }
+}
+
+// Removes the points from the map, but keeps them in the array.
+function clearMarkers() {
+    setMapOnAll(null);
+}
+
+// Shows any points currently in the array.
+function showMarkers() {
+    setMapOnAll(map);
+}
+
+// Deletes all points in the array by removing references to them.
+function deleteMarkers() {
+    clearMarkers();
+    points = [];
+}
+
+function LocationOnEdge(point, route, tolerance) {
+    var onEdge = false;
+    var path = route.getPath();
+    for (var i = 0; i < path.length && !onEdge; i++) {
+        var polyPoint = path.getAt(i);
+        var dx = point.lat() - polyPoint.lat();
+        var dy = point.lng() - polyPoint.lng();
+        var distance2 = dx * dx + dy * dy;
+        var tolerance2 = tolerance * tolerance;
+        if (distance2 <= tolerance2) {
+            onEdge = true;
+        }
+    }  
+    return onEdge;
 }
 
 

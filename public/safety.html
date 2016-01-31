@@ -7,32 +7,63 @@
     <script src="angular.min.js"></script>
     <script src="Chart.min.js"></script>
     <script src="angular-chart.min.js"></script>
-    <script src="https://maps.googleapis.com/maps/api/js?v=3"></script>
-    <script src="recalculate.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?v=3.exp"></script>
+    <script src="safety.js"></script>
     <link href="style.css" rel="stylesheet" />
-    <link href="angular-chart.min.css" rel="stylesheet"/>
+    <link href="angular-chart.min.css" rel="stylesheet" />
     <style type="text/css">
-        #container {height: 100%; width:100%; font-size: 0;}
-        #panel, #map-container {display: inline-block; *display: inline; zoom: 1; vertical-align: top; font-size: 12px;}
-        #panel {width: 25%}
-        #map-container {width: 75%}
+        #container {
+            height: 100%;
+            width: 100%;
+            font-size: 0;
+        }
+
+        #panel, #safety-map-container {
+            display: inline-block;
+            *display: inline;
+            zoom: 1;
+            vertical-align: top;
+            font-size: 12px;
+        }
+
+        #panel {
+            width: 21%;
+            margin: 10px;
+        }
+
+        #safety-map-container {
+            width: 77%;
+        }
+        #safety-map-holder {
+            height: 870px;
+            width: 100%;
+        }
     </style>
 </head>
 <body ng-app="BoundaryEntry">
     <div id="container" ng-controller="BoundaryController">
         <div id="panel">
-            <div id="panel-content" width: 200px>
+            <div id="panel-content" width 100px>
                 <form class="css-form">
-                    <br>
-                    <input type="button" ng-click="Recalculate()" value="Recalculate" />
+                        <label>Accident Rate (ACC/MVM)</label>
+                        <input type="number" ng-model="data.accidentRate" required /><br>
+                    ------ OR ------ <br>
+                        <label>Accidents On Roadway</label>
+                        <input type="number" ng-model="data.accidents" required /><br>
+                        <label>Time Period (years)</label>
+                        <input type="number" ng-model="data.period" /><br>
+                        <label>Average Annual Daily Traffic</label>
+                        <input type="number" ng-model="data.traffic" /><br>
+                    <input type="button" ng-click="NewRoute(data)" value="Add Route" />
+                    <input type="button" ng-click="DeleteRoute(data)" value="Delete Selected Route" />
                     <br>
                 </form>
-            </div>
-            <pre>data = {{data | json}}</pre>            
         </div>
-        <div id="map-container">
-            <div id="map-holder"></div>
-        </div>
+    </div>
+    <div id="safety-map-container">
+        <ul></ul>
+        <div id="safety-map-holder"></div>
+    </div>
     </div>
 </body>
 </html>
