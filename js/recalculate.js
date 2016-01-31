@@ -2,6 +2,8 @@ var app = angular.module('BoundaryEntry', ['chart.js']);
 var map;
 var directionsService;
 var directionsDisplay;
+var geocoder;
+var infowindow;
 var panel;
 var selectedGrid; // selected feature object
 var selectedFeature; //  JSON selected grid
@@ -79,7 +81,9 @@ app.controller('BoundaryController', function ($scope, $http) {
 		map = new google.maps.Map(document.getElementById('map-holder'), mapProp);
 		directionsService = new google.maps.DirectionsService;		
 		var renderOptions = { preserveViewport: true };
-		directionsDisplay = new google.maps.DirectionsRenderer(renderOptions);
+        directionsDisplay = new google.maps.DirectionsRenderer(renderOptions);
+        geocoder = new google.maps.Geocoder;
+        infowindow = new google.maps.InfoWindow;
 
         // Add the BSD boundary overlay
         var imageBounds = {
@@ -184,7 +188,9 @@ function Configure($scope) {
 			
 			if (grid.properties.timeInTraffic) {
 				$scope.data.timeInTraffic = grid.properties.timeInTraffic;
-			}
+            }
+            var school = FindSchool(grid.properties.high, schools);
+            FindPath(map, grid, school.location, departDate, function () { });
 		});
 		
 		map.data.overrideStyle(event.feature, { strokeWeight: 1 });		
@@ -256,25 +262,45 @@ function FindDistance(map, grid, destinations, departureTime, callback) {
 	});
 }
 
-//function FindDistance(map, origin, destination, departureTime, callback) {
+function FindPath(map, grid, destination, departureTime, callback) {
 	
-//	directionsDisplay.setMap(map);
+	directionsDisplay.setMap(map);
 	
-	
-//	directionsService.route({
-//		origin: origin,
-//		destination: destination,
-//		travelMode: google.maps.TravelMode.DRIVING,
-//		drivingOptions: {departureTime: departureTime}
-//	}, function (response, status) {
-//		if (status === google.maps.DirectionsStatus.OK) {
-//			directionsDisplay.setDirections(response);
-//			callback(response);
-//		} else {
-//			window.alert('Directions request failed due to ' + status);
-//		}
-//	});
-//}
+	directionsService.route({
+		origin: Center(grid),
+		destination: destination,
+		travelMode: google.maps.TravelMode.DRIVING,
+		drivingOptions: {departureTime: departureTime}
+	}, function (response, status) {
+		if (status === google.maps.DirectionsStatus.OK) {
+            directionsDisplay.setDirections(response);
+            
+            var location = response.routes[0].legs[0].steps[0].start_point;
+            var latlng = { lat: location.lat(), lng: location.lng() };
+            geocoder.geocode({ 'location': location }, function (results, status) {
+                if (status === google.maps.GeocoderStatus.OK) {
+                    if (results[0]) {
+                        var marker = new google.maps.Marker({
+                            position: latlng,
+                            map: map
+                        });
+                        infowindow.setContent(results[0].formatted_address);
+                        infowindow.open(map, marker);
+                    } else {
+                        window.alert('No results found');
+                    }
+                } else {
+                    window.alert('Geocoder failed due to: ' + status);
+                }
+            });            
+
+
+			callback(response);
+		} else {
+			window.alert('Directions request failed due to ' + status);
+		}
+	});
+}
 
 function FindSchool(schoolName, schoolsData) {
 	var school;
