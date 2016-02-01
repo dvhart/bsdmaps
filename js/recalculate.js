@@ -22,7 +22,8 @@ var schools = [
     {id:3, dbName:'Southridge', displayName:'Southridge', color:'red', capacity:1850, location:{ lat: 45.4507757, lng: -122.8063213 }},
     {id:4, dbName:'Sunset', displayName:'Sunset', color:'purple', capacity:2203, location:{ lat: 45.5275752, lng: -122.8188107 }},
     {id:5, dbName:'Westview', displayName:'Westview', color:'pink', capacity:2421, location:{ lat: 45.5489509, lng: -122.8663216}}
-    ];
+];
+
 
 app.controller('BoundaryController', function ($scope, $http) {
     $scope.data = {
@@ -190,7 +191,12 @@ function Configure($scope) {
 				$scope.data.timeInTraffic = grid.properties.timeInTraffic;
             }
             var school = FindSchool(grid.properties.high, schools);
-            FindPath(map, grid, school.location, departDate, function () { });
+            FindPath(map, grid, school.location, departDate, function (response, polyline) {
+                var res = response;
+                console.log("distance:" + response.routes[0].legs[0].distance.value + " duration:" + response.routes[0].legs[0].duration.value);
+                //response.routes[0].legs[0].duration_in_traffic.value
+                var poly = polyline;
+            });
 		});
 		
 		map.data.overrideStyle(event.feature, { strokeWeight: 1 });		
@@ -262,44 +268,70 @@ function FindDistance(map, grid, destinations, departureTime, callback) {
 	});
 }
 
+
+
 function FindPath(map, grid, destination, departureTime, callback) {
 	
-	directionsDisplay.setMap(map);
+    directionsDisplay.setMap(map);
+    
+    var request = {
+        origin: Center(grid),
+        destination: destination,
+        travelMode: google.maps.TravelMode.DRIVING,
+        drivingOptions: { departureTime: departureTime }
+    };
 	
-	directionsService.route({
-		origin: Center(grid),
-		destination: destination,
-		travelMode: google.maps.TravelMode.DRIVING,
-		drivingOptions: {departureTime: departureTime}
-	}, function (response, status) {
+	directionsService.route(request, function (response, status) {
 		if (status === google.maps.DirectionsStatus.OK) {
             directionsDisplay.setDirections(response);
             
-            var location = response.routes[0].legs[0].steps[0].start_point;
-            var latlng = { lat: location.lat(), lng: location.lng() };
-            geocoder.geocode({ 'location': location }, function (results, status) {
-                if (status === google.maps.GeocoderStatus.OK) {
-                    if (results[0]) {
-                        var marker = new google.maps.Marker({
-                            position: latlng,
-                            map: map
-                        });
-                        infowindow.setContent(results[0].formatted_address);
-                        infowindow.open(map, marker);
-                    } else {
-                        window.alert('No results found');
+            // Convert route to polyline
+            var polyline = new google.maps.Polyline({
+                path: [],
+                strokeColor: '#000000',
+                strokeWeight: 2
+            });
+            
+            var legs = response.routes[0].legs;
+            for (i = 0; i < legs.length; i++) {
+                var steps = legs[i].steps;
+                for (j = 0; j < steps.length; j++) {
+                    var nextSegment = steps[j].path;
+                    for (k = 0; k < nextSegment.length; k++) {
+                        polyline.getPath().push(nextSegment[k]);
                     }
-                } else {
-                    window.alert('Geocoder failed due to: ' + status);
                 }
-            });            
-
-
-			callback(response);
+            }
+            callback(response, polyline);
 		} else {
 			window.alert('Directions request failed due to ' + status);
 		}
 	});
+}
+
+function FindNeighborhood(map, location, callback) {
+    var location = response.routes[0].legs[0].steps[0].start_point;
+    geocoder.geocode({ 'location': location }, function (results, status) {
+        if (status === google.maps.GeocoderStatus.OK) {
+            if (results[1]) {
+                var marker = new google.maps.Marker({
+                    position: latlng,
+                    map: map
+                });
+                infowindow.setContent(results[1].formatted_address);
+                infowindow.open(map, marker);
+                
+                var neighborhood = results[1].formatted_address;
+                
+                callback(neighborhood);
+
+            } else {
+                window.alert('No results found');
+            }
+        } else {
+            window.alert('Geocoder failed due to: ' + status);
+        }
+    });
 }
 
 function FindSchool(schoolName, schoolsData) {
