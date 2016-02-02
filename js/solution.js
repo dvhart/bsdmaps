@@ -178,7 +178,9 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
         "otherObjectives": [],
         "solutionSaveResponse":"",
         "mapName":defaultMapName,
-        "mapDescription":defaultMapDescription
+        "mapDescription": defaultMapDescription,
+        "accidentRate": [ [0, 0, 0, 0, 0, 0]],
+        "totalAccidentRate":0
     };
 
     $scope.DBRefresh = function () {
@@ -296,6 +298,7 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
         out += '    <div class="stats-header-cell">School</div>';
         out += '    <div class="stats-header-cell">Capacity</div>';
         out += '    <div class="stats-header-cell">Proximity (miles)</div>';
+        out += '    <div class="stats-header-cell">Accident Rate</div>';
         out += '    <div class="stats-header-cell">Transitions</div>';
         out += '    <div class="stats-header-cell">FRL</div>';
         out += '</div>';
@@ -304,6 +307,7 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
             out += '    <div class="stats-cell">' + $scope.data.schools[i] + '</div>';
             out += '    <div class="stats-cell">' + $scope.data.capacity_p[0][i] + '%</div>';
             out += '    <div class="stats-cell">' + $scope.data.distance[0][i] + '</div>';
+            out += '    <div class="stats-cell">' + $scope.data.accidentRate[0][i] + '</div>';
             out += '    <div class="stats-cell">' + $scope.data.transitions[0][i] + '</div>';
             out += '    <div class="stats-cell">' + $scope.data.frl_p[0][i] + '%</div>';
             out += '</div>';
@@ -312,6 +316,7 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
         out += '    <div class="stats-footer-cell">District Total</div>';
         out += '    <div class="stats-footer-cell">' + $scope.data.total_capacity_p + '%</div>';
         out += '    <div class="stats-footer-cell">' + $scope.data.milesTraveled + '</div>';
+        out += '    <div class="stats-footer-cell">' + $scope.data.totalAccidentRate + '</div>';
         out += '    <div class="stats-footer-cell">' + $scope.data.total_transitions + '</div>';
         out += '    <div class="stats-footer-cell">' + $scope.data.total_frl_p + '%</div>';
         out += '</div>';
@@ -328,15 +333,18 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
         out += '<div class="stats-header-row">';
         out += '    <div class="stats-header-cell">School</div>';
         out += '    <div class="stats-header-cell">Cap %</div>';
-        out += '    <div class="stats-header-cell">Proximity</div>';
-        out += '    <div class="stats-header-cell">Transitions</div>';
+        out += '    <div class="stats-header-cell">Prox.</div>';
+        out += '    <div class="stats-header-cell">Acc.</div>';
+        out += '    <div class="stats-header-cell">Trans.</div>';
         out += '    <div class="stats-header-cell">FRL %</div>';
+       
         out += '</div>';
         for (var i = 0; i < $scope.data.schools.length; i++) {
             out += '<div class="stats-row">';
             out += '    <div class="stats-cell">' + $scope.data.schools[i] + '</div>';
             out += '    <div class="stats-cell">' + Math.round($scope.data.capacity_p[0][i]) + '</div>';
             out += '    <div class="stats-cell">' + Math.round($scope.data.distance[0][i]) + '</div>';
+            out += '    <div class="stats-cell">' + Math.round($scope.data.accidentRate[0][i]) + '</div>';
             out += '    <div class="stats-cell">' + $scope.data.transitions[0][i] + '</div>';
             out += '    <div class="stats-cell">' + Math.round($scope.data.frl_p[0][i]) + '</div>';
             out += '</div>';
@@ -345,6 +353,7 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
         out += '    <div class="stats-footer-cell">Total</div>';
         out += '    <div class="stats-footer-cell">' + Math.round($scope.data.total_capacity_p) + '</div>';
         out += '    <div class="stats-footer-cell">' + Math.round($scope.data.milesTraveled) + '</div>';
+        out += '    <div class="stats-footer-cell">' + Math.round($scope.data.totalAccidentRate) + '</div>';
         out += '    <div class="stats-footer-cell">' + $scope.data.total_transitions + '</div>';
         out += '    <div class="stats-footer-cell">' + Math.round($scope.data.total_frl_p) + '</div>';
         out += '</div>';
@@ -457,6 +466,7 @@ function UpdateScopeData($scope, results) {
         $scope.data.distance[0][i] = results.schools[i].distance;
         $scope.data.transitions[0][i] = results.schools[i].transitions;
         $scope.data.frl_p[0][i] = results.schools[i].frl_p;
+        $scope.data.accidentRate[0][i] = results.schools[i].accidentRate.toFixed(2);
 
         students += $scope.data.students[0][i];
         cap += $scope.data.students[1][i];
@@ -466,7 +476,8 @@ function UpdateScopeData($scope, results) {
     $scope.data.total_capacity_p = (100 * students/cap).toFixed(2);
     $scope.data.milesTraveled = results.distance;
     $scope.data.total_transitions = results.transitions;
-    $scope.data.total_frl_p = (100 * frl/students).toFixed(2);
+    $scope.data.total_frl_p = (100 * frl / students).toFixed(2);
+    $scope.data.totalAccidentRate = results.totalAccidentRate.toFixed(2);
 
     $scope.data.solutionSaveResponse = "";
 }
@@ -503,7 +514,7 @@ function Configure($scope) {
         map.data.revertStyle();
         map.data.overrideStyle(event.feature, { strokeWeight: 1 });
 
-        if (event.Tb.buttons==1 && ($scope.data.dragFunc=="paint")) {
+        if (event.Pb.buttons==1 && ($scope.data.dragFunc=="paint")) {
             var proposedHigh = $scope.data.proposedHigh;
             if (proposedHigh) {
                 // Record selected grid and grid data
@@ -624,8 +635,10 @@ function Results(grids, schoolData)
     var results = {transitions:0, distance:0, schools:[]};
     for(var i=0; i<numSchools; i++)
     {
-        results.schools[i] = {dbname:schoolData.hs[i].dbName, students:0, capacity_p:0, distance:0, transitions:0, frl:0, frl_p:0};
+        results.schools[i] = {dbname:schoolData.hs[i].dbName, students:0, capacity_p:0, distance:0, transitions:0, frl:0, frl_p:0, accidentRate:0};
     }
+    
+    results.totalAccidentRate = 0;
 
     grids.forEach(function (grid){
         var hs = grid.properties.proposedHigh;
@@ -637,10 +650,13 @@ function Results(grids, schoolData)
                 results.schools[i].students += grid.properties.hs2020;
                 results.schools[i].distance += grid.properties.hs2020*grid.properties.distance[i];
                 results.schools[i].frl += FrlFit(grid.properties);
+                
+                if (grid.properties.hs2020 * grid.properties.accidentRate) {
+                    results.schools[i].accidentRate += grid.properties.hs2020 * grid.properties.accidentRate[i];
+                }
             }
             // Compute transitions by existing school
-            if(grid.properties.high == schoolData.hs[i].dbName && hs != grid.properties.high)
-            {
+            if(grid.properties.high == schoolData.hs[i].dbName && hs != grid.properties.high){
                 results.schools[i].transitions += grid.properties.hs2020;
             }
         }
@@ -656,6 +672,10 @@ function Results(grids, schoolData)
         results.transitions += results.schools[i].transitions;
         if (results.schools[i].students) {
             results.schools[i].frl_p = 100*results.schools[i].frl/(results.schools[i].students);
+        }
+        
+        if (results.schools[i].accidentRate) {
+            results.totalAccidentRate += results.schools[i].accidentRate;
         }
 
         // Reduce decimal places to 2 (FIXME this is formatting and should be elsewhere)
