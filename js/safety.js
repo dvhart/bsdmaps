@@ -57,7 +57,7 @@ app.controller('BoundaryController', function ($scope, $http) {
             }
             $http.post('/NewSection', section).then(function (response) {
                 RefreshFromDB(response);
-                clearMarkers();
+                deleteMarkers();
                 Configure($scope);
                 $scope.data.accidentRate = 0;
                 $scope.data.accidents = 0;
@@ -193,12 +193,8 @@ function RefreshFromDB(dbData) {
         });
         
     } catch (error) {
-        newData.setMap(null);
-        if (geoJsonInput.value !== "") {
-            setGeoJsonValidity(false);
-        } else {
-            setGeoJsonValidity(true);
-        }
+        console.log('error ' + error);
+
         return;
     }
 };
@@ -310,11 +306,6 @@ function setMapOnAll(map) {
     }
 }
 
-// Removes the points from the map, but keeps them in the array.
-function clearMarkers() {
-    setMapOnAll(null);
-}
-
 // Shows any points currently in the array.
 function showMarkers() {
     setMapOnAll(map);
@@ -322,7 +313,7 @@ function showMarkers() {
 
 // Deletes all points in the array by removing references to them.
 function deleteMarkers() {
-    clearMarkers();
+    setMapOnAll(null);
     points = [];
 }
 
