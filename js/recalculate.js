@@ -9,6 +9,8 @@ var selectedGrid; // selected feature object
 var selectedFeature; //  JSON selected grid
 var results;
 var milePerMeter = 0.000621371;
+var routes = [];
+var newRoute;
 
 // Google Map Overlays
 var bsdOverlay;
@@ -33,7 +35,9 @@ app.controller('BoundaryController', function ($scope, $http) {
         "high": "",
         "middle": "",
         "elementary": "",
-        "centroid": [0,0],
+        "routeLength":0,
+        "accidentRate": 0,
+        "centroid": [0, 0],
         "distance":[0, 0, 0, 0, 0, 0],
 		"time": [0, 0, 0, 0, 0, 0],
 		"timeInTraffic": [0, 0, 0, 0, 0, 0]
@@ -50,14 +54,16 @@ app.controller('BoundaryController', function ($scope, $http) {
 			var end = response.data.length;
 			//end = 3; // Testing
 			var j = 0;
-			var grids = [];
-			
+            var grids = [];
+            var intervalDelayMs = 2000;
+            
+            // Delay update
 			var intervalID = setInterval(function () {
 				while (j < end - 1 && response.data[j].properties.time[0] != 0) {
 					grids.push(response.data[j]);
 					j++;
 				}
-				FindDistance(map, response.data[j], destinations, departDate, function (newGrid) {
+				FindDistance(map, PolygonCenter(response.data[j].geometry.coordinates), destinations, departDate, function (newGrid) {
 					grids.push(newGrid);
 					j++;
 					if (j >= end) {
@@ -66,7 +72,7 @@ app.controller('BoundaryController', function ($scope, $http) {
 						console.log("Recalculate Complete");
 					}
 				});
-			}, 2000);
+			}, intervalDelayMs);
 		});
 	};
 	
@@ -101,6 +107,11 @@ app.controller('BoundaryController', function ($scope, $http) {
 	
         $http.get('/GetFeatures').then(function (response) {
             RefreshFromGrids(response.data);
+            
+            $http.get('/GetSection').then(function (sectionResponse) {
+                routes = RefreshFromSafetyDB(sectionResponse, map);
+            });
+
             Configure($scope);
         });
     };
@@ -160,83 +171,79 @@ function Configure($scope) {
     });
 
     map.data.addListener('mouseover', function (event) {
-        if (selectedGrid == null) {
-            map.data.revertStyle();
-            map.data.overrideStyle(event.feature, { strokeWeight: 1 });
-        }
+        map.data.revertStyle();
+        map.data.overrideStyle(event.feature, { strokeWeight: 1 });
     });
     
     map.data.addListener('mouseout', function (event) {
-        if (selectedGrid == null) {
-            map.data.revertStyle();
-        }
+        map.data.revertStyle();
     });
     
     map.data.addListener('click', selectGrid = function (event) {
         map.data.revertStyle();
-		selectedGrid = event.feature;
-		event.feature.toGeoJson(function (grid) {
-			selectedFeature = grid;
-			$scope.data.gc = grid.properties.gc;
-			$scope.data.hs2020 = grid.properties.hs2020;
-			$scope.data.reducedLunch = grid.properties.reducedLunch;
-			$scope.data.high = grid.properties.high;
-			$scope.data.middle = grid.properties.middle;
-			$scope.data.elementary = grid.properties.elementary;
-			$scope.data.centroid = grid.properties.centroid;
-			$scope.data.distance = grid.properties.distance;
-			$scope.data.time = grid.properties.time;
-			
-			if (grid.properties.timeInTraffic) {
-				$scope.data.timeInTraffic = grid.properties.timeInTraffic;
+        selectedGrid = event.feature;
+        event.feature.toGeoJson(function (grid) {
+            selectedFeature = grid;
+            $scope.data.gc = grid.properties.gc;
+            $scope.data.hs2020 = grid.properties.hs2020;
+            $scope.data.reducedLunch = grid.properties.reducedLunch;
+            $scope.data.high = grid.properties.high;
+            $scope.data.middle = grid.properties.middle;
+            $scope.data.elementary = grid.properties.elementary;
+            $scope.data.centroid = grid.properties.centroid;
+            $scope.data.distance = grid.properties.distance;
+            $scope.data.time = grid.properties.time;
+            
+            if (grid.properties.timeInTraffic) {
+                $scope.data.timeInTraffic = grid.properties.timeInTraffic;
             }
-            var school = FindSchool(grid.properties.high, schools);
-            FindPath(map, grid, school.location, departDate, function (response, polyline) {
-                var res = response;
-                console.log("distance:" + response.routes[0].legs[0].distance.value + " duration:" + response.routes[0].legs[0].duration.value);
-                //response.routes[0].legs[0].duration_in_traffic.value
-                var poly = polyline;
+            var school = FindSchool(grid.properties.high, schools);               
+            FindRoute(PolygonCenter(grid.geometry.coordinates), school.location, routes, function (results) {
+                $scope.data.routeLength = results.length;
+                $scope.data.accidentRate = results.accidentRate;
+                
+                var gridPath = { gc: grid.properties.gc, paths: [{ high: grid.properties.high, path: results.polyline }] };
+                
+                map.data.overrideStyle(event.feature, { strokeWeight: 1 });
+                $scope.$apply();
             });
-		});
-		
-		map.data.overrideStyle(event.feature, { strokeWeight: 1 });		
-			
-		$scope.$apply();
+        });
     });
 };
 
-function Center(grid) {
-	var maxLat, minLat, maxLong, minLong;
+function FindRoute(origin, destination, routes,  callback) {
+    var results = { length: 0, accidentRate: 0, polyline: {} };
+    if (newRoute) {
+        newRoute.setMap(null);
+    }
+    FindPath(map, origin, destination, departDate, function (response, polyline) {
+        var points = [];
+        // Algorithm to find and measure polyline overlap
+        routes.forEach(function (route) {
+            var points = [];
+            route.polyline.getPath().forEach(function (point) {
+                if (google.maps.geometry.poly.isLocationOnEdge(point, polyline)) {
+                    points.push(point);
+                }
+            });
+            var distanceMeters = google.maps.geometry.spherical.computeLength(points);
+            results.accidentRate += distanceMeters* milePerMeter * route.rate;
+            var overlapPolyline = new google.maps.Polyline({ path: points, clickable: false, strokeColor: '#FF0000', strokeWeight: 5, map : map })
+        });
+        newRoute = polyline;
+        newRoute.setMap(map);
+        results.length = response.routes[0].legs[0].distance.value;
+        results.polyline = polyline;
+        callback(results);
+    });
+};
 
-	maxLong = minLong = grid.geometry.coordinates[0][0][0];
-	maxLat = minLat = grid.geometry.coordinates[0][0][1];
-	
-	for (var i=1; i < grid.geometry.coordinates[0].length; i++) {
-		if (grid.geometry.coordinates[0][i][0] < minLong) {
-			minLong = grid.geometry.coordinates[0][i][0]
-		}
-		if (grid.geometry.coordinates[0][i][0] > maxLong) {
-			maxLong = grid.geometry.coordinates[0][i][0]
-		}
-		if (grid.geometry.coordinates[0][i][1] < minLat) {
-			minLat = grid.geometry.coordinates[0][i][1]
-		}
-		if (grid.geometry.coordinates[0][i][1] > maxLat) {
-			maxLat = grid.geometry.coordinates[0][i][1]
-		}
-	}
-	
-	var center = {lat:(maxLat+minLat)/2, lng: (maxLong+minLong)/2};
-
-	return center;
-}
-
-function FindDistance(map, grid, destinations, departureTime, callback) {
+function FindDistance(map, origin, destinations, departureTime, callback) {
 	var service = new google.maps.DistanceMatrixService;
 	var newGrid = JSON.parse(JSON.stringify(grid));  // Make a deep copy
 
 	service.getDistanceMatrix({
-		origins: [Center(grid)],
+		origins: [origin],
 		destinations: destinations,
 		travelMode: google.maps.TravelMode.DRIVING,
 		drivingOptions: { departureTime: departureTime, trafficModel: google.maps.TrafficModel.BEST_GUESS }
@@ -270,12 +277,12 @@ function FindDistance(map, grid, destinations, departureTime, callback) {
 
 
 
-function FindPath(map, grid, destination, departureTime, callback) {
+function FindPath(map, origin, destination, departureTime, callback) {
 	
     directionsDisplay.setMap(map);
     
     var request = {
-        origin: Center(grid),
+        origin: origin,
         destination: destination,
         travelMode: google.maps.TravelMode.DRIVING,
         drivingOptions: { departureTime: departureTime }
