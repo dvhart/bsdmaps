@@ -197,13 +197,12 @@ function Configure($scope) {
             if (grid.properties.timeInTraffic) {
                 $scope.data.timeInTraffic = grid.properties.timeInTraffic;
             }
-            var school = FindSchool(grid.properties.high, schools);               
-            FindRoute(PolygonCenter(grid.geometry.coordinates), school.location, routes, function (results) {
+            var school = FindSchool(grid.properties.high, schools);
+            var center = PolygonCenter(grid.geometry.coordinates);          
+            FindRoute(center, school.location, routes, function (results) {
                 $scope.data.routeLength = results.length;
                 $scope.data.accidentRate = results.accidentRate;
-                
-                var gridPath = { gc: grid.properties.gc, paths: [{ high: grid.properties.high, path: results.polyline }] };
-                
+                var gridPath = { gc: grid.properties.gc, paths: [{ high: grid.properties.high, path: results.polyline }] };                
                 map.data.overrideStyle(event.feature, { strokeWeight: 1 });
                 $scope.$apply();
             });
@@ -317,20 +316,16 @@ function FindPath(map, origin, destination, departureTime, callback) {
 }
 
 function FindNeighborhood(map, location, callback) {
-    var location = response.routes[0].legs[0].steps[0].start_point;
     geocoder.geocode({ 'location': location }, function (results, status) {
         if (status === google.maps.GeocoderStatus.OK) {
             if (results[1]) {
                 var marker = new google.maps.Marker({
-                    position: latlng,
+                    position: location,
                     map: map
                 });
-                infowindow.setContent(results[1].formatted_address);
-                infowindow.open(map, marker);
-                
-                var neighborhood = results[1].formatted_address;
-                
-                callback(neighborhood);
+                infowindow.setContent(results[1].address_components[0].long_name);
+                infowindow.open(map, marker);               
+                callback(results);
 
             } else {
                 window.alert('No results found');
