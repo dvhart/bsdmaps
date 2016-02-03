@@ -44,30 +44,31 @@ app.controller('BoundaryController', function ($scope, $http) {
         "progress":"recompute status"
     };
 	
-	$scope.Recalculate = function () {
+	$scope.RecalculateRoutes = function () {
 		
 		var destinations = [];
 		schools.forEach(function (school) {
 			destinations.push(school.location);
 		});
 		
-		$http.get('/GetFeatures').then(function (getResponse) {
-			var end = getResponse.data.length;
+		$http.get('/GetFeatures').then(function (getFeatures) {
+			var end = getFeatures.data.length;
 			end = 2; // Testing
             var i = 0; // school index
             var j = 0; // grid index
             var grids = [];
+            var routes = [];
             var intervalDelayMs = 3000;
             
             // Skip grids that already have populated field
             // Fast forward to point that we need to look up path to school
             //var needPath = false;
             //while (j < end-1 && !needPath) {
-            //    if (!getResponse.data[j].properties.path || getResponse.data[j].properties.path.length < destinations.length) {
+            //    if (!getFeatures.data[j].properties.path || getFeatures.data[j].properties.path.length < destinations.length) {
             //        needPath = true;
             //    }
             //    else { // Already have path data.  Fast forward
-            //        grids.push(getResponse.data[j]);
+            //        grids.push(getFeatures.data[j]);
             //        j++;
             //    }
             //}
@@ -75,7 +76,7 @@ app.controller('BoundaryController', function ($scope, $http) {
             // Delay update
 			var intervalID = setInterval(function () {
                 
-                var thisGrid = getResponse.data[j];
+                var thisGrid = getFeatures.data[j];
                                                         
                 if (!thisGrid.properties.distance) thisGrid.properties.distance = [];
                 if (!thisGrid.properties.time) thisGrid.properties.time = [];
@@ -83,15 +84,23 @@ app.controller('BoundaryController', function ($scope, $http) {
 
                 var center = PolygonCenter(thisGrid.geometry.coordinates);
                 
+                directionsDisplay.setMap(map);                                                 
                 FindPath(center, destinations[i], departDate, function (findPathResponse, polyline) {
                     
                     if (findPathResponse.status == "OK") {
+                        directionsDisplay.setDirections(findPathResponse); 
                         
-                        thisGrid.properties.distance[i] = findPathResponse.routes[0].legs[0].distance.value;
-                        thisGrid.properties.time[i] = findPathResponse.routes[0].legs[0].duration.value;
-                        thisGrid.properties.path[i] = PolylineToArray(polyline);
+                        while (routes.length <= j) {
+                            routes.push({gc: thisGrid.properties.gc, path:[]});
+                        }
                         
-                        $scope.data.progress = "Grid " + j + " of " + getResponse.data.length + " route " + i;
+                        var distance = findPathResponse.routes[0].legs[0].distance.value;
+                        var duration = findPathResponse.routes[0].legs[0].duration.value
+                        thisGrid.properties.distance[i] = distance;
+                        thisGrid.properties.time[i] = duration ;
+                        routes[j].path[i] = polyline.getPath();
+                        
+                        $scope.data.progress = "Grid " + j + " of " + getFeatures.data.length + " route " + i + " distance " + distance + " duration " + duration;
                         $scope.$apply();
                         
                         i++;
@@ -100,13 +109,14 @@ app.controller('BoundaryController', function ($scope, $http) {
                             grids.push(thisGrid);
                             j++;
                             if (j >= end) {
-                                if (end < getResponse.data.length) {
-                                    for (var l = end; l < getResponse.data.length; l++) {
-                                        grids.push(getResponse.data[l]);
+                                if (end < getFeatures.data.length) {
+                                    for (var l = end; l < getFeatures.data.length; l++) {
+                                        grids.push(getFeatures.data[l]);
                                     }
                                 }
                                 clearInterval(intervalID); // Done.  Don't restart interval timer
                                 $http.post('/SetFeatures', grids);
+                                $http.post('/SetRoutes', routes)
                                 $scope.data.progress = "Recalculate Complete"
                                 $scope.$apply();
                             }
@@ -257,7 +267,7 @@ function FindRoute(origin, destination, routes,  callback) {
         newRoute.setMap(null);
     }
     directionsDisplay.setMap(map);
-    FindPath(map, origin, destination, departDate, function (response, polyline) {
+    FindPath(origin, destination, departDate, function (response, polyline) {
 
         directionsDisplay.setDirections(response);
         var points = [];
