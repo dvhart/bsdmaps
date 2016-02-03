@@ -56,7 +56,7 @@ app.controller('BoundaryController', function ($scope, $http) {
                 section.rate = AccidentRate(section.accidents, section.period, section.aadt, section.length);
             }
             $http.post('/NewSection', section).then(function (response) {
-                RefreshFromDB(response);
+                routes = RefreshFromSafetyDB(response, map);
                 deleteMarkers();
                 Configure($scope);
                 $scope.data.accidentRate = 0;
@@ -70,7 +70,15 @@ app.controller('BoundaryController', function ($scope, $http) {
 
     $scope.DeleteRoute = function () {
 		
-    };    
+    };
+    
+    function GetRouteSections()
+    {
+        $http.get('/GetSection').then(function (response) {
+            routes = RefreshFromSafetyDB(response, map);
+            Configure($scope);
+        });
+    }  
 	
     function initMap() {
         // Initialise the map.
@@ -101,10 +109,7 @@ app.controller('BoundaryController', function ($scope, $http) {
 
 		panel = document.getElementById('panel');
         
-        $http.get('/GetSection').then(function (response) {
-            RefreshFromDB(response);
-            Configure($scope);
-        });
+        GetRouteSections()
     };
 
     initMap();
@@ -142,7 +147,7 @@ function Configure($scope) {
         });
         marker.addListener('dragend', function (event) {
             if (points.length == 2) {
-                FindRoute(function (length) {
+                FindRoute(points[0].position, points[1].position, routes, function (length) {
                     $scope.data.sectionLength = length;
                     $scope.$apply();
                 });
@@ -157,7 +162,7 @@ function Configure($scope) {
             addMarker(event.latLng);
         }
         if (points.length == 2) {
-            FindRoute(function (length) {
+            FindRoute(points[0].position, points[1].position, routes, function (length) {
                 $scope.data.sectionLength = length;
                 $scope.$apply();
             });
@@ -166,73 +171,6 @@ function Configure($scope) {
     });
     //map.addListener('removefeature', function (event) { });
 };
-
-function RefreshFromDB(dbData) {
-    try {
-        
-        routes = dbData.data;
-        
-        // Find max accident rate
-        var maxRate = 0;
-        routes.forEach(function (route) {
-            if (route.rate > maxRate) {
-                maxRate = route.rate;
-            }
-        });
-        
-        // Set visible with color based on heat map
-        routes.forEach(function (route) {
-            var color = HeatMap(0, maxRate, route.rate);
-            var polyline = new google.maps.Polyline({
-                path: route.polyline.j,
-                strokeColor: color,
-                strokeWeight: 2
-            });
-            route.polyline = polyline;  
-            route.polyline.setMap(map);
-        });
-        
-    } catch (error) {
-        console.log('error ' + error);
-
-        return;
-    }
-};
-
-// Loading routes from database
-// routes.push(polyline);
-
-//computeDistanceBetween(from:LatLng, to:LatLng, radius?:number)
-//google.maps.geometry.poly 
-//bool containsLocation(point:LatLng, polygon:Polygon)
-//isLocationOnEdge(point:LatLng, poly:Polygon|Polyline, tolerance?:number) // Computes whether the given point lies inside the specified polygon.
-//LatLngBounds contains, intersects, union
-
-//function Center(grid) {
-//	var maxLat, minLat, maxLong, minLong;
-
-//	maxLong = minLong = grid.geometry.coordinates[0][0][0];
-//	maxLat = minLat = grid.geometry.coordinates[0][0][1];
-	
-//	for (var i=1; i < grid.geometry.coordinates[0].length; i++) {
-//		if (grid.geometry.coordinates[0][i][0] < minLong) {
-//			minLong = grid.geometry.coordinates[0][i][0]
-//		}
-//		if (grid.geometry.coordinates[0][i][0] > maxLong) {
-//			maxLong = grid.geometry.coordinates[0][i][0]
-//		}
-//		if (grid.geometry.coordinates[0][i][1] < minLat) {
-//			minLat = grid.geometry.coordinates[0][i][1]
-//		}
-//		if (grid.geometry.coordinates[0][i][1] > maxLat) {
-//			maxLat = grid.geometry.coordinates[0][i][1]
-//		}
-//	}
-	
-//	var center = {lat:(maxLat+minLat)/2, lng: (maxLong+minLong)/2};
-
-//	return center;
-//}
 
 
 function FindPath(map, origin, destination, departureTime, callback) {
@@ -275,11 +213,11 @@ function FindPath(map, origin, destination, departureTime, callback) {
 
 
 
-function FindRoute(callback) {
+function FindRoute(origin, destination, routes, callback) {
     if (newRoute) {
         newRoute.setMap(null);
     }
-    FindPath(map, points[0].position, points[1].position, departDate, function (polyline) {
+    FindPath(map, origin, destination, departDate, function (polyline) {
         var points = [];
         // Algorithm to find and measure polyline overlap
         //routes.forEach(function (route) {
@@ -315,50 +253,6 @@ function showMarkers() {
 function deleteMarkers() {
     setMapOnAll(null);
     points = [];
-}
-
-function LocationOnEdge(point, route, tolerance) {
-    var onEdge = false;
-    var path = route.getPath();
-    for (var i = 0; i < path.length && !onEdge; i++) {
-        var polyPoint = path.getAt(i);
-        var dx = point.lat() - polyPoint.lat();
-        var dy = point.lng() - polyPoint.lng();
-        var distance2 = dx * dx + dy * dy;
-        var tolerance2 = tolerance * tolerance;
-        if (distance2 <= tolerance2) {
-            onEdge = true;
-        }
-    }  
-    return onEdge;
-}
-
-function HeatMap(minimum, maximum, value) {
-    var ratio = 2 * (value - minimum) / (maximum - minimum);
-    var b = Math.max(0, 255 * (1 - ratio));
-    var r = Math.max(0, 255 * (ratio - 1));
-    var g = 255 - b - r;
-    return rgb(r, g, b);
-}
-
-function rgb(r, g, b) {
-    r = Math.floor(r);
-    g = Math.floor(g);
-    b = Math.floor(b);
-    return ["rgb(", r, ",", g, ",", b, ")"].join("");
-}
-
-function AccidentRate(totalAccidents, studyYears, averageAnnualDailyTraffice, sectionLength){
-    var rate = 0;
-    
-    if (totalAccidents > 0 && studyYears > 0 && averageAnnualDailyTraffice > 0 && sectionLength > 0) {
-        rate = totalAccidents*1e6 / (365*studyYears*averageAnnualDailyTraffice*sectionLength);
-    }
-    else {
-        console.log("AccidentRate incorrect paramters totalAccidents:" + totalAccidents + " studyYears:" + studyYears + " averageAnnualDailyTraffice:" + averageAnnualDailyTraffice + " sectionLength:" + sectionLength);
-    }
-
-    return rate;
 }
 
 
