@@ -397,6 +397,47 @@ app.post('/DeleteSection', function (request, res) {
     });
 });
 
+app.get('/GetRoutes', function (request, response) {
+    console.time("/GetRoutes");
+    dbGrid.collection('routes').find().toArray(function (err, items) {
+        if (err) {
+            console.log("/GetRoutes error" + err);
+            return next(err);
+        }
+        response.send(JSON.stringify(items));
+        console.timeEnd("/GetFeatures")
+    });
+});
+
+app.post('/SetRoutes', function (request, res) {
+    console.time("/SetRoutes");
+    var putFeatures = '';
+    
+    request.on('data', function (data) {
+        putFeatures += data;
+        if (putFeatures.slength > 1e6)
+            request.connection.destroy();
+    });
+    
+    request.on('end', function () {
+        
+        if (putFeatures != '') {
+            var newFeatures = JSON.parse(putFeatures);
+            
+            dbGrid.collection('routes').remove({}); // remove features from database
+            dbGrid.collection('routes').insert(newFeatures, function (err, result) {
+                if (err != null) {
+                    console.log("/SetRoutes error" + err);
+                }
+                else {
+                    res.send(JSON.stringify(result));
+                    console.timeEnd("/SetRoutes");
+                }
+            });
+        }
+    });
+});
+
 // spin up server
 MongoClient.connect(urlBsdGrid, function (err1, database1) {
     if (err1) throw err1;
