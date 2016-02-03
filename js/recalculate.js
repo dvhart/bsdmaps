@@ -40,7 +40,8 @@ app.controller('BoundaryController', function ($scope, $http) {
         "centroid": [0, 0],
         "distance":[0, 0, 0, 0, 0, 0],
 		"time": [0, 0, 0, 0, 0, 0],
-		"timeInTraffic": [0, 0, 0, 0, 0, 0]
+        "timeInTraffic": [0, 0, 0, 0, 0, 0],
+        "progress":"recompute status"
     };
 	
 	$scope.Recalculate = function () {
@@ -50,28 +51,68 @@ app.controller('BoundaryController', function ($scope, $http) {
 			destinations.push(school.location);
 		});
 		
-		$http.get('/GetFeatures').then(function (response) {
-			var end = response.data.length;
-			//end = 3; // Testing
-			var j = 0;
+		$http.get('/GetFeatures').then(function (getResponse) {
+			var end = getResponse.data.length;
+			end = 2; // Testing
+            var i = 0; // school index
+            var j = 0; // grid index
             var grids = [];
-            var intervalDelayMs = 2000;
+            var intervalDelayMs = 3000;
+            
+            // Skip grids that already have populated field
+            // Fast forward to point that we need to look up path to school
+            //var needPath = false;
+            //while (j < end-1 && !needPath) {
+            //    if (!getResponse.data[j].properties.path || getResponse.data[j].properties.path.length < destinations.length) {
+            //        needPath = true;
+            //    }
+            //    else { // Already have path data.  Fast forward
+            //        grids.push(getResponse.data[j]);
+            //        j++;
+            //    }
+            //}
             
             // Delay update
 			var intervalID = setInterval(function () {
-				while (j < end - 1 && response.data[j].properties.time[0] != 0) {
-					grids.push(response.data[j]);
-					j++;
-				}
-				FindDistance(map, PolygonCenter(response.data[j].geometry.coordinates), destinations, departDate, function (newGrid) {
-					grids.push(newGrid);
-					j++;
-					if (j >= end) {
-						clearInterval(intervalID);
-						$http.post('/SetFeatures', grids);
-						console.log("Recalculate Complete");
-					}
-				});
+                
+                var thisGrid = getResponse.data[j];
+                                                        
+                if (!thisGrid.properties.distance) thisGrid.properties.distance = [];
+                if (!thisGrid.properties.time) thisGrid.properties.time = [];
+                if (!thisGrid.properties.path) thisGrid.properties.path = [];
+
+                var center = PolygonCenter(thisGrid.geometry.coordinates);
+                
+                FindPath(center, destinations[i], departDate, function (findPathResponse, polyline) {
+                    
+                    if (findPathResponse.status == "OK") {
+                        
+                        thisGrid.properties.distance[i] = findPathResponse.routes[0].legs[0].distance.value;
+                        thisGrid.properties.time[i] = findPathResponse.routes[0].legs[0].duration.value;
+                        thisGrid.properties.path[i] = PolylineToArray(polyline);
+                        
+                        $scope.data.progress = "Grid " + j + " of " + getResponse.data.length + " route " + i;
+                        $scope.$apply();
+                        
+                        i++;
+                        if (i >= destinations.length) {
+                            i = 0;
+                            grids.push(thisGrid);
+                            j++;
+                            if (j >= end) {
+                                if (end < getResponse.data.length) {
+                                    for (var l = end; l < getResponse.data.length; l++) {
+                                        grids.push(getResponse.data[l]);
+                                    }
+                                }
+                                clearInterval(intervalID); // Done.  Don't restart interval timer
+                                $http.post('/SetFeatures', grids);
+                                $scope.data.progress = "Recalculate Complete"
+                                $scope.$apply();
+                            }
+                        }
+                    }
+                });
 			}, intervalDelayMs);
 		});
 	};
@@ -215,7 +256,10 @@ function FindRoute(origin, destination, routes,  callback) {
     if (newRoute) {
         newRoute.setMap(null);
     }
+    directionsDisplay.setMap(map);
     FindPath(map, origin, destination, departDate, function (response, polyline) {
+
+        directionsDisplay.setDirections(response);
         var points = [];
         // Algorithm to find and measure polyline overlap
         routes.forEach(function (route) {
@@ -276,10 +320,8 @@ function FindDistance(map, origin, destinations, departureTime, callback) {
 
 
 
-function FindPath(map, origin, destination, departureTime, callback) {
-	
-    directionsDisplay.setMap(map);
-    
+function FindPath(origin, destination, departureTime, callback) {
+        
     var request = {
         origin: origin,
         destination: destination,
@@ -288,9 +330,7 @@ function FindPath(map, origin, destination, departureTime, callback) {
     };
 	
 	directionsService.route(request, function (response, status) {
-		if (status === google.maps.DirectionsStatus.OK) {
-            directionsDisplay.setDirections(response);
-            
+		if (status === google.maps.DirectionsStatus.OK) {           
             // Convert route to polyline
             var polyline = new google.maps.Polyline({
                 path: [],
@@ -344,6 +384,23 @@ function FindSchool(schoolName, schoolsData) {
 		}
 	}
 	return school;
+}
+
+function PolylineToArray(polyline) {
+    var pointArray = [[]];
+    var polyArray = polyline.getPath();
+    
+    polyArray.forEach(function (point) {
+        pointArray.push([point.lat(), point.lng()]);
+    });
+    
+    return pointArray;
+}
+
+function PolylineFromArray(array) {
+    var polyline = new google.maps.Polyline();
+    polyline.setPath(array);
+    return polyline;
 }
 
 
