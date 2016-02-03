@@ -26,8 +26,9 @@
             <div id="panel-content" width: 200px>
                 <form class="css-form">
                     <br>
-                    <input type="button" ng-click="Recalculate()" value="Calculate Routes" /><br>
-                    {{data.progress}}<br>
+                    <input type="button" ng-click="RecalculateRoutes()" value="Calculate Routes" /> {{data.progress}}<br>
+                    <input type="button" ng-click="CalculateSafety()" value="Calculate Safety" /> {{data.progressSafety}}<br>
+
                 </form>
             </div>
             <pre>data = {{data | json}}</pre>            
