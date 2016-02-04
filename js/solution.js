@@ -651,7 +651,7 @@ function Results(grids, schoolData)
                 results.schools[i].distance += grid.properties.hs2020*grid.properties.distance[i];
                 results.schools[i].frl += FrlFit(grid.properties);
                 
-                if (grid.properties.hs2020 * grid.properties.accidentRate) {
+                if (grid.properties.accidentRate) {
                     results.schools[i].accidentRate += grid.properties.hs2020 * grid.properties.accidentRate[i];
                 }
             }
