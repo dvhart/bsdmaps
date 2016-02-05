@@ -44,8 +44,8 @@ app.controller('BoundaryController', function ($scope, $http) {
         "progress":"recompute status"
     };
 	
-	$scope.RecalculateRoutes = function () {
-		
+    $scope.RecalculateRoutes = function () {
+
 		var destinations = [];
 		schools.forEach(function (school) {
 			destinations.push(school.location);
@@ -55,7 +55,7 @@ app.controller('BoundaryController', function ($scope, $http) {
             $http.get('/GetRoutes').then(function (getRoutes) {
                 
                 var end = getFeatures.data.length;
-                end = 3; // Testing
+                //end = 8; // Testing
                 var iSchool = 0; // school index
                 var iGrid = 0; // grid index
 
@@ -63,79 +63,73 @@ app.controller('BoundaryController', function ($scope, $http) {
                 var routes = getRoutes.data;
                 var intervalDelayMs = 3000;
                 
-                // Skip grids that already have populated field
-                // Fast forward to point that we need to look up path to school
-                //var needPath = false;
-                //while (iGrid < end-1 && !needPath) {
-                //    if (!getFeatures.data[iGrid].properties.path || getFeatures.data[iGrid].properties.path.length < destinations.length) {
-                //        needPath = true;
-                //    }
-                //    else { // Already have path data.  Fast forward
-                //        grids.push(getFeatures.data[iGrid]);
-                //        iGrid++;
-                //    }
-                //}
-                
                 // Delay update
                 var intervalID = setInterval(function () {
                     
-                    var thisGrid = getFeatures.data[iGrid];
-                    
-                    if (!thisGrid.properties.distance) thisGrid.properties.distance = [];
-                    if (!thisGrid.properties.time) thisGrid.properties.time = [];
-                    if (!thisGrid.properties.path) thisGrid.properties.path = [];
-                    
-                    var center = PolygonCenter(thisGrid.geometry.coordinates);
-                    
-                    directionsDisplay.setMap(map);
-                    FindPath(center, destinations[iSchool], departDate, function (findPathResponse, polyline) {
+                    // Skip grids that already have populated field
+                    // Fast forward to point that we need to look up path to school
+                    var needPath = false;
+                    while (iGrid < end && !needPath) {
                         
-                        if (findPathResponse.status == "OK") {
-                            directionsDisplay.setDirections(findPathResponse);
-                            
-                            while (routes.length <= iGrid) {
-                                routes.push({ gc: thisGrid.properties.gc, path: [] });
+                        if (routes.length < iGrid+1) {
+                            routes[iGrid] = { gc: grids[iGrid].properties.gc, path: [] };
+                            needPath = true;
+                        }
+                        else {
+                            if (routes[iGrid].path.length < iSchool+1 || !routes[iGrid].path[iSchool]) {
+                                needPath = true;
                             }
-                            
-                            var distance = findPathResponse.routes[0].legs[0].distance.value;
-                            var duration = findPathResponse.routes[0].legs[0].duration.value
-                            thisGrid.properties.distance[iSchool] = distance;
-                            thisGrid.properties.time[iSchool] = duration;
-                            routes[iGrid].path[iSchool] = PolylineToArray(polyline);
-                            
-                            $scope.data.progress = "Grid " + iGrid + " of " + getFeatures.data.length + " route " + iSchool + " distance " + distance + " duration " + duration;
-                            $scope.$apply();
-                            
-                            iSchool++;
-                            if (iSchool >= destinations.length) {
-                                iSchool = 0;
-                                grids.push(thisGrid);
-                                iGrid++;
-                                if (iGrid >= end) {
-                                    if (end < getFeatures.data.length) {
-                                        for (var l = end; l < getFeatures.data.length; l++) {
-                                            grids.push(getFeatures.data[l]);
-                                        }
-                                    }
-                                    clearInterval(intervalID); // Done.  Don't restart interval timer
-                                    $http.post('/SetFeatures', grids);
-                                    $http.post('/SetRoutes', routes);
-                                    $scope.data.progress = "Recalculate Complete";
-                                    $scope.$apply();
+                            else {
+                                iSchool++;
+                                if (iSchool >= destinations.length) {
+                                    iSchool = 0;
+                                    iGrid++;
                                 }
+                            } 
+                        }
+                    }
+                    
+                    if (!needPath) { // Done.  Save and exit
+                        clearInterval(intervalID); // Done.  Don't restart interval timer
+                       // $http.post('/SetFeatures', grids);
+                        $http.post('/SetRoutes', routes);
+                        $scope.data.progress = "Recalculate Complete grids:" + iGrid;
+                        $scope.$apply();
+                    }
+                    else {
+                        if (!grids[iGrid].properties.distance) grids[iGrid].properties.distance = [];
+                        if (!grids[iGrid].properties.time) grids[iGrid].properties.time = [];
+                        if (!grids[iGrid].properties.path) grids[iGrid].properties.path = [];
+                        
+                        var center = PolygonCenter(grids[iGrid].geometry.coordinates);
+                        
+                        directionsDisplay.setMap(map);
+                        FindPath(center, destinations[iSchool], departDate, function (findPathResponse, polyline) {
+                            
+                            if (findPathResponse.status == "OK") {
+                                directionsDisplay.setDirections(findPathResponse);
+                                
+                                var distance = findPathResponse.routes[0].legs[0].distance.value;
+                                var duration = findPathResponse.routes[0].legs[0].duration.value
+                                grids[iGrid].properties.distance[iSchool] = distance;
+                                grids[iGrid].properties.time[iSchool] = duration;
+                                routes[iGrid].path[iSchool] = PolylineToArray(polyline);
+                                
+                                $scope.data.progress = "Grid " + iGrid + " of " + grids.length + " route " + iSchool + " distance " + distance + " duration " + duration;
+                                $scope.$apply();
                             }
-                        }
-                        else { // Google does not like to give the data all at once.  Save off to database and try again later
-                            clearInterval(intervalID); // Done.  Don't restart interval timer
-                            $http.post('/SetFeatures', grids);
-                            $http.post('/SetRoutes', routes);
-                            $scope.data.progress = "Recalculate Complete";
-                            $scope.$apply();
-                        }
-                    });
+                            else { // Google does not like to give the data all at once.  Save off to database and try again later
+                                clearInterval(intervalID); // Done.  Don't restart interval timer
+                                //$http.post('/SetFeatures', grids);
+                                $http.post('/SetRoutes', routes);
+                                $scope.data.progress = "Recalculate Finished Incoplete grids:" + iGrid;
+                                $scope.$apply();
+                            }
+                        });
+                    }
                 }, intervalDelayMs);
             });
-                };
+        });
     };
     
     $scope.CalculateSafety = function() {
@@ -408,7 +402,8 @@ function FindPath(origin, destination, departureTime, callback) {
             }
             callback(response, polyline);
 		} else {
-			window.alert('Directions request failed due to ' + status);
+            console.log('Directions request failed due to ' + status);
+            callback(response, null);
 		}
 	});
 }
