@@ -51,80 +51,91 @@ app.controller('BoundaryController', function ($scope, $http) {
 			destinations.push(school.location);
 		});
 		
-		$http.get('/GetFeatures').then(function (getFeatures) {
-			var end = getFeatures.data.length;
-			//end = 30; // Testing
-            var i = 0; // school index
-            var j = 0; // grid index
-            var grids = [];
-            var routes = [];
-            var intervalDelayMs = 3000;
-            
-            // Skip grids that already have populated field
-            // Fast forward to point that we need to look up path to school
-            //var needPath = false;
-            //while (j < end-1 && !needPath) {
-            //    if (!getFeatures.data[j].properties.path || getFeatures.data[j].properties.path.length < destinations.length) {
-            //        needPath = true;
-            //    }
-            //    else { // Already have path data.  Fast forward
-            //        grids.push(getFeatures.data[j]);
-            //        j++;
-            //    }
-            //}
-            
-            // Delay update
-			var intervalID = setInterval(function () {
+        $http.get('/GetFeatures').then(function (getFeatures) {
+            $http.get('/GetRoutes').then(function (getRoutes) {
                 
-                var thisGrid = getFeatures.data[j];
-                                                        
-                if (!thisGrid.properties.distance) thisGrid.properties.distance = [];
-                if (!thisGrid.properties.time) thisGrid.properties.time = [];
-                if (!thisGrid.properties.path) thisGrid.properties.path = [];
+                var end = getFeatures.data.length;
+                end = 3; // Testing
+                var iSchool = 0; // school index
+                var iGrid = 0; // grid index
 
-                var center = PolygonCenter(thisGrid.geometry.coordinates);
+                var grids = getFeatures.data;
+                var routes = getRoutes.data;
+                var intervalDelayMs = 3000;
                 
-                directionsDisplay.setMap(map);                                                 
-                FindPath(center, destinations[i], departDate, function (findPathResponse, polyline) {
+                // Skip grids that already have populated field
+                // Fast forward to point that we need to look up path to school
+                //var needPath = false;
+                //while (iGrid < end-1 && !needPath) {
+                //    if (!getFeatures.data[iGrid].properties.path || getFeatures.data[iGrid].properties.path.length < destinations.length) {
+                //        needPath = true;
+                //    }
+                //    else { // Already have path data.  Fast forward
+                //        grids.push(getFeatures.data[iGrid]);
+                //        iGrid++;
+                //    }
+                //}
+                
+                // Delay update
+                var intervalID = setInterval(function () {
                     
-                    if (findPathResponse.status == "OK") {
-                        directionsDisplay.setDirections(findPathResponse); 
+                    var thisGrid = getFeatures.data[iGrid];
+                    
+                    if (!thisGrid.properties.distance) thisGrid.properties.distance = [];
+                    if (!thisGrid.properties.time) thisGrid.properties.time = [];
+                    if (!thisGrid.properties.path) thisGrid.properties.path = [];
+                    
+                    var center = PolygonCenter(thisGrid.geometry.coordinates);
+                    
+                    directionsDisplay.setMap(map);
+                    FindPath(center, destinations[iSchool], departDate, function (findPathResponse, polyline) {
                         
-                        while (routes.length <= j) {
-                            routes.push({gc: thisGrid.properties.gc, path:[]});
-                        }
-                        
-                        var distance = findPathResponse.routes[0].legs[0].distance.value;
-                        var duration = findPathResponse.routes[0].legs[0].duration.value
-                        thisGrid.properties.distance[i] = distance;
-                        thisGrid.properties.time[i] = duration ;
-                        routes[j].path[i] = PolylineToArray(polyline);
-                        
-                        $scope.data.progress = "Grid " + j + " of " + getFeatures.data.length + " route " + i + " distance " + distance + " duration " + duration;
-                        $scope.$apply();
-                        
-                        i++;
-                        if (i >= destinations.length) {
-                            i = 0;
-                            grids.push(thisGrid);
-                            j++;
-                            if (j >= end) {
-                                if (end < getFeatures.data.length) {
-                                    for (var l = end; l < getFeatures.data.length; l++) {
-                                        grids.push(getFeatures.data[l]);
+                        if (findPathResponse.status == "OK") {
+                            directionsDisplay.setDirections(findPathResponse);
+                            
+                            while (routes.length <= iGrid) {
+                                routes.push({ gc: thisGrid.properties.gc, path: [] });
+                            }
+                            
+                            var distance = findPathResponse.routes[0].legs[0].distance.value;
+                            var duration = findPathResponse.routes[0].legs[0].duration.value
+                            thisGrid.properties.distance[iSchool] = distance;
+                            thisGrid.properties.time[iSchool] = duration;
+                            routes[iGrid].path[iSchool] = PolylineToArray(polyline);
+                            
+                            $scope.data.progress = "Grid " + iGrid + " of " + getFeatures.data.length + " route " + iSchool + " distance " + distance + " duration " + duration;
+                            $scope.$apply();
+                            
+                            iSchool++;
+                            if (iSchool >= destinations.length) {
+                                iSchool = 0;
+                                grids.push(thisGrid);
+                                iGrid++;
+                                if (iGrid >= end) {
+                                    if (end < getFeatures.data.length) {
+                                        for (var l = end; l < getFeatures.data.length; l++) {
+                                            grids.push(getFeatures.data[l]);
+                                        }
                                     }
+                                    clearInterval(intervalID); // Done.  Don't restart interval timer
+                                    $http.post('/SetFeatures', grids);
+                                    $http.post('/SetRoutes', routes);
+                                    $scope.data.progress = "Recalculate Complete";
+                                    $scope.$apply();
                                 }
-                                clearInterval(intervalID); // Done.  Don't restart interval timer
-                                $http.post('/SetFeatures', grids);
-                                $http.post('/SetRoutes', routes);
-                                $scope.data.progress = "Recalculate Complete";
-                                $scope.$apply();
                             }
                         }
-                    }
-                });
-			}, intervalDelayMs);
-		});
+                        else { // Google does not like to give the data all at once.  Save off to database and try again later
+                            clearInterval(intervalID); // Done.  Don't restart interval timer
+                            $http.post('/SetFeatures', grids);
+                            $http.post('/SetRoutes', routes);
+                            $scope.data.progress = "Recalculate Complete";
+                            $scope.$apply();
+                        }
+                    });
+                }, intervalDelayMs);
+            });
+                };
     };
     
     $scope.CalculateSafety = function() {
