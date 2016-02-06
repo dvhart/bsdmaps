@@ -4,6 +4,7 @@ var directionsService;
 var directionsDisplay;
 var geocoder;
 var infowindow;
+var infoWindowMarker;
 var panel;
 var points = []; // selected feature object
 var newRoute;
@@ -12,6 +13,10 @@ var routes = [];
 var selectedFeature; //  JSON selected grid
 var results;
 var milePerMeter = 0.000621371;
+var selectedRoute;
+var selectedIndex = -1;
+var routeWidth = 4;
+var highlightWidth = 7;
 
 // Google Map Overlays
 var bsdOverlay;
@@ -58,6 +63,9 @@ app.controller('BoundaryController', function ($scope, $http) {
             $http.post('/NewSection', section).then(function (response) {
                 routes = RefreshFromSafetyDB(response, map);
                 deleteMarkers();
+                
+                SetRouteCallback(routes);
+
                 Configure($scope);
                 $scope.data.accidentRate = 0;
                 $scope.data.accidents = 0;
@@ -69,13 +77,34 @@ app.controller('BoundaryController', function ($scope, $http) {
     };
 
     $scope.DeleteRoute = function () {
-		
+        if (selectedRoute) {
+            selectedRoute.polyline.setMap(null);
+            selectedRoute.polyline = selectedRoute.polyline.getPath();
+            $http.post('/DeleteSection', selectedRoute).then(function (response) {
+                routes = RefreshFromSafetyDB(response, map);
+                deleteMarkers();
+                
+                selectedRoute = null;
+                selectedIndex = -1;
+                infowindowMarker.setMap(null);
+
+                SetRouteCallback(routes);
+                
+                Configure($scope);
+                $scope.data.accidentRate = 0;
+                $scope.data.accidents = 0;
+                $scope.data.period = 0;
+                $scope.data.aadt = 0;
+                $scope.data.response = "Route Deleted";
+            });
+        }
     };
     
     function GetRouteSections()
     {
         $http.get('/GetSection').then(function (response) {
             routes = RefreshFromSafetyDB(response, map);
+            SetRouteCallback(routes);
             Configure($scope);
         });
     }  
@@ -95,6 +124,8 @@ app.controller('BoundaryController', function ($scope, $http) {
         //directionsDisplay = new google.maps.DirectionsRenderer(renderOptions);
         geocoder = new google.maps.Geocoder;
         infowindow = new google.maps.InfoWindow;
+        infowindowMarker = new google.maps.Marker();
+       
 
         // Add the BSD boundary overlay
         var imageBounds = {
@@ -106,6 +137,8 @@ app.controller('BoundaryController', function ($scope, $http) {
 
         bsdOverlay = new google.maps.GroundOverlay('http://bsdmaps.monkeyblade.net/bsd-boundary-existing-overlay.png', imageBounds, {clickable:false});
         bsdOverlay.setMap(map);
+        bsdOverlay.setOpacity(0.4);
+
 
 		panel = document.getElementById('panel');
         
@@ -190,7 +223,8 @@ function FindPath(map, origin, destination, departureTime, callback) {
             var polyline = new google.maps.Polyline({
                 path: [],
                 strokeColor: '#000000',
-                strokeWeight: 2
+                strokeWeight: routeWidth, 
+                clickable : true,
             });
                                 
             var legs = result.routes[0].legs;
@@ -219,17 +253,6 @@ function FindRoute(origin, destination, routes, callback) {
     }
     FindPath(map, origin, destination, departDate, function (polyline) {
         var points = [];
-        // Algorithm to find and measure polyline overlap
-        //routes.forEach(function (route) {
-        //    var points = [];
-        //    route.getPath().forEach(function (point) {
-        //        if (google.maps.geometry.poly.isLocationOnEdge(point, polyline)) {
-        //            points.push(point);
-        //        }
-        //    });
-        //    var distanceMeters = google.maps.geometry.spherical.computeLength(points);
-        //    var overlapPolyline = new google.maps.Polyline({ path: points, clickable: false, strokeColor: '#FF0000', strokeWeight: 8, map : map })
-        //});
         newRoute = polyline;
         newRoute.setMap(map);
         sectionLength = milePerMeter * google.maps.geometry.spherical.computeLength(newRoute.getPath());
@@ -253,6 +276,52 @@ function showMarkers() {
 function deleteMarkers() {
     setMapOnAll(null);
     points = [];
+}
+
+function SetRouteCallback(routes)
+{
+    routes.forEach(function (route, iRoute) {
+        route.polyline.setOptions({ clickable: true });
+        map.data.add(route.polyline);
+        route.polyline.addListener('click', function (event) {
+            FindRouteAtPoint(event.latLng)
+        });
+    });
+}
+
+function FindRouteAtPoint(latlng) {   
+    var routeToDelete = -1;
+    
+    var scale = 3e-2 / map.getZoom();
+    
+    if (selectedRoute) {
+        selectedRoute.polyline.setOptions({ strokeWeight: routeWidth });
+        selectedRoute.polyline.setMap(map);
+    }
+    selectedRoute = null;
+    selectedIndex = -1;
+
+    routes.forEach(function (route, iRoute) {
+        
+        if (!selectedRoute && google.maps.geometry.poly.isLocationOnEdge(latlng, route.polyline, scale)) {
+            selectedRoute = route;
+            selectedIndex = iRoute;
+            selectedRoute.polyline.setOptions({ strokeWeight: highlightWidth });
+            selectedRoute.polyline.setMap(map);
+            var msg = "rate:" + selectedRoute.rate.toFixed(2) + 
+                "<br>aadt:" + selectedRoute.aadt.toFixed(0) + 
+                "<br>accidents:" + selectedRoute.accidents +
+                "<br>period:" + selectedRoute.period +
+                "<br>length:" + selectedRoute.length.toFixed(2);
+            infowindow.setContent(msg);
+            infowindow.open(map, infowindowMarker);
+            infowindowMarker.setPosition(latlng);
+            infowindowMarker.setVisible(false);
+            infowindowMarker.setMap(map);
+
+
+        }
+    });
 }
 
 

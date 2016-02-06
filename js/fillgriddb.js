@@ -353,7 +353,7 @@ function Configure($scope) {
         }
     });
 
-    map.data.addListener('click', selectGrid = function (event) {
+    map.data.addListener('click', function (event) {
         map.data.revertStyle();
 
         selectedGrid = event.feature;
