@@ -31,7 +31,7 @@ function RefreshFromSafetyDB(dbData, renderMap) {
             var polyline = new google.maps.Polyline({
                 path: route.polyline.j,
                 strokeColor: color,
-                strokeWeight: 2
+                strokeWeight: 3
             });
             route.polyline = polyline;
             route.polyline.setMap(renderMap);
