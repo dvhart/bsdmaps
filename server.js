@@ -373,8 +373,7 @@ app.post('/DeleteSection', function (request, res) {
         if (putSection != '') {
             //console.log('DeleteGrid: ' + putSection);
             var section = JSON.parse(putSection);
-            dbGrid.collection('sections').deleteOne(
-                section._id,
+            dbGrid.collection('sections').deleteOne({"_id": ObjectId(section._id)},
                 function (err, results) {
                     if (err != null) {
                         console.log("/DeleteSection error: " + err);
