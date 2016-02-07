@@ -5,6 +5,8 @@ var selectedGrid; // selected feature object
 var selectedFeature; //  JSON selected grid
 var results;
 var milePerMeter = 0.000621371;
+var infowindow;
+var infoWindowMarker;
 
 var defaultMapName = "Unnamed Map";
 var defaultMapDescription = "No Description";
@@ -268,8 +270,12 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
 
     $scope.SelectSolution = function () {
         var selectedSolution = $scope.data.selectedSolution;
-        $scope.data.mapName = selectedSolution[0]["solutionName"];
-        $scope.data.mapDescription = selectedSolution[0]["solutionDescription"];
+        if (selectedSolution[0]["solutionName"]) {
+            $scope.data.mapName = selectedSolution[0]["solutionName"];
+        }
+        if (selectedSolution[0]["solutionDescription"]) {
+            $scope.data.mapDescription = selectedSolution[0]["solutionDescription"];
+        }
 
         map.data.toGeoJson(function (geoJson) {
             JsonToSolution(selectedSolution[0], geoJson.features);
@@ -383,6 +389,9 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
 
         bsdOverlay = new google.maps.GroundOverlay('http://bsdmaps.monkeyblade.net/bsd-boundary-existing-overlay.png', imageBounds);
         bsdOverlay.setMap(map);
+        
+        infowindow = new google.maps.InfoWindow;
+        infowindowMarker = new google.maps.Marker();
 
         /*
          * Add google markers for each high school
@@ -542,12 +551,25 @@ function Configure($scope) {
                 UpdateScopeData($scope, results);
                 $scope.$apply();
             }
-
+        }
+        else {
+            var thisGrid = event.feature;
+            var msg = "gc:" + thisGrid.getProperty("gc") + 
+                "<br>high:" + thisGrid.getProperty("high") +
+                "<br>proposed:" + thisGrid.getProperty("proposedHigh") +  
+                "<br>" + thisGrid.getProperty("distance");
+            infowindow.setContent(msg);
+            infowindow.open(map, infowindowMarker);
+            var centroid = thisGrid.getProperty("centroid");
+            infowindowMarker.setPosition({lat: centroid[1], lng: centroid[0]});
+            infowindowMarker.setVisible(false);
+            infowindowMarker.setMap(map);
         }
     });
 
     map.data.addListener('mouseout', function (event) {
         map.data.revertStyle();
+        infowindowMarker.setMap(null);
     });
 
 
@@ -605,8 +627,15 @@ function SolutionToJson(formData, gridData, resultsData)
 
 function JsonToSolution(solution, gridData)
 {
-    for(var i=0; i< solution.grids.length; i++)
-    {
+    //var gcSearch = 366;
+    //solution.grids.forEach(function (grid, iGrid) {
+    //    if (grid.gc == gcSearch) {
+    //        console.log("Found "+ gcSearch + " index " + iGrid + " proposedHS " + grid.proposedHigh);
+    //    }  
+    //});
+  
+    
+    for (var i = 0; i < gridData.length; i++) {
         if(gridData[i].properties.gc == solution.grids[i].gc)
         {
             gridData[i].properties.proposedHigh = solution.grids[i].proposedHigh;
@@ -615,9 +644,9 @@ function JsonToSolution(solution, gridData)
             var findGC = gridData[i].properties.gc;
             var solutionLength = solution.grids.length;
             var match = false;
-            for (var index = 0; index < solutionLength && !match; index++) {
+            for (var index = 0; index < solutionLength /*&& !match*/; index++){
                 if (gridData[i].properties.gc == solution.grids[index].gc) {
-                    match = true;
+                    match = true; 
                     gridData[i].properties.proposedHigh = solution.grids[index].proposedHigh;
                 }
             }
