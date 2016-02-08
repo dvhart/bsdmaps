@@ -244,6 +244,36 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
             });
         });
     };
+    
+    $scope.EditSolution = function () {
+        $scope.data.solutionSaveResponse = "Editing ..."
+        map.data.toGeoJson(function (geoJson) {
+            var solution = SolutionToJson($scope.data, geoJson.features, results);
+            solution._id = $scope.data.selectedSolution[0]._id;
+            $http.post('/EditSolution', solution).then(function (response) {
+                if (response.statusText == "OK") {
+                    $scope.data.solutionSaveResponse = response.data;
+                } else {
+                    $scope.data.solutionSaveResponse = "Failed to edit map: " + response.statusText;
+                }
+            });
+        });
+    };
+    
+    $scope.DeleteSolution = function () {
+        $scope.data.solutionSaveResponse = "Deleting ..."
+        map.data.toGeoJson(function (geoJson) {
+            var solution = SolutionToJson($scope.data, geoJson.features, results);
+            solution._id = $scope.data.selectedSolution[0]._id;
+            $http.post('/DeleteSolution', solution).then(function (response) {
+                if (response.statusText == "OK") {
+                    $scope.data.solutionSaveResponse = response.data;
+                } else {
+                    $scope.data.solutionSaveResponse = "Failed to delete map: " + response.statusText;
+                }
+            });
+        });
+    };
 
 
     $scope.LoadFromDB = function () {
@@ -287,6 +317,12 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
             map.data.setMap(null);
             map.data = newData;
             mapGrids = features;
+            
+            $scope.data.solutionName = selectedSolution[0]["solutionName"];
+            $scope.data.solutionDescription = selectedSolution[0]["solutionDescription"];
+            $scope.data.solutionUsername = selectedSolution[0]["solutionUsername"];
+            $scope.data.solutionEmail = selectedSolution[0]["email"];
+            $scope.data.solutionUrl = selectedSolution[0]["url"];
 
             results = Results(geoJson.features, schoolData);
             UpdateScopeData($scope, results);
@@ -298,10 +334,11 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
     /* Dynamically generate the stats table. This requires the angular sce
      * filter to trust the output as html */
     $scope.GenStatsTable = function () {
-        var out="";
+        var out = "";
         out += '<div class="stats-table">';
         out += '<div class="stats-header-row">';
         out += '    <div class="stats-header-cell">School</div>';
+        out += '    <div class="stats-header-cell">Students</div>';
         out += '    <div class="stats-header-cell">Capacity</div>';
         out += '    <div class="stats-header-cell">Proximity (miles)</div>';
         out += '    <div class="stats-header-cell">Accident Rate</div>';
@@ -311,6 +348,7 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
         for (var i = 0; i < $scope.data.schools.length; i++) {
             out += '<div class="stats-row">';
             out += '    <div class="stats-cell">' + $scope.data.schools[i] + '</div>';
+            out += '    <div class="stats-cell">' + $scope.data.students[0][i] + '</div>';
             out += '    <div class="stats-cell">' + $scope.data.capacity_p[0][i] + '%</div>';
             out += '    <div class="stats-cell">' + $scope.data.distance[0][i] + '</div>';
             out += '    <div class="stats-cell">' + $scope.data.accidentRate[0][i] + '</div>';
@@ -320,6 +358,7 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
         }
         out += '<div class="stats-footer-row">';
         out += '    <div class="stats-footer-cell">District Total</div>';
+        out += '    <div class="stats-footer-cell">' + $scope.data.total_students + '</div>';
         out += '    <div class="stats-footer-cell">' + $scope.data.total_capacity_p + '%</div>';
         out += '    <div class="stats-footer-cell">' + $scope.data.milesTraveled + '</div>';
         out += '    <div class="stats-footer-cell">' + $scope.data.totalAccidentRate + '</div>';
@@ -481,7 +520,8 @@ function UpdateScopeData($scope, results) {
         cap += $scope.data.students[1][i];
         frl += results.schools[i].frl;
     }
-
+    
+    $scope.data.total_students = students;
     $scope.data.total_capacity_p = (100 * students/cap).toFixed(2);
     $scope.data.milesTraveled = results.distance;
     $scope.data.total_transitions = results.transitions;
@@ -497,6 +537,8 @@ function Configure($scope) {
 
     map.data.setStyle(function (feature) {
         var highSchool = feature.getProperty('proposedHigh');
+        var gc = feature.getProperty('gc');
+
 
         var color = 'grey';
         for (var i=0; i<schoolData.hs.length && color == 'grey'; i++)
@@ -552,7 +594,7 @@ function Configure($scope) {
                 $scope.$apply();
             }
         }
-        else {
+        else if (event.Pb.ctrlKey) {
             var thisGrid = event.feature;
             var msg = "gc:" + thisGrid.getProperty("gc") + 
                 "<br>high:" + thisGrid.getProperty("high") +
@@ -627,11 +669,17 @@ function SolutionToJson(formData, gridData, resultsData)
 
 function JsonToSolution(solution, gridData)
 {
-    //var gcSearch = 366;
+    //var gcSearch = 910;
     //solution.grids.forEach(function (grid, iGrid) {
     //    if (grid.gc == gcSearch) {
-    //        console.log("Found "+ gcSearch + " index " + iGrid + " proposedHS " + grid.proposedHigh);
+    //        console.log("Solution found "+ gcSearch + " index " + iGrid + " proposedHS " + grid.proposedHigh);
     //    }  
+    //});
+    
+    //gridData.forEach(function (grid, iGrid) {
+    //    if (grid.properties.gc == gcSearch) {
+    //        console.log("Grids found " + gcSearch + " index " + iGrid + " proposedHS " + grid.properties.proposedHigh);
+    //    }
     //});
   
     
@@ -643,16 +691,19 @@ function JsonToSolution(solution, gridData)
         else { // Exhaustive search is definately not the best method but did not see a better search build in to JS
             var findGC = gridData[i].properties.gc;
             var solutionLength = solution.grids.length;
-            var match = false;
+            var match = 0;
             for (var index = 0; index < solutionLength /*&& !match*/; index++){
                 if (gridData[i].properties.gc == solution.grids[index].gc) {
-                    match = true; 
+                    match++; 
                     gridData[i].properties.proposedHigh = solution.grids[index].proposedHigh;
                 }
             }
-            if (match == false) {
+            if (match == 0) {
                 gridData[i].properties.proposedHigh = gridData[i].properties.high;
-                console.log("Grid code index " + solution.grids[i].gc + " not found");
+                console.log("Grid code index " + solution.grids[i].gc + " not found in solution");
+            }
+            else if (match > 1) {
+                console.log("Grid code index " + solution.grids[i].gc + " found "+ match+ " times in solution.");
             }
         }
     }
