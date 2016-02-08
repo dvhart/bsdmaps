@@ -257,6 +257,70 @@ app.post('/NewSolution', function (request, res) {
     });
 });
 
+app.post('/EditSolution', function (request, res) {
+    console.time("/EditSolution");
+    var putFeature = '';
+    
+    request.on('data', function (data) {
+        putFeature += data;
+        if (putFeature.length > 1e6)
+            request.connection.destroy();
+    });
+    
+    request.on('end', function () {
+        if (putFeature != '') {
+            var edit = JSON.parse(putFeature);
+            edit._id = ObjectId(edit._id);
+            dbGrid.collection('solutions').replaceOne({"_id":edit._id}, edit, function (err, results) {
+                if (err != null) {
+                    console.log("/EditSolution set properties error: " + err);
+                    res.send(JSON.stringify(err));
+                }
+                else if (results.modifiedCount ==1) {
+                    res.send("Map saved successfully");
+                }
+                else {
+                    res.send("Failed to save map");
+                }
+                console.timeEnd("/EditSolution");
+            });
+        }
+    });
+});
+
+app.post('/DeleteSolution', function (request, res) {
+    console.time("/DeleteSolution");
+    var solution = '';
+    
+    request.on('data', function (data) {
+        solution += data;
+        if (solution.length > 1e6)
+            request.connection.destroy();
+    });
+    
+    request.on('end', function () {
+        
+        if (solution != '') {
+            var section = JSON.parse(solution);
+            dbGrid.collection('solutions').deleteOne({ "_id": ObjectId(section._id) },
+                function (err, results) {
+                if (err != null) {
+                    console.log("/DeleteSolution error: " + err);
+                }
+                else {
+                    if (results) {
+                        res.send("Successfully Deleted");
+                    }
+                    else {
+                        res.send("Failed to delete solution");
+                    }
+                }
+            });
+        }
+    });
+});
+
+
 function SolutionInDb(newSolution, items)
 {
     var match = false;
@@ -404,7 +468,7 @@ app.get('/GetRoutes', function (request, response) {
             return next(err);
         }
         response.send(JSON.stringify(items));
-        console.timeEnd("/GetFeatures")
+        console.timeEnd("/GetRoutes")
     });
 });
 
