@@ -61,7 +61,7 @@ app.controller('BoundaryController', function ($scope, $http) {
 
                 var grids = getFeatures.data;
                 var routes = getRoutes.data;
-                var intervalDelayMs = 3000;
+                var intervalDelayMs = 10000;
                 
                 // Delay update
                 var intervalID = setInterval(function () {
@@ -106,7 +106,7 @@ app.controller('BoundaryController', function ($scope, $http) {
                         directionsDisplay.setMap(map);
                         FindPath(center, destinations[iSchool], departDate, function (findPathResponse, polyline) {
                             
-                            if (findPathResponse.status == "OK") {
+                            if (findPathResponse && findPathResponse.status == "OK") {
                                 directionsDisplay.setDirections(findPathResponse);
                                 
                                 var distance = findPathResponse.routes[0].legs[0].distance.value;
@@ -132,15 +132,16 @@ app.controller('BoundaryController', function ($scope, $http) {
         });
     };
     
-    $scope.CalculateSafety = function() {
-        
+    $scope.CalculateSafety = function () {
+        $scope.data.progressSafety = "Calculating Safety ...";
         $http.get('/GetFeatures').then(function (getFeatures) {
             $http.get('/GetRoutes').then(function (getRoutes) {
-                $http.get('/GetSection').then(function (getSafety) {
-                    getFeatures.data.forEach(function (grid, iGrid) {
-                        grid.properties.accidentRate = [0, 0, 0, 0, 0, 0];
-                        
+                getFeatures.data.forEach(function (grid, iGrid) {
+                    grid.properties.accidentRate = [0, 0, 0, 0, 0, 0];
+                    
+                    if (iGrid < getRoutes.data.length) {
                         var gridRoutes = getRoutes.data[iGrid];
+                        console.log("Calculate safety grid " + iGrid + " gc " + grid.properties.gc);
                         if (gridRoutes.gc != grid.properties.gc) { // Indexes don't match, search for matching grid
                             gridRoutes = null;
                             for (var i = 0; i < getRoutes.data.length && !gridRoutes; i++) {
@@ -151,20 +152,20 @@ app.controller('BoundaryController', function ($scope, $http) {
                         }
                         
                         if (gridRoutes) {
-                            gridRoutes.path.forEach(function (route, iRoute) {
-                                var routePolyline = new google.maps.Polyline();
-                                routePolyline.setPath(route);                                
-                                grid.properties.accidentRate[iRoute] = FindAccidentRate(getSafety.data, routePolyline);
-                                $scope.data.progressSafety = "gc " + grid.properties.gc +" rate "+ grid.properties.accidentRate[iRoute];
-                                $scope.$apply();                                
+                            gridRoutes.path.forEach(function (path, iPath) {
+                                grid.properties.accidentRate[iPath] = FindAccidentRate(path);
+                                var status = "gc " + grid.properties.gc + " rate " + grid.properties.accidentRate[iPath];
+                                console.log(status)
+                                $scope.data.progressSafety = status;
+                            //$scope.$apply();
                             });
-                        }
-                    });
-                    
-                    $http.post('/SetFeatures', getFeatures.data);
-                    $scope.data.progressSafety = "Done Computing Accident Rate";
-                    $scope.$apply();
+                        }                    	
+                    }
                 });
+                
+                $http.post('/SetFeatures', getFeatures.data);
+                $scope.data.progressSafety = "Done Computing Accident Rate";
+                $scope.$apply();
             });
         });
     };
@@ -457,21 +458,22 @@ function PolylineFromArray(array) {
     return polyline;
  }
         
-function FindAccidentRate(routes, polyline){
+function FindAccidentRate(path){
     var accidentRate = 0;
 
     // Algorithm to find and measure polyline overlap
     routes.forEach(function (route) {
         var points = [];
-        var routePolyline = new google.maps.Polyline;
-        routePolyline.setPath(route.polyline);
-        routePolyline.getPath().forEach(function (point) {
-            if (google.maps.geometry.poly.isLocationOnEdge(point, polyline)) {
+        //var routePolyline = new google.maps.Polyline;
+        //routePolyline.setPath(route.polyline);
+        path.forEach(function (pointLoc) {
+            var point = new google.maps.LatLng(pointLoc.lat, pointLoc.lng);
+            if (google.maps.geometry.poly.isLocationOnEdge(point, route.polyline)) {
                 points.push(point);
             }
         });
         var distanceMiles = milePerMeter * google.maps.geometry.spherical.computeLength(points);
-        accidentRate += route.accidentRate * distanceMiles;
+        accidentRate += route.rate * distanceMiles;
     });
     return accidentRate;
 }
