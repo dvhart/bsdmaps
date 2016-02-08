@@ -215,9 +215,13 @@ function RefreshFromDB(dbData) {
         var geoJsonData = { "type": "FeatureCollection", "features": dbData.data };
 
         // Database ID does not survive going to and from google maps unless it is copied into properties
-        geoJsonData.features.forEach(function (grid) {
+        geoJsonData.features.forEach(function (grid, iGrid) {
             if (grid._id) {
                 grid.properties.id = grid._id;
+            }
+
+            if (grid.properties.gc == 908) {
+                console.log("RefreshFromDB " + grid.properties.gc);
             }
         });
 
