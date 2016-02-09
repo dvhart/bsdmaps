@@ -5,6 +5,8 @@ var selectedGrid; // selected feature object
 var selectedFeature; //  JSON selected grid
 var results;
 var milePerMeter = 0.000621371;
+var infowindow;
+var infoWindowMarker;
 
 var defaultMapName = "Unnamed Map";
 var defaultMapDescription = "No Description";
@@ -178,7 +180,9 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
         "otherObjectives": [],
         "solutionSaveResponse":"",
         "mapName":defaultMapName,
-        "mapDescription":defaultMapDescription
+        "mapDescription": defaultMapDescription,
+        "accidentRate": [ [0, 0, 0, 0, 0, 0]],
+        "totalAccidentRate":0
     };
 
     $scope.DBRefresh = function () {
@@ -240,6 +244,36 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
             });
         });
     };
+    
+    $scope.EditSolution = function () {
+        $scope.data.solutionSaveResponse = "Editing ..."
+        map.data.toGeoJson(function (geoJson) {
+            var solution = SolutionToJson($scope.data, geoJson.features, results);
+            solution._id = $scope.data.selectedSolution[0]._id;
+            $http.post('/EditSolution', solution).then(function (response) {
+                if (response.statusText == "OK") {
+                    $scope.data.solutionSaveResponse = response.data;
+                } else {
+                    $scope.data.solutionSaveResponse = "Failed to edit map: " + response.statusText;
+                }
+            });
+        });
+    };
+    
+    $scope.DeleteSolution = function () {
+        $scope.data.solutionSaveResponse = "Deleting ..."
+        map.data.toGeoJson(function (geoJson) {
+            var solution = SolutionToJson($scope.data, geoJson.features, results);
+            solution._id = $scope.data.selectedSolution[0]._id;
+            $http.post('/DeleteSolution', solution).then(function (response) {
+                if (response.statusText == "OK") {
+                    $scope.data.solutionSaveResponse = response.data;
+                } else {
+                    $scope.data.solutionSaveResponse = "Failed to delete map: " + response.statusText;
+                }
+            });
+        });
+    };
 
 
     $scope.LoadFromDB = function () {
@@ -266,8 +300,12 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
 
     $scope.SelectSolution = function () {
         var selectedSolution = $scope.data.selectedSolution;
-        $scope.data.mapName = selectedSolution[0]["solutionName"];
-        $scope.data.mapDescription = selectedSolution[0]["solutionDescription"];
+        if (selectedSolution[0]["solutionName"]) {
+            $scope.data.mapName = selectedSolution[0]["solutionName"];
+        }
+        if (selectedSolution[0]["solutionDescription"]) {
+            $scope.data.mapDescription = selectedSolution[0]["solutionDescription"];
+        }
 
         map.data.toGeoJson(function (geoJson) {
             JsonToSolution(selectedSolution[0], geoJson.features);
@@ -279,6 +317,12 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
             map.data.setMap(null);
             map.data = newData;
             mapGrids = features;
+            
+            $scope.data.solutionName = selectedSolution[0]["solutionName"];
+            $scope.data.solutionDescription = selectedSolution[0]["solutionDescription"];
+            $scope.data.solutionUsername = selectedSolution[0]["solutionUsername"];
+            $scope.data.solutionEmail = selectedSolution[0]["email"];
+            $scope.data.solutionUrl = selectedSolution[0]["url"];
 
             results = Results(geoJson.features, schoolData);
             UpdateScopeData($scope, results);
@@ -290,28 +334,34 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
     /* Dynamically generate the stats table. This requires the angular sce
      * filter to trust the output as html */
     $scope.GenStatsTable = function () {
-        var out="";
+        var out = "";
         out += '<div class="stats-table">';
         out += '<div class="stats-header-row">';
         out += '    <div class="stats-header-cell">School</div>';
+        out += '    <div class="stats-header-cell">Students</div>';
         out += '    <div class="stats-header-cell">Capacity</div>';
         out += '    <div class="stats-header-cell">Proximity (miles)</div>';
+        out += '    <div class="stats-header-cell">Accident Rate</div>';
         out += '    <div class="stats-header-cell">Transitions</div>';
         out += '    <div class="stats-header-cell">FRL</div>';
         out += '</div>';
         for (var i = 0; i < $scope.data.schools.length; i++) {
             out += '<div class="stats-row">';
             out += '    <div class="stats-cell">' + $scope.data.schools[i] + '</div>';
+            out += '    <div class="stats-cell">' + $scope.data.students[0][i] + '</div>';
             out += '    <div class="stats-cell">' + $scope.data.capacity_p[0][i] + '%</div>';
             out += '    <div class="stats-cell">' + $scope.data.distance[0][i] + '</div>';
+            out += '    <div class="stats-cell">' + $scope.data.accidentRate[0][i] + '</div>';
             out += '    <div class="stats-cell">' + $scope.data.transitions[0][i] + '</div>';
             out += '    <div class="stats-cell">' + $scope.data.frl_p[0][i] + '%</div>';
             out += '</div>';
         }
         out += '<div class="stats-footer-row">';
         out += '    <div class="stats-footer-cell">District Total</div>';
+        out += '    <div class="stats-footer-cell">' + $scope.data.total_students + '</div>';
         out += '    <div class="stats-footer-cell">' + $scope.data.total_capacity_p + '%</div>';
         out += '    <div class="stats-footer-cell">' + $scope.data.milesTraveled + '</div>';
+        out += '    <div class="stats-footer-cell">' + $scope.data.totalAccidentRate + '</div>';
         out += '    <div class="stats-footer-cell">' + $scope.data.total_transitions + '</div>';
         out += '    <div class="stats-footer-cell">' + $scope.data.total_frl_p + '%</div>';
         out += '</div>';
@@ -328,15 +378,18 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
         out += '<div class="stats-header-row">';
         out += '    <div class="stats-header-cell">School</div>';
         out += '    <div class="stats-header-cell">Cap %</div>';
-        out += '    <div class="stats-header-cell">Proximity</div>';
-        out += '    <div class="stats-header-cell">Transitions</div>';
+        out += '    <div class="stats-header-cell">Prox.</div>';
+        out += '    <div class="stats-header-cell">Acc.</div>';
+        out += '    <div class="stats-header-cell">Trans.</div>';
         out += '    <div class="stats-header-cell">FRL %</div>';
+       
         out += '</div>';
         for (var i = 0; i < $scope.data.schools.length; i++) {
             out += '<div class="stats-row">';
             out += '    <div class="stats-cell">' + $scope.data.schools[i] + '</div>';
             out += '    <div class="stats-cell">' + Math.round($scope.data.capacity_p[0][i]) + '</div>';
             out += '    <div class="stats-cell">' + Math.round($scope.data.distance[0][i]) + '</div>';
+            out += '    <div class="stats-cell">' + Math.round($scope.data.accidentRate[0][i]) + '</div>';
             out += '    <div class="stats-cell">' + $scope.data.transitions[0][i] + '</div>';
             out += '    <div class="stats-cell">' + Math.round($scope.data.frl_p[0][i]) + '</div>';
             out += '</div>';
@@ -345,6 +398,7 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
         out += '    <div class="stats-footer-cell">Total</div>';
         out += '    <div class="stats-footer-cell">' + Math.round($scope.data.total_capacity_p) + '</div>';
         out += '    <div class="stats-footer-cell">' + Math.round($scope.data.milesTraveled) + '</div>';
+        out += '    <div class="stats-footer-cell">' + Math.round($scope.data.totalAccidentRate) + '</div>';
         out += '    <div class="stats-footer-cell">' + $scope.data.total_transitions + '</div>';
         out += '    <div class="stats-footer-cell">' + Math.round($scope.data.total_frl_p) + '</div>';
         out += '</div>';
@@ -374,6 +428,9 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
 
         bsdOverlay = new google.maps.GroundOverlay('http://bsdmaps.monkeyblade.net/bsd-boundary-existing-overlay.png', imageBounds);
         bsdOverlay.setMap(map);
+        
+        infowindow = new google.maps.InfoWindow;
+        infowindowMarker = new google.maps.Marker();
 
         /*
          * Add google markers for each high school
@@ -457,16 +514,19 @@ function UpdateScopeData($scope, results) {
         $scope.data.distance[0][i] = results.schools[i].distance;
         $scope.data.transitions[0][i] = results.schools[i].transitions;
         $scope.data.frl_p[0][i] = results.schools[i].frl_p;
+        $scope.data.accidentRate[0][i] = results.schools[i].accidentRate.toFixed(2);
 
         students += $scope.data.students[0][i];
         cap += $scope.data.students[1][i];
         frl += results.schools[i].frl;
     }
-
+    
+    $scope.data.total_students = students;
     $scope.data.total_capacity_p = (100 * students/cap).toFixed(2);
     $scope.data.milesTraveled = results.distance;
     $scope.data.total_transitions = results.transitions;
-    $scope.data.total_frl_p = (100 * frl/students).toFixed(2);
+    $scope.data.total_frl_p = (100 * frl / students).toFixed(2);
+    $scope.data.totalAccidentRate = results.totalAccidentRate.toFixed(2);
 
     $scope.data.solutionSaveResponse = "";
 }
@@ -477,6 +537,8 @@ function Configure($scope) {
 
     map.data.setStyle(function (feature) {
         var highSchool = feature.getProperty('proposedHigh');
+        var gc = feature.getProperty('gc');
+
 
         var color = 'grey';
         for (var i=0; i<schoolData.hs.length && color == 'grey'; i++)
@@ -503,7 +565,7 @@ function Configure($scope) {
         map.data.revertStyle();
         map.data.overrideStyle(event.feature, { strokeWeight: 1 });
 
-        if (event.Tb.buttons==1 && ($scope.data.dragFunc=="paint")) {
+        if (event.Pb.buttons==1 && ($scope.data.dragFunc=="paint")) {
             var proposedHigh = $scope.data.proposedHigh;
             if (proposedHigh) {
                 // Record selected grid and grid data
@@ -531,12 +593,25 @@ function Configure($scope) {
                 UpdateScopeData($scope, results);
                 $scope.$apply();
             }
-
+        }
+        else if (event.Pb.ctrlKey) {
+            var thisGrid = event.feature;
+            var msg = "gc:" + thisGrid.getProperty("gc") + 
+                "<br>high:" + thisGrid.getProperty("high") +
+                "<br>proposed:" + thisGrid.getProperty("proposedHigh") +  
+                "<br>" + thisGrid.getProperty("distance");
+            infowindow.setContent(msg);
+            infowindow.open(map, infowindowMarker);
+            var centroid = thisGrid.getProperty("centroid");
+            infowindowMarker.setPosition({lat: centroid[1], lng: centroid[0]});
+            infowindowMarker.setVisible(false);
+            infowindowMarker.setMap(map);
         }
     });
 
     map.data.addListener('mouseout', function (event) {
         map.data.revertStyle();
+        infowindowMarker.setMap(null);
     });
 
 
@@ -594,8 +669,21 @@ function SolutionToJson(formData, gridData, resultsData)
 
 function JsonToSolution(solution, gridData)
 {
-    for(var i=0; i< solution.grids.length; i++)
-    {
+    //var gcSearch = 910;
+    //solution.grids.forEach(function (grid, iGrid) {
+    //    if (grid.gc == gcSearch) {
+    //        console.log("Solution found "+ gcSearch + " index " + iGrid + " proposedHS " + grid.proposedHigh);
+    //    }  
+    //});
+    
+    //gridData.forEach(function (grid, iGrid) {
+    //    if (grid.properties.gc == gcSearch) {
+    //        console.log("Grids found " + gcSearch + " index " + iGrid + " proposedHS " + grid.properties.proposedHigh);
+    //    }
+    //});
+  
+    
+    for (var i = 0; i < gridData.length; i++) {
         if(gridData[i].properties.gc == solution.grids[i].gc)
         {
             gridData[i].properties.proposedHigh = solution.grids[i].proposedHigh;
@@ -603,16 +691,19 @@ function JsonToSolution(solution, gridData)
         else { // Exhaustive search is definately not the best method but did not see a better search build in to JS
             var findGC = gridData[i].properties.gc;
             var solutionLength = solution.grids.length;
-            var match = false;
-            for (var index = 0; index < solutionLength && !match; index++) {
+            var match = 0;
+            for (var index = 0; index < solutionLength /*&& !match*/; index++){
                 if (gridData[i].properties.gc == solution.grids[index].gc) {
-                    match = true;
+                    match++; 
                     gridData[i].properties.proposedHigh = solution.grids[index].proposedHigh;
                 }
             }
-            if (match == false) {
+            if (match == 0) {
                 gridData[i].properties.proposedHigh = gridData[i].properties.high;
-                console.log("Grid code index " + solution.grids[i].gc + " not found");
+                console.log("Grid code index " + solution.grids[i].gc + " not found in solution");
+            }
+            else if (match > 1) {
+                console.log("Grid code index " + solution.grids[i].gc + " found "+ match+ " times in solution.");
             }
         }
     }
@@ -624,8 +715,10 @@ function Results(grids, schoolData)
     var results = {transitions:0, distance:0, schools:[]};
     for(var i=0; i<numSchools; i++)
     {
-        results.schools[i] = {dbname:schoolData.hs[i].dbName, students:0, capacity_p:0, distance:0, transitions:0, frl:0, frl_p:0};
+        results.schools[i] = {dbname:schoolData.hs[i].dbName, students:0, capacity_p:0, distance:0, transitions:0, frl:0, frl_p:0, accidentRate:0};
     }
+    
+    results.totalAccidentRate = 0;
 
     grids.forEach(function (grid){
         var hs = grid.properties.proposedHigh;
@@ -637,10 +730,13 @@ function Results(grids, schoolData)
                 results.schools[i].students += grid.properties.hs2020;
                 results.schools[i].distance += grid.properties.hs2020*grid.properties.distance[i];
                 results.schools[i].frl += FrlFit(grid.properties);
+                
+                if (grid.properties.accidentRate) {
+                    results.schools[i].accidentRate += grid.properties.hs2020 * grid.properties.accidentRate[i];
+                }
             }
             // Compute transitions by existing school
-            if(grid.properties.high == schoolData.hs[i].dbName && hs != grid.properties.high)
-            {
+            if(grid.properties.high == schoolData.hs[i].dbName && hs != grid.properties.high){
                 results.schools[i].transitions += grid.properties.hs2020;
             }
         }
@@ -656,6 +752,10 @@ function Results(grids, schoolData)
         results.transitions += results.schools[i].transitions;
         if (results.schools[i].students) {
             results.schools[i].frl_p = 100*results.schools[i].frl/(results.schools[i].students);
+        }
+        
+        if (results.schools[i].accidentRate) {
+            results.totalAccidentRate += results.schools[i].accidentRate;
         }
 
         // Reduce decimal places to 2 (FIXME this is formatting and should be elsewhere)

@@ -1,0 +1,41 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BSD Solution Entry</title>
+
+    <script src="angular.min.js"></script>
+    <script src="Chart.min.js"></script>
+    <script src="angular-chart.min.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?v=3&key=AIzaSyClOV84F4-AzJuaHuqfN8VLZJo6Zf0YAtI"></script>
+    <script src="Calculations.js"></script>
+    <script src="ServerApi.js"></script>
+    <script src="recalculate.js"></script>
+    <link href="style.css" rel="stylesheet" />
+    <link href="angular-chart.min.css" rel="stylesheet"/>
+    <style type="text/css">
+        #container {height: 100%; width:100%; font-size: 0;}
+        #panel, #map-container {display: inline-block; *display: inline; zoom: 1; vertical-align: top; font-size: 12px;}
+        #panel {width: 25%}
+        #map-container {width: 75%}
+    </style>
+</head>
+<body ng-app="BoundaryEntry">
+    <div id="container" ng-controller="BoundaryController">
+        <div id="panel">
+            <div id="panel-content" width: 200px>
+                <form class="css-form">
+                    <br>
+                    <input type="button" ng-click="RecalculateRoutes()" value="Calculate Routes" /> {{data.progress}}<br>
+                    <input type="button" ng-click="CalculateSafety()" value="Calculate Safety" /> {{data.progressSafety}}<br>
+
+                </form>
+            </div>
+            <pre>data = {{data | json}}</pre>            
+        </div>
+        <div id="map-container">
+            <div id="map-holder"></div>
+        </div>
+    </div>
+</body>
+</html>
