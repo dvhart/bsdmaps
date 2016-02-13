@@ -10,14 +10,17 @@ var selectedFeature; //  JSON selected grid
 var results;
 var milePerMeter = 0.000621371;
 var routes = [];
+var overlapPolylines = [];
 var newRoute;
+var maxAccidentRate = 20;
+var minAccidentRate = 0;
 
 // Google Map Overlays
 var bsdOverlay;
 var mapGrids;
 var departDate = new Date("Wed Feb 17 2016 7:10:00 GMT-0800")
 
-var schools = [ 
+var schools = [
     {id:0, dbName:'Aloha', displayName:'Aloha', color:'blue', capacity:2176, location:{ lat: 45.4857177, lng: -122.8695357 }},
     {id:1, dbName:'Beaverton', displayName:'Beaverton', color:'orange', capacity:2122, location:{ lat: 45.4862121, lng: -122.8111987 }},
     {id:2, dbName:'Cooper', displayName:'Cooper Mtn', color:'green', capacity:2176, location:{ lat: 45.4264562, lng: -122.8536721 }},
@@ -36,24 +39,25 @@ app.controller('BoundaryController', function ($scope, $http) {
         "middle": "",
         "elementary": "",
         "routeLength":0,
-        "accidentRate": 0,
+        "accidentRate": [0, 0, 0, 0, 0, 0],
         "centroid": [0, 0],
         "distance":[0, 0, 0, 0, 0, 0],
-		"time": [0, 0, 0, 0, 0, 0],
+        "time": [0, 0, 0, 0, 0, 0],
         "timeInTraffic": [0, 0, 0, 0, 0, 0],
-        "progress":"recompute status"
+        "progress": "recompute status",
+        "evalHigh": "Current"
     };
-	
+
     $scope.RecalculateRoutes = function () {
 
-		var destinations = [];
-		schools.forEach(function (school) {
-			destinations.push(school.location);
-		});
-		
+        var destinations = [];
+        schools.forEach(function (school) {
+            destinations.push(school.location);
+        });
+
         $http.get('/GetFeatures').then(function (getFeatures) {
             $http.get('/GetRoutes').then(function (getRoutes) {
-                
+
                 var end = getFeatures.data.length;
                 //end = 8; // Testing
                 var iSchool = 0; // school index
@@ -62,15 +66,15 @@ app.controller('BoundaryController', function ($scope, $http) {
                 var grids = getFeatures.data;
                 var routes = getRoutes.data;
                 var intervalDelayMs = 10000;
-                
+
                 // Delay update
                 var intervalID = setInterval(function () {
-                    
+
                     // Skip grids that already have populated field
                     // Fast forward to point that we need to look up path to school
                     var needPath = false;
                     while (iGrid < end && !needPath) {
-                        
+
                         if (routes.length < iGrid+1) {
                             routes[iGrid] = { gc: grids[iGrid].properties.gc, path: [] };
                             needPath = true;
@@ -85,10 +89,10 @@ app.controller('BoundaryController', function ($scope, $http) {
                                     iSchool = 0;
                                     iGrid++;
                                 }
-                            } 
+                            }
                         }
                     }
-                    
+
                     if (!needPath) { // Done.  Save and exit
                         clearInterval(intervalID); // Done.  Don't restart interval timer
                        // $http.post('/SetFeatures', grids);
@@ -100,21 +104,24 @@ app.controller('BoundaryController', function ($scope, $http) {
                         if (!grids[iGrid].properties.distance) grids[iGrid].properties.distance = [];
                         if (!grids[iGrid].properties.time) grids[iGrid].properties.time = [];
                         if (!grids[iGrid].properties.path) grids[iGrid].properties.path = [];
-                        
+
                         var center = PolygonCenter(grids[iGrid].geometry.coordinates);
-                        
+
                         directionsDisplay.setMap(map);
                         FindPath(center, destinations[iSchool], departDate, function (findPathResponse, polyline) {
-                            
+
                             if (findPathResponse && findPathResponse.status == "OK") {
                                 directionsDisplay.setDirections(findPathResponse);
-                                
+
                                 var distance = findPathResponse.routes[0].legs[0].distance.value;
                                 var duration = findPathResponse.routes[0].legs[0].duration.value
                                 grids[iGrid].properties.distance[iSchool] = distance;
                                 grids[iGrid].properties.time[iSchool] = duration;
                                 routes[iGrid].path[iSchool] = PolylineToArray(polyline);
-                                
+
+                                $scope.data.distance = grids[iGrid].properties.distance;
+                                $scope.data.duration = grids[iGrid].properties.time[iSchool];
+
                                 $scope.data.progress = "Grid " + iGrid + " of " + grids.length + " route " + iSchool + " distance " + distance + " duration " + duration;
                                 $scope.$apply();
                             }
@@ -131,14 +138,14 @@ app.controller('BoundaryController', function ($scope, $http) {
             });
         });
     };
-    
+
     $scope.CalculateSafety = function () {
         $scope.data.progressSafety = "Calculating Safety ...";
         $http.get('/GetFeatures').then(function (getFeatures) {
             $http.get('/GetRoutes').then(function (getRoutes) {
                 getFeatures.data.forEach(function (grid, iGrid) {
                     grid.properties.accidentRate = [0, 0, 0, 0, 0, 0];
-                    
+
                     if (iGrid < getRoutes.data.length) {
                         var gridRoutes = getRoutes.data[iGrid];
                         console.log("Calculate safety grid " + iGrid + " gc " + grid.properties.gc);
@@ -150,7 +157,7 @@ app.controller('BoundaryController', function ($scope, $http) {
                                 }
                             }
                         }
-                        
+
                         if (gridRoutes) {
                             gridRoutes.path.forEach(function (path, iPath) {
                                 grid.properties.accidentRate[iPath] = FindAccidentRate(path);
@@ -159,17 +166,21 @@ app.controller('BoundaryController', function ($scope, $http) {
                                 $scope.data.progressSafety = status;
                             //$scope.$apply();
                             });
-                        }                    	
+                        }                        
                     }
                 });
-                
+
                 $http.post('/SetFeatures', getFeatures.data);
                 $scope.data.progressSafety = "Done Computing Accident Rate";
                 $scope.$apply();
             });
         });
     };
-	
+
+    $scope.UpdateHigh = function () {
+        Configure($scope);
+    };
+
     function initMap() {
         // Initialise the map.
         var myLatLng = { lat: 45.4834817, lng: -122.8216516 };
@@ -179,9 +190,9 @@ app.controller('BoundaryController', function ($scope, $http) {
             mapTypeId: google.maps.MapTypeId.ROADMAP
         };
 
-		map = new google.maps.Map(document.getElementById('map-holder'), mapProp);
-		directionsService = new google.maps.DirectionsService;		
-		var renderOptions = { preserveViewport: true };
+        map = new google.maps.Map(document.getElementById('safety-map-holder'), mapProp);
+        directionsService = new google.maps.DirectionsService;        
+        var renderOptions = { preserveViewport: true };
         directionsDisplay = new google.maps.DirectionsRenderer(renderOptions);
         geocoder = new google.maps.Geocoder;
         infowindow = new google.maps.InfoWindow;
@@ -197,11 +208,11 @@ app.controller('BoundaryController', function ($scope, $http) {
         bsdOverlay = new google.maps.GroundOverlay('http://bsdmaps.monkeyblade.net/bsd-boundary-existing-overlay.png', imageBounds);
         bsdOverlay.setMap(map);
 
-		panel = document.getElementById('panel');
-	
+        panel = document.getElementById('panel');
+
         $http.get('/GetFeatures').then(function (response) {
             RefreshFromGrids(response.data);
-            
+
             $http.get('/GetSection').then(function (sectionResponse) {
                 routes = RefreshFromSafetyDB(sectionResponse, map);
             });
@@ -216,6 +227,17 @@ app.controller('BoundaryController', function ($scope, $http) {
 function RefreshFromGrids(grids) {
     try {
         var geoJsonData = { "type": "FeatureCollection", "features": grids };
+        //maxAccidentRate = minAccidentRate = grids[0].properties.accidentRate[0];
+        //for (var i = 0; i < grids.length; i++) {
+        //    for (var j = 0; j < grids[i].properties.accidentRate.length; j++){
+        //        if (grids[i].properties.accidentRate[j] > maxAccidentRate) {
+        //            maxAccidentRate = grids[i].properties.accidentRate[j];
+        //        }
+        //        if (grids[i].properties.accidentRate[j] < minAccidentRate) {
+        //            minAccidentRate = grids[i].properties.accidentRate[j];
+        //        }
+        //    }
+        //}
 
         var newData = new google.maps.Data({map: map});
         var features = newData.addGeoJson(geoJsonData);
@@ -242,16 +264,27 @@ function Configure($scope) {
     map.data.setControls(['LineString', 'Polygon']);
 
     map.data.setStyle(function (feature) {
-        var highSchool = feature.getProperty('high');
 
-		var color;
-		var school = FindSchool(highSchool, schools);
-		if (school) {
-			color = school.color;
-		}
-		else {
-			color = 'grey';
-		}
+        var highSchool = feature.getProperty('high');
+        var color = 'grey';
+        if ($scope.data.evalHigh == 'Current') {
+
+            var school = FindSchool(highSchool, schools);
+            if (school) {
+                color = school.color;
+            }
+        }
+        else {
+            for (var i = 0; i < schools.length; i++) {
+                if ($scope.data.evalHigh == schools[i].dbName) {
+                    var accidentRates = feature.getProperty('accidentRate');
+                    var accidentRate = accidentRates[i];
+                    color = HeatMap(minAccidentRate, maxAccidentRate, accidentRates[i]);
+                }
+            }
+        }
+
+
 
         return { editable: false, draggable: false, strokeWeight: 0, fillColor: color };
     });
@@ -268,13 +301,18 @@ function Configure($scope) {
         map.data.revertStyle();
         map.data.overrideStyle(event.feature, { strokeWeight: 1 });
     });
-    
+
     map.data.addListener('mouseout', function (event) {
         map.data.revertStyle();
     });
-    
+
     map.data.addListener('click', selectGrid = function (event) {
         map.data.revertStyle();
+        overlapPolylines.forEach(function (polyline) {
+            polyline.setMap(null);
+        });
+        overlapPolylines = [];
+
         selectedGrid = event.feature;
         event.feature.toGeoJson(function (grid) {
             selectedFeature = grid;
@@ -287,17 +325,22 @@ function Configure($scope) {
             $scope.data.centroid = grid.properties.centroid;
             $scope.data.distance = grid.properties.distance;
             $scope.data.time = grid.properties.time;
-            
+            $scope.data.accidentRate = grid.properties.accidentRate
+
             if (grid.properties.timeInTraffic) {
                 $scope.data.timeInTraffic = grid.properties.timeInTraffic;
             }
             var school = FindSchool(grid.properties.high, schools);
-            var center = PolygonCenter(grid.geometry.coordinates);          
-            FindRoute(center, school.location, routes, function (results) {
+            var center = PolygonCenter(grid.geometry.coordinates);
+            FindRoute(center, school.location, routes, function (results, routeOverlap) {
                 $scope.data.routeLength = results.length;
-                $scope.data.accidentRate = results.accidentRate;
-                var gridPath = { gc: grid.properties.gc, paths: [{ high: grid.properties.high, path: results.polyline }] };                
+                overlapPolylines = routeOverlap;
+                var gridPath = { gc: grid.properties.gc, paths: [{ high: grid.properties.high, path: results.polyline }] };
                 map.data.overrideStyle(event.feature, { strokeWeight: 1 });
+
+                overlapPolylines.forEach(function (polyline) {
+                    polyline.setMap(map);
+                });
                 $scope.$apply();
             });
         });
@@ -309,13 +352,14 @@ function FindRoute(origin, destination, routes,  callback) {
     if (newRoute) {
         newRoute.setMap(null);
     }
-    directionsDisplay.setMap(map);
+    var overlapPolylines = [];
+    //directionsDisplay.setMap(map);
     FindPath(origin, destination, departDate, function (response, polyline) {
 
-        directionsDisplay.setDirections(response);
+        //directionsDisplay.setDirections(response);
         var points = [];
         // Algorithm to find and measure polyline overlap
-        routes.forEach(function (route) {
+        routes.forEach(function (route, iRoute) {
             var points = [];
             route.polyline.getPath().forEach(function (point) {
                 if (google.maps.geometry.poly.isLocationOnEdge(point, polyline)) {
@@ -323,74 +367,77 @@ function FindRoute(origin, destination, routes,  callback) {
                 }
             });
             var distanceMeters = google.maps.geometry.spherical.computeLength(points);
-            results.accidentRate += distanceMeters* milePerMeter * route.rate;
-            var overlapPolyline = new google.maps.Polyline({ path: points, clickable: false, strokeColor: '#FF0000', strokeWeight: 5, map : map })
+            results.accidentRate += distanceMeters * milePerMeter * route.rate;
+            if (distanceMeters > 0) {
+                console.log(iRoute + ", distance " + distanceMeters * milePerMeter + ", rate " + route.rate);
+                overlapPolylines.push(new google.maps.Polyline({ path: points, clickable: false, strokeColor: '#FF0000', strokeWeight: 8 }));
+            }
         });
         newRoute = polyline;
         newRoute.setMap(map);
         results.length = response.routes[0].legs[0].distance.value;
         results.polyline = polyline;
-        callback(results);
+        callback(results, overlapPolylines);
     });
 };
 
 function FindDistance(map, origin, destinations, departureTime, callback) {
-	var service = new google.maps.DistanceMatrixService;
-	var newGrid = JSON.parse(JSON.stringify(grid));  // Make a deep copy
+    var service = new google.maps.DistanceMatrixService;
+    var newGrid = JSON.parse(JSON.stringify(grid));  // Make a deep copy
 
-	service.getDistanceMatrix({
-		origins: [origin],
-		destinations: destinations,
-		travelMode: google.maps.TravelMode.DRIVING,
-		drivingOptions: { departureTime: departureTime, trafficModel: google.maps.TrafficModel.BEST_GUESS }
-	}, 
-		function (response, status) {
-		if (status !== google.maps.DistanceMatrixStatus.OK) {
-			console.log("Grid "+ newGrid.properties.gc +" Error:" + status + " grid:" + newGrid);
-		} else {
-			var travelDistance = [];
-			var travelTimeNoTraffic = [];
-			var travelTimeInTraffic = [];
-			response.rows[0].elements.forEach(function (travel) {
-				travelDistance.push(travel.distance.value);
-				travelTimeNoTraffic.push(travel.duration.value);
-				if (travel.duration_in_traffic) {
-					travelTimeInTraffic.push(travel.duration_in_traffic.value);
-				}
-			});
-			newGrid.properties.distance = travelDistance;
-			newGrid.properties.time = travelTimeNoTraffic;
-			newGrid.properties.timeInTraffic = travelTimeInTraffic;
-			console.log("Grid " + newGrid.properties.gc + 
-				" distance=" + newGrid.properties.distance + 
-				" time="+ newGrid.properties.time + 
-				" trafficTime=" + newGrid.properties.timeInTraffic);
+    service.getDistanceMatrix({
+        origins: [origin],
+        destinations: destinations,
+        travelMode: google.maps.TravelMode.DRIVING,
+        drivingOptions: { departureTime: departureTime, trafficModel: google.maps.TrafficModel.BEST_GUESS }
+    },
+        function (response, status) {
+        if (status !== google.maps.DistanceMatrixStatus.OK) {
+            console.log("Grid "+ newGrid.properties.gc +" Error:" + status + " grid:" + newGrid);
+        } else {
+            var travelDistance = [];
+            var travelTimeNoTraffic = [];
+            var travelTimeInTraffic = [];
+            response.rows[0].elements.forEach(function (travel) {
+                travelDistance.push(travel.distance.value);
+                travelTimeNoTraffic.push(travel.duration.value);
+                if (travel.duration_in_traffic) {
+                    travelTimeInTraffic.push(travel.duration_in_traffic.value);
+                }
+            });
+            newGrid.properties.distance = travelDistance;
+            newGrid.properties.time = travelTimeNoTraffic;
+            newGrid.properties.timeInTraffic = travelTimeInTraffic;
+            console.log("Grid " + newGrid.properties.gc +
+                " distance=" + newGrid.properties.distance +
+                " time="+ newGrid.properties.time +
+                " trafficTime=" + newGrid.properties.timeInTraffic);
 
-		}
-		callback(newGrid);
-	});
+        }
+        callback(newGrid);
+    });
 }
 
 
 
 function FindPath(origin, destination, departureTime, callback) {
-        
+
     var request = {
         origin: origin,
         destination: destination,
         travelMode: google.maps.TravelMode.DRIVING,
         drivingOptions: { departureTime: departureTime }
     };
-	
-	directionsService.route(request, function (response, status) {
-		if (status === google.maps.DirectionsStatus.OK) {           
+
+    directionsService.route(request, function (response, status) {
+        if (status === google.maps.DirectionsStatus.OK) {
             // Convert route to polyline
             var polyline = new google.maps.Polyline({
                 path: [],
                 strokeColor: '#000000',
                 strokeWeight: 2
             });
-            
+
             var legs = response.routes[0].legs;
             for (i = 0; i < legs.length; i++) {
                 var steps = legs[i].steps;
@@ -402,11 +449,11 @@ function FindPath(origin, destination, departureTime, callback) {
                 }
             }
             callback(response, polyline);
-		} else {
+        } else {
             console.log('Directions request failed due to ' + status);
             callback(response, null);
-		}
-	});
+        }
+    });
 }
 
 function FindNeighborhood(map, location, callback) {
@@ -418,7 +465,7 @@ function FindNeighborhood(map, location, callback) {
                     map: map
                 });
                 infowindow.setContent(results[1].address_components[0].long_name);
-                infowindow.open(map, marker);               
+                infowindow.open(map, marker);
                 callback(results);
 
             } else {
@@ -431,24 +478,24 @@ function FindNeighborhood(map, location, callback) {
 }
 
 function FindSchool(schoolName, schoolsData) {
-	var school;
-	for (var i = 0; i < schoolsData.length && school == null; i++) {
-		if (schoolName == schoolsData[i].dbName) {
-			school = schoolsData[i];
-		}
-	}
-	return school;
+    var school;
+    for (var i = 0; i < schoolsData.length && school == null; i++) {
+        if (schoolName == schoolsData[i].dbName) {
+            school = schoolsData[i];
+        }
+    }
+    return school;
 }
 
 function PolylineToArray(polyline) {
     var pointArray = [];
     var polyArray = polyline.getPath();
-    
+
     polyArray.forEach(function (point) {
 //        pointArray.push([point.lat(), point.lng()]);
         pointArray.push({lat:point.lat(), lng:point.lng()});
     });
-    
+
     return pointArray;
 }
 
@@ -457,7 +504,7 @@ function PolylineFromArray(array) {
     polyline.setPath(array);
     return polyline;
  }
-        
+
 function FindAccidentRate(path){
     var accidentRate = 0;
 

@@ -138,7 +138,8 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
         FIVE   : function(name, code) { $scope.data.proposedHigh = schoolData.hs[4].dbName },
         SIX    : function(name, code) { $scope.data.proposedHigh = schoolData.hs[5].dbName },
         SEVEN  : function(name, code) { $scope.data.proposedHigh = "Closest" },
-        EIGHT  : function(name, code) { $scope.data.proposedHigh = "Unassigned" }
+        EIGHT  : function(name, code) { $scope.data.proposedHigh = "Unassigned" },
+        NINE  : function (name, code) { $scope.data.proposedHigh = "Safest" }
     };
 
     $scope.data = {
@@ -244,7 +245,7 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
             });
         });
     };
-    
+
     $scope.EditSolution = function () {
         $scope.data.solutionSaveResponse = "Editing ..."
         map.data.toGeoJson(function (geoJson) {
@@ -259,7 +260,7 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
             });
         });
     };
-    
+
     $scope.DeleteSolution = function () {
         $scope.data.solutionSaveResponse = "Deleting ..."
         map.data.toGeoJson(function (geoJson) {
@@ -317,7 +318,7 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
             map.data.setMap(null);
             map.data = newData;
             mapGrids = features;
-            
+
             $scope.data.solutionName = selectedSolution[0]["solutionName"];
             $scope.data.solutionDescription = selectedSolution[0]["solutionDescription"];
             $scope.data.solutionUsername = selectedSolution[0]["solutionUsername"];
@@ -382,7 +383,7 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
         out += '    <div class="stats-header-cell">Acc.</div>';
         out += '    <div class="stats-header-cell">Trans.</div>';
         out += '    <div class="stats-header-cell">FRL %</div>';
-       
+
         out += '</div>';
         for (var i = 0; i < $scope.data.schools.length; i++) {
             out += '<div class="stats-row">';
@@ -428,7 +429,7 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
 
         bsdOverlay = new google.maps.GroundOverlay('http://bsdmaps.monkeyblade.net/bsd-boundary-existing-overlay.png', imageBounds);
         bsdOverlay.setMap(map);
-        
+
         infowindow = new google.maps.InfoWindow;
         infowindowMarker = new google.maps.Marker();
 
@@ -520,7 +521,7 @@ function UpdateScopeData($scope, results) {
         cap += $scope.data.students[1][i];
         frl += results.schools[i].frl;
     }
-    
+
     $scope.data.total_students = students;
     $scope.data.total_capacity_p = (100 * students/cap).toFixed(2);
     $scope.data.milesTraveled = results.distance;
@@ -596,10 +597,20 @@ function Configure($scope) {
         }
         else if (event.Pb.ctrlKey) {
             var thisGrid = event.feature;
-            var msg = "gc:" + thisGrid.getProperty("gc") + 
+
+            var accidentNum = thisGrid.getProperty("accidentRate");
+            var accidentStr = [];
+            accidentNum.forEach(function (rate, iRate) {
+                accidentStr.push(rate.toFixed(2));
+            });
+
+            thisGrid.getProperty("accidentRate");
+
+            var msg = "gc:" + thisGrid.getProperty("gc") +
                 "<br>high:" + thisGrid.getProperty("high") +
-                "<br>proposed:" + thisGrid.getProperty("proposedHigh") +  
-                "<br>" + thisGrid.getProperty("distance");
+                "<br>proposed:" + thisGrid.getProperty("proposedHigh") +
+                "<br>" + thisGrid.getProperty("distance") +
+                "<br>" + accidentStr;
             infowindow.setContent(msg);
             infowindow.open(map, infowindowMarker);
             var centroid = thisGrid.getProperty("centroid");
@@ -673,16 +684,16 @@ function JsonToSolution(solution, gridData)
     //solution.grids.forEach(function (grid, iGrid) {
     //    if (grid.gc == gcSearch) {
     //        console.log("Solution found "+ gcSearch + " index " + iGrid + " proposedHS " + grid.proposedHigh);
-    //    }  
+    //    }
     //});
-    
+
     //gridData.forEach(function (grid, iGrid) {
     //    if (grid.properties.gc == gcSearch) {
     //        console.log("Grids found " + gcSearch + " index " + iGrid + " proposedHS " + grid.properties.proposedHigh);
     //    }
     //});
-  
-    
+
+
     for (var i = 0; i < gridData.length; i++) {
         if(gridData[i].properties.gc == solution.grids[i].gc)
         {
@@ -694,7 +705,7 @@ function JsonToSolution(solution, gridData)
             var match = 0;
             for (var index = 0; index < solutionLength /*&& !match*/; index++){
                 if (gridData[i].properties.gc == solution.grids[index].gc) {
-                    match++; 
+                    match++;
                     gridData[i].properties.proposedHigh = solution.grids[index].proposedHigh;
                 }
             }
@@ -717,7 +728,7 @@ function Results(grids, schoolData)
     {
         results.schools[i] = {dbname:schoolData.hs[i].dbName, students:0, capacity_p:0, distance:0, transitions:0, frl:0, frl_p:0, accidentRate:0};
     }
-    
+
     results.totalAccidentRate = 0;
 
     grids.forEach(function (grid){
@@ -730,7 +741,7 @@ function Results(grids, schoolData)
                 results.schools[i].students += grid.properties.hs2020;
                 results.schools[i].distance += grid.properties.hs2020*grid.properties.distance[i];
                 results.schools[i].frl += FrlFit(grid.properties);
-                
+
                 if (grid.properties.accidentRate) {
                     results.schools[i].accidentRate += grid.properties.hs2020 * grid.properties.accidentRate[i];
                 }
@@ -753,7 +764,7 @@ function Results(grids, schoolData)
         if (results.schools[i].students) {
             results.schools[i].frl_p = 100*results.schools[i].frl/(results.schools[i].students);
         }
-        
+
         if (results.schools[i].accidentRate) {
             results.totalAccidentRate += results.schools[i].accidentRate;
         }
@@ -821,6 +832,24 @@ function ProposedHigh(inProposedHigh, grid) {
 
             for (var i = 0; i < distance.length; i++) {
                 if (distance[i] < minDistance) {
+                    minDistance = distance[i];
+                    proposedHigh = schoolData.hs[i].dbName;
+                }
+            }
+        }
+    }
+
+    if (proposedHigh == 'Safest') {
+        var accidentRate = grid.getProperty('accidentRate');
+        var distance = grid.getProperty('distance');
+        if (accidentRate && accidentRate.length > 1) {
+            var minRate = accidentRate[0];
+            var minDistance = distance[0];
+            var proposedHigh = schoolData.hs[0].dbName;
+
+            for (var i = 0; i < accidentRate.length; i++) {
+                if (accidentRate[i] <= minRate && distance[i] < minDistance) {
+                    minRate = accidentRate[i];
                     minDistance = distance[i];
                     proposedHigh = schoolData.hs[i].dbName;
                 }
