@@ -15,6 +15,9 @@ var defaultMapDescription = "No Description";
 var bsdOverlay;
 var mapGrids;
 
+var maxAccidentRate = 20;
+var minAccidentRate = 0;
+
 var schoolData = {
     hs: [
         { id: 0, dbName: 'Aloha',  displayName: 'Aloha', color: 'blue', capacity: 2176, location: { lat: 45.4857177, lng: -122.8695357 } },
@@ -183,7 +186,8 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
         "mapName":defaultMapName,
         "mapDescription": defaultMapDescription,
         "accidentRate": [ [0, 0, 0, 0, 0, 0]],
-        "totalAccidentRate":0
+        "totalAccidentRate": 0,
+        "colorMap":"Proposed"
     };
 
     $scope.DBRefresh = function () {
@@ -406,6 +410,11 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
         out += '</div> <!-- Stats Table -->';
         return out;
     };
+    
+    $scope.ColorMap = function () {
+        Configure($scope);
+        $scope.$apply();
+    };
 
     function initMap() {
         // Initialise the map.
@@ -542,12 +551,20 @@ function Configure($scope) {
 
 
         var color = 'grey';
-        for (var i=0; i<schoolData.hs.length && color == 'grey'; i++)
-        {
-            var school = schoolData.hs[i];
-            if (highSchool == school.dbName)
-            {
+        if ($scope.data.colorMap == 'Proposed') {
+            
+            var school = FindSchool(highSchool, schoolData);
+            if (school) {
                 color = school.color;
+            }
+        }
+        else {
+            for (var i = 0; i < schoolData.hs.length; i++) {
+                if ($scope.data.colorMap == schoolData.hs[i].dbName) {
+                    var accidentRates = feature.getProperty('accidentRate');
+                    var accidentRate = accidentRates[i];
+                    color = HeatMap(minAccidentRate, maxAccidentRate, accidentRates[i]);
+                }
             }
         }
 
@@ -858,4 +875,14 @@ function ProposedHigh(inProposedHigh, grid) {
     }
 
     return proposedHigh;
+}
+
+function FindSchool(schoolName, schoolsData) {
+    var school;
+    for (var i = 0; i < schoolData.hs.length && school == null; i++) {
+        if (schoolName == schoolData.hs[i].dbName) {
+            school = schoolData.hs[i];
+        }
+    }
+    return school;
 }
