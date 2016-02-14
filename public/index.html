@@ -8,6 +8,8 @@
     <script src="Chart.min.js"></script>
     <script src="angular-chart.min.js"></script>
     <script src="https://maps.googleapis.com/maps/api/js?v=3.exp"></script>
+    <script src="Calculations.js"></script>
+    <script src="ServerApi.js"></script>
     <script src="solution.js"></script>
     <link href="style.css" rel="stylesheet" />
     <link href="angular-chart.min.css" rel="stylesheet"/>
@@ -40,6 +42,7 @@
                                 <option value="Sunset">Sunset</option>
                                 <option value="Westview">Westview</option>
                                 <option value="Closest">Closest High School</option>
+                                <option value="Safest">Safest Travel</option>
                                 <option value="Unassigned">Unassigned</option>
                             </select>
                         </div>
@@ -59,6 +62,17 @@
                                 <option value="paint">Applies High School</option>
                             </select>
                         </div>
+
+                        <label>Color Map By</label>
+                        <select name="ColorMap" id="colorMap" ng-model="data.colorMap" value="data.colorMap" ng-change="ColorMap()">
+                            <option value="Proposed">Proposed High School</option>
+                            <option value="Aloha">Aloha Accident Rate</option>
+                            <option value="Beaverton">Beaverton Accident Rate</option>
+                            <option value="Cooper">Cooper Accident Rate</option>
+                            <option value="Southridge">Southridge Accident Rate</option>
+                            <option value="Sunset">SunsetAccident Rate</option>
+                            <option value="Westview">Westview Accident Rate</option>
+                        </select>
                     </form>
                 </div>
             </div> <!-- BSD Solution Editor -->

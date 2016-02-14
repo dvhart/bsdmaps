@@ -15,8 +15,8 @@ var defaultMapDescription = "No Description";
 var bsdOverlay;
 var mapGrids;
 
-var maxAccidentRate = 20;
-var minAccidentRate = 0;
+var maxAccidentRate = [10,8,12,8,7,10];
+var minAccidentRate = [0, 0, 2, 0, 0, 0];
 
 var schoolData = {
     hs: [
@@ -325,8 +325,8 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
 
             $scope.data.solutionName = selectedSolution[0]["solutionName"];
             $scope.data.solutionDescription = selectedSolution[0]["solutionDescription"];
-            $scope.data.solutionUsername = selectedSolution[0]["solutionUsername"];
-            $scope.data.solutionEmail = selectedSolution[0]["email"];
+            //$scope.data.solutionUsername = selectedSolution[0]["solutionUsername"];
+            //$scope.data.solutionEmail = selectedSolution[0]["email"];
             $scope.data.solutionUrl = selectedSolution[0]["url"];
 
             results = Results(geoJson.features, schoolData);
@@ -410,10 +410,10 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
         out += '</div> <!-- Stats Table -->';
         return out;
     };
-    
+
     $scope.ColorMap = function () {
         Configure($scope);
-        $scope.$apply();
+ //       $scope.$apply();
     };
 
     function initMap() {
@@ -493,6 +493,12 @@ function RefreshFromGrids(grids) {
     try {
         var geoJsonData = { "type": "FeatureCollection", "features": grids };
 
+        geoJsonData.features.forEach(function (grid, iGrid) {
+            if (grid._id) {
+                grid.properties.id = grid._id;
+            }
+        });
+
         var newData = new google.maps.Data({map: map});
         var features = newData.addGeoJson(geoJsonData);
 
@@ -502,7 +508,7 @@ function RefreshFromGrids(grids) {
         mapGrids = features;
 
     } catch (error) {
-        newData.setMap(null);
+        if (newData) { newData.setMap(null); }
         if (geoJsonInput.value !== "") {
             setGeoJsonValidity(false);
         } else {
@@ -552,7 +558,7 @@ function Configure($scope) {
 
         var color = 'grey';
         if ($scope.data.colorMap == 'Proposed') {
-            
+
             var school = FindSchool(highSchool, schoolData);
             if (school) {
                 color = school.color;
@@ -563,7 +569,7 @@ function Configure($scope) {
                 if ($scope.data.colorMap == schoolData.hs[i].dbName) {
                     var accidentRates = feature.getProperty('accidentRate');
                     var accidentRate = accidentRates[i];
-                    color = HeatMap(minAccidentRate, maxAccidentRate, accidentRates[i]);
+                    color = HeatMapRG(minAccidentRate[i], maxAccidentRate[i], accidentRates[i]);
                 }
             }
         }
@@ -861,13 +867,11 @@ function ProposedHigh(inProposedHigh, grid) {
         var distance = grid.getProperty('distance');
         if (accidentRate && accidentRate.length > 1) {
             var minRate = accidentRate[0];
-            var minDistance = distance[0];
             var proposedHigh = schoolData.hs[0].dbName;
 
             for (var i = 0; i < accidentRate.length; i++) {
-                if (accidentRate[i] <= minRate && distance[i] < minDistance) {
+                if (accidentRate[i] <= minRate) {
                     minRate = accidentRate[i];
-                    minDistance = distance[i];
                     proposedHigh = schoolData.hs[i].dbName;
                 }
             }

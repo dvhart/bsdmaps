@@ -219,10 +219,6 @@ function RefreshFromDB(dbData) {
             if (grid._id) {
                 grid.properties.id = grid._id;
             }
-
-            if (grid.properties.gc == 908) {
-                console.log("RefreshFromDB " + grid.properties.gc);
-            }
         });
 
         var newData = new google.maps.Data({map: map});
@@ -248,7 +244,7 @@ function Configure($scope) {
     // Initialise the map.
     map.data.setControls(['Polygon']);
 
-    map.data.setStyle(function (feature) {		
+    map.data.setStyle(function (feature) {
         var view = "elementary";
 
         var color = 'grey';

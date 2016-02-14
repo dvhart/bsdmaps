@@ -33,6 +33,7 @@ var schools = [
 
 app.controller('BoundaryController', function ($scope, $http) {
     $scope.data = {
+        "rid": "",
         "gc": 0,
         "hs2020": 0,
         "reducedLunch": 0,
@@ -75,7 +76,7 @@ app.controller('BoundaryController', function ($scope, $http) {
                     var needPath = false;
                     var jRoute;
                     var iRoute = [];
-                    var route;                    
+                    var route;
                     while (iGrid < end && !needPath) {
                         // Find all routes that match the grid code.
 
@@ -219,7 +220,7 @@ app.controller('BoundaryController', function ($scope, $http) {
         };
 
         map = new google.maps.Map(document.getElementById('safety-map-holder'), mapProp);
-        directionsService = new google.maps.DirectionsService;        
+        directionsService = new google.maps.DirectionsService;
         var renderOptions = { preserveViewport: true };
         directionsDisplay = new google.maps.DirectionsRenderer(renderOptions);
         geocoder = new google.maps.Geocoder;
@@ -259,6 +260,13 @@ app.controller('BoundaryController', function ($scope, $http) {
 function RefreshFromGrids(grids) {
     try {
         var geoJsonData = { "type": "FeatureCollection", "features": grids };
+
+        geoJsonData.features.forEach(function (grid, iGrid) {
+            if (grid._id) {
+                grid.properties.id = grid._id;
+            }
+        });
+
         var newData = new google.maps.Data({map: map});
         var features = newData.addGeoJson(geoJsonData);
 
@@ -299,7 +307,7 @@ function Configure($scope, $http) {
                 if ($scope.data.evalHigh == schools[i].dbName) {
                     var accidentRates = feature.getProperty('accidentRate');
                     var accidentRate = accidentRates[i];
-                    color = HeatMap(minAccidentRate, maxAccidentRate, accidentRates[i]);
+                    color = HeatMapRG(minAccidentRate[i], maxAccidentRate[i], accidentRates[i]);
                 }
             }
         }
@@ -325,47 +333,46 @@ function Configure($scope, $http) {
 
     map.data.addListener('click', selectGrid = function (event) {
         map.data.revertStyle();
+
+        overlapPolylines.forEach(function (polyline) {
+            polyline.setMap(null);
+        });
+        overlapPolylines = [];
+
         selectedGrid = event.feature;
         event.feature.toGeoJson(function (grid) {
             if (event.Fb.ctrlKey) {
                 selectedFeature = grid;
                 // Find route associated with gc
                 var route;
-                for (var i = 0; i < sections.length && route == null; i++) {
+                for (var i = 0; i < routes.length && route == null; i++) {
                     if (routes[i].gc == grid.properties.gc) {
-                        route = sections[i];
+                        route = routes[i];
                     }
                 }
 
-                if (route && route.path.lenth == schools.length) {
+                if (route && route.path.length == schools.length) {
+                    grid.properties.accidentRate = [];
                     route.path.forEach(function (path, iPath) {
-                        grid.properties.accidentRate[iPath] = FindAccidentRate(path.getPath());
+                        grid.properties.accidentRate[iPath] = FindAccidentRate(path);
                         var status = "gc " + grid.properties.gc + " rate " + grid.properties.accidentRate[iPath];
                         console.log(status)
-                    });
-                }
-                else {
-                    var newRoute = { gc: grid.properties.gc, path: [] };
 
-                    schools.forEach(function (school, iSchool) {
-                        var origin = PolygonCenter(grid.geometry.coordinates);
-                        var destination = school.location;
-
-                        FindRoute(origin, destination, sections, function (results) {
-                            newRoute.path[iSchool] = PolylineToArray(results.polyline);
-                            grid.properties.accidentRate[iSchool] = FindAccidentRate(results.polyline.getPath());
-                            grid.properties.distance[iSchool] = results.length;
-
-                            if (iSchool >= schools.length - 1) {
-                                //routes.push(newRoute);
-                                //$http.post('/SetRoutes', routes).then(function (response) {
-                                //    console.log("/SetRoutes " + response);
-                                //    $http.post('/EditGrid', grid).then(function (response) {
-                                //        console.log("/EditGrid " + response);
-                                //    });
-                                //});
+                        if (iPath == schools.length - 1) {
+                            if (grid.properties.id) {
+                                grid._id = grid.properties.id;
+                                delete grid.properties.id;
                             }
-                        });
+
+                            $http.post('/EditGrid', grid).then(function (response) {
+                                console.log("/EditGrid " + response);
+                            });
+
+                            $http.post('/EditGrid', grid).then(function (response) {
+                                RefreshFromGrids(response.data);
+                                Configure($scope);
+                            });
+                        }
                     });
                 }
             }
@@ -415,7 +422,7 @@ function Configure($scope, $http) {
                     if (route) {
                         if (route.path) {
                             route.path.forEach(function (points) {
-                                overlapPolylines.push(new google.maps.Polyline({ path: points, clickable: false, strokeColor: '#ffff00', strokeWeight: 8 }));
+                                overlapPolylines.push(new google.maps.Polyline({ path: points, clickable: false, strokeColor: '#ffff00', strokeWeight: 6 }));
                             });
                         }
                         else {
@@ -427,7 +434,10 @@ function Configure($scope, $http) {
                     overlapPolylines.forEach(function (polyline) {
                         polyline.setMap(map);
                     });
-                    //$http.post('/EditGrid', grid);
+                    if (route) {
+                        $scope.data.rid = route._id;
+                    }
+                    $scope.$apply();
                 });
             }
         });
@@ -525,7 +535,7 @@ function FindPath(origin, destination, departureTime, callback) {
     };
 
     directionsService.route(request, function (response, status) {
-        if (status === google.maps.DirectionsStatus.OK) {
+        if (status == google.maps.DirectionsStatus.OK) {
             // Convert route to polyline
             var polyline = new google.maps.Polyline({
                 path: [],

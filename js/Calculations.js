@@ -16,10 +16,10 @@
 
 function PolygonCenter(coordinates) {
     var maxLat, minLat, maxLong, minLong;
-    
+
     maxLong = minLong = coordinates[0][0][0];
     maxLat = minLat = coordinates[0][0][1];
-    
+
     for (var i = 1; i < coordinates[0].length; i++) {
         if (coordinates[0][i][0] < minLong) {
             minLong = coordinates[0][i][0]
@@ -34,9 +34,9 @@ function PolygonCenter(coordinates) {
             maxLat = coordinates[0][i][1]
         }
     }
-    
+
     var center = { lat: (maxLat + minLat) / 2, lng: (maxLong + minLong) / 2 };
-    
+
     return center;
 }
 
@@ -55,15 +55,23 @@ function rgb(r, g, b) {
     return ["rgb(", r, ",", g, ",", b, ")"].join("");
 }
 
+function HeatMapRG(minimum, maximum, value) {
+    var ratio = 1 * (value - minimum) / (maximum - minimum);
+    var b = 0;
+    var r = Math.max(0, 255 * (ratio - 1));
+    var g = Math.max(0, 255 * (1 - ratio));
+    return rgb(r, g, b);
+}
+
 function AccidentRate(totalAccidents, studyYears, averageAnnualDailyTraffice, sectionLength) {
     var rate = 0;
-    
+
     if (totalAccidents > 0 && studyYears > 0 && averageAnnualDailyTraffice > 0 && sectionLength > 0) {
         rate = totalAccidents * 1e6 / (365 * studyYears * averageAnnualDailyTraffice * sectionLength);
     }
     else {
         console.log("AccidentRate incorrect paramters totalAccidents:" + totalAccidents + " studyYears:" + studyYears + " averageAnnualDailyTraffice:" + averageAnnualDailyTraffice + " sectionLength:" + sectionLength);
     }
-    
+
     return rate;
 }
