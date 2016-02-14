@@ -555,19 +555,19 @@ function Configure($scope) {
     map.data.setStyle(function (feature) {
         var highSchool = feature.getProperty('proposedHigh');
         var gc = feature.getProperty('gc');
-
-
         var color = 'grey';
-        if ($scope.data.colorMap == 'Proposed') {
 
+        if ($scope.data.colorMap == 'Proposed') {
             var school = FindSchool(highSchool, schoolData);
             if (school) {
                 color = school.color;
             }
-        }
-        else {
+        } else {
+            if ($scope.data.colorMap != 'Safety') {
+                highSchool = $scope.data.colorMap;
+            }
             for (var i = 0; i < schoolData.hs.length; i++) {
-                if ($scope.data.colorMap == schoolData.hs[i].dbName) {
+                if (highSchool == schoolData.hs[i].dbName) {
                     var accidentRates = feature.getProperty('accidentRate');
                     var accidentRate = accidentRates[i];
                     color = HeatMapRG(minAccidentRate[i], maxAccidentRate[i], accidentRates[i]);
