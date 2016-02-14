@@ -136,28 +136,27 @@ app.post('/NewGrid', function (request, res) {
 app.post('/DeleteGrid', function (request, res) {
     console.time("/DeleteGrid");
     var putFeature = '';
-
+    
     request.on('data', function (data) {
         putFeature += data;
         if (putFeature.length > 1e6)
             request.connection.destroy();
     });
-
+    
     request.on('end', function () {
-
+        
         if (putFeature != '') {
             //console.log('DeleteGrid: ' + putFeature);
             var grid = JSON.parse(putFeature);
             dbGrid.collection('features').deleteOne(
-                grid._id,
-                function (err, results)
-                {
+                { "_id": ObjectId(grid._id) },
+                function (err, results) {
                     if (err != null) {
                         console.log("/DeleteGrid error: " + err);
                     }
                     else {
                         console.log("/DeleteGrid " + results.deletedCount + " deleted, result: " + results.result);
-
+                        
                         var features = dbGrid.collection('features').find().toArray(function (err, items) {
                             if (err) {
                                 console.log("/GetFeatures error" + err);
@@ -167,8 +166,7 @@ app.post('/DeleteGrid', function (request, res) {
                             console.timeEnd("/DeleteGrid");
                         });
                     }
-                }
-            );
+                });
         }
     });
 });
@@ -186,7 +184,9 @@ app.post('/EditGrid', function (request, res) {
     request.on('end', function () {
         if (putFeature != '') {
             var edit = JSON.parse(putFeature);
-            dbGrid.collection('features').replaceOne({ "_id" : edit._id }, edit, function (err, results) {
+            var id = ObjectId(edit._id);
+            delete edit._id;
+            dbGrid.collection('features').replaceOne({ "_id" : id }, edit, function (err, results) {
                 if (err != null) {
                     console.log("/EditGrid set properties error: " + err);
                     res.send(JSON.stringify(err));
