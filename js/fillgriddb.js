@@ -154,7 +154,7 @@ app.controller('BoundaryController', function ($scope, $http) {
 
                 // move id to top level from properties
                 if (geoJson.properties.id) {
-                    geoJson._id = grid.properties.id;
+                    geoJson._id = geoJson.properties.id;
                     delete geoJson.properties.id;
                 }
 
