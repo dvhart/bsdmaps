@@ -95,6 +95,7 @@ app.constant("keyCodes", {
     SIX     : 54,
     SEVEN   : 55,
     EIGHT   : 56,
+    NINE    : 57,
 });
 
 app.directive("keyboard", function($document, keyCodes) {
@@ -141,8 +142,8 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
         FIVE   : function(name, code) { $scope.data.proposedHigh = schoolData.hs[4].dbName },
         SIX    : function(name, code) { $scope.data.proposedHigh = schoolData.hs[5].dbName },
         SEVEN  : function(name, code) { $scope.data.proposedHigh = "Closest" },
-        EIGHT  : function(name, code) { $scope.data.proposedHigh = "Unassigned" },
-        NINE  : function (name, code) { $scope.data.proposedHigh = "Safest" }
+        EIGHT  : function (name, code) { $scope.data.proposedHigh = "Safest" },
+        NINE   : function(name, code) { $scope.data.proposedHigh = "Unassigned" }
     };
 
     $scope.data = {
