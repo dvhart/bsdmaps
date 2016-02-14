@@ -62,18 +62,19 @@
                                 <option value="paint">Applies High School</option>
                             </select>
                         </div>
-
-                        <label>Color Map By</label>
-                        <select name="ColorMap" id="colorMap" ng-model="data.colorMap" value="data.colorMap" ng-change="ColorMap()">
-                            <option value="Proposed">Proposed High School</option>
-                            <option value="Safety">Proposed HS Accident Rate</option>
-                            <option value="Aloha">Aloha Accident Rate</option>
-                            <option value="Beaverton">Beaverton Accident Rate</option>
-                            <option value="Cooper">Cooper Accident Rate</option>
-                            <option value="Southridge">Southridge Accident Rate</option>
-                            <option value="Sunset">SunsetAccident Rate</option>
-                            <option value="Westview">Westview Accident Rate</option>
-                        </select>
+                        <div class="form-row">
+                            <label>Color Map By</label>
+                            <select name="ColorMap" id="colormap" ng-model="data.colorMap" value="data.colorMap" ng-change="ColorMap()">
+                                <option value="Proposed">Proposed High School</option>
+                                <option value="Safety">Proposed HS Accident Rate</option>
+                                <option value="Aloha">Aloha Accident Rate</option>
+                                <option value="Beaverton">Beaverton Accident Rate</option>
+                                <option value="Cooper">Cooper Accident Rate</option>
+                                <option value="Southridge">Southridge Accident Rate</option>
+                                <option value="Sunset">Sunset Accident Rate</option>
+                                <option value="Westview">Westview Accident Rate</option>
+                            </select>
+                        </div>
                     </form>
                 </div>
             </div> <!-- BSD Solution Editor -->
