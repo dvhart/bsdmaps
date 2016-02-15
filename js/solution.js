@@ -590,7 +590,7 @@ function Configure($scope) {
         map.data.revertStyle();
         map.data.overrideStyle(event.feature, { strokeWeight: 1 });
 
-        if (event.Pb.buttons==1 && ($scope.data.dragFunc=="paint")) {
+        if (event.Ob.buttons == 1 && ($scope.data.dragFunc == "paint")) {
             var proposedHigh = $scope.data.proposedHigh;
             if (proposedHigh) {
                 // Record selected grid and grid data
@@ -619,7 +619,7 @@ function Configure($scope) {
                 $scope.$apply();
             }
         }
-        else if (event.Pb.ctrlKey) {
+        else if (event.Ob.ctrlKey) {
             var thisGrid = event.feature;
 
             var accidentNum = thisGrid.getProperty("accidentRate");
