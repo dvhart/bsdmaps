@@ -436,6 +436,9 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
         };
 
         map = new google.maps.Map(document.getElementById('map-holder'), mapProp);
+        
+        infowindow = new google.maps.InfoWindow;
+        infoWindowMarker = new google.maps.Marker();
 
         // Add the BSD boundary overlay
         var imageBounds = {
@@ -447,9 +450,6 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
 
         bsdOverlay = new google.maps.GroundOverlay('http://bsdmaps.monkeyblade.net/bsd-boundary-existing-overlay.png', imageBounds);
         bsdOverlay.setMap(map);
-
-        infowindow = new google.maps.InfoWindow;
-        infowindowMarker = new google.maps.Marker();
 
         /*
          * Add google markers for each high school
@@ -598,6 +598,7 @@ function Configure($scope) {
 
     map.data.addListener('mouseover', function (event) {
         map.data.revertStyle();
+        infoWindowMarker.setMap(null);
         map.data.overrideStyle(event.feature, { strokeWeight: 1 });
 
         if (event.Ob.buttons == 1 && ($scope.data.dragFunc == "paint")) {
@@ -629,66 +630,71 @@ function Configure($scope) {
                 $scope.$apply();
             }
         }
-        else if (event.Ob.ctrlKey) {
-            var thisGrid = event.feature;
+    });
 
+    map.data.addListener('mouseout', function (event) {
+        map.data.revertStyle();
+    });
+
+
+    map.data.addListener('click', selectGrid = function (event) {
+        if (event.Ob.ctrlKey) {
+            var thisGrid = event.feature;
+        
             var accidentNum = thisGrid.getProperty("accidentRate");
             var accidentStr = [];
             accidentNum.forEach(function (rate, iRate) {
                 accidentStr.push(rate.toFixed(2));
             });
-
+        
             thisGrid.getProperty("accidentRate");
-
+        
             var msg = "gc:" + thisGrid.getProperty("gc") +
-                "<br>high:" + thisGrid.getProperty("high") +
-                "<br>proposed:" + thisGrid.getProperty("proposedHigh") +
-                "<br>" + thisGrid.getProperty("distance") +
-                "<br>" + accidentStr;
+                    "<br>High School:" + thisGrid.getProperty("high") +
+                    "<br>Proposed:" + thisGrid.getProperty("proposedHigh") +
+                    "<br>Students:" + thisGrid.getProperty("hs2020") +
+                    "<br>Dist:" + thisGrid.getProperty("distance") +
+                    "<br>Crash:" + accidentStr;
+            
+            infoWindowMarker.setMap(null);          
+
             infowindow.setContent(msg);
-            infowindow.open(map, infowindowMarker);
+            infowindow.open(map, infoWindowMarker);
             var centroid = thisGrid.getProperty("centroid");
-            infowindowMarker.setPosition({lat: centroid[1], lng: centroid[0]});
-            infowindowMarker.setVisible(false);
-            infowindowMarker.setMap(map);
+            infoWindowMarker.setPosition({ lat: centroid[1], lng: centroid[0] });
+            infoWindowMarker.setVisible(false);
+            infoWindowMarker.setMap(map);
         }
-    });
-
-    map.data.addListener('mouseout', function (event) {
-        map.data.revertStyle();
-        infowindowMarker.setMap(null);
-    });
-
-
-    map.data.addListener('click', selectGrid = function (event) {
-        var proposedHigh = $scope.data.proposedHigh;
-        if (proposedHigh) {
-            // Record selected grid and grid data
-            selectedGrid = event.feature;
-            selectedGrid.setProperty('proposedHigh', ProposedHigh(proposedHigh, selectedGrid));
-            selectedES = selectedGrid.getProperty('elementary');
-
-            var numEsGrids = 0;
-            if ($scope.data.paintBy == "ES") {
-                mapGrids.forEach(function (grid) {
-                    if (grid.getProperty('elementary') == selectedES) {
-                        grid.setProperty('proposedHigh', ProposedHigh(proposedHigh, grid));
-                        numEsGrids++;
-                    }
+        else {
+            var proposedHigh = $scope.data.proposedHigh;
+            if (proposedHigh) {
+                // Record selected grid and grid data
+                selectedGrid = event.feature;
+                selectedGrid.setProperty('proposedHigh', ProposedHigh(proposedHigh, selectedGrid));
+                selectedES = selectedGrid.getProperty('elementary');
+                
+                var numEsGrids = 0;
+                if ($scope.data.paintBy == "ES") {
+                    mapGrids.forEach(function (grid) {
+                        if (grid.getProperty('elementary') == selectedES) {
+                            grid.setProperty('proposedHigh', ProposedHigh(proposedHigh, grid));
+                            numEsGrids++;
+                        }
+                    });
+                }
+                
+                console.log("click elementary grids=" + numEsGrids);
+                
+                map.data.toGeoJson(function (geoJson) {
+                    results = Results(geoJson.features, schoolData);
                 });
+                
+                $scope.data.mapName = defaultMapName;
+                $scope.data.mapDescription = defaultMapDescription;
+                
+                UpdateScopeData($scope, results);
+                $scope.$apply();
             }
-
-            console.log("click elementary grids=" + numEsGrids);
-
-            map.data.toGeoJson(function (geoJson) {
-                results = Results(geoJson.features, schoolData);
-            });
-
-            $scope.data.mapName = defaultMapName;
-            $scope.data.mapDescription = defaultMapDescription;
-
-            UpdateScopeData($scope, results);
-            $scope.$apply();
         }
     });
 };
