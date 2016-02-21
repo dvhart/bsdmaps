@@ -785,7 +785,7 @@ function Results(grids, schoolData)
                 results.schools[i].frl += FrlFit(grid.properties);
 
                 if (grid.properties.accidentRate) {
-                    results.schools[i].accidentRate += grid.properties.hs2020 * grid.properties.accidentRate[i];
+                    results.schools[i].accidentRate += grid.properties.hs2020 * grid.properties.accidentRate[i] * 2*365/1e6;
                 }
             }
             // Compute transitions by existing school
