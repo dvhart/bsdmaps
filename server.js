@@ -184,7 +184,7 @@ app.post('/EditGrid', function (request, res) {
     request.on('end', function () {
         if (putFeature != '') {
             var edit = JSON.parse(putFeature);
-            var id = ObjectId(edit._id);
+            var id = edit._id;
             delete edit._id;
             dbGrid.collection('features').replaceOne({ "_id" : id }, edit, function (err, results) {
                 if (err != null) {
