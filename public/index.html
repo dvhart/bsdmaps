@@ -66,13 +66,13 @@
                             <label>Color Map By</label>
                             <select name="ColorMap" id="colormap" ng-model="data.colorMap" value="data.colorMap" ng-change="ColorMap()">
                                 <option value="Proposed">Proposed High School</option>
-                                <option value="Safety">Proposed HS Accident Rate</option>
-                                <option value="Aloha">Aloha Accident Rate</option>
-                                <option value="Beaverton">Beaverton Accident Rate</option>
-                                <option value="Cooper">Cooper Accident Rate</option>
-                                <option value="Southridge">Southridge Accident Rate</option>
-                                <option value="Sunset">Sunset Accident Rate</option>
-                                <option value="Westview">Westview Accident Rate</option>
+                                <option value="Safety">Proposed HS Crash Rate</option>
+                                <option value="Aloha">Aloha Crash Rate</option>
+                                <option value="Beaverton">Beaverton Crash Rate</option>
+                                <option value="Cooper">Cooper Crash Rate</option>
+                                <option value="Southridge">Southridge Crash Rate</option>
+                                <option value="Sunset">Sunset Crash Rate</option>
+                                <option value="Westview">Westview Crash Rate</option>
                             </select>
                         </div>
                     </form>
@@ -278,6 +278,10 @@
                             split to each high school and 3 splits to the total. An
                             elementary school feeding only one high school will not
                             contribute to either score.</li>
+                        <li>
+                            <a href="crashrate.html">Crash rate description</a>
+                        </li>
+
                     </ol>
                 </div>
 
@@ -333,14 +337,19 @@
                 <div class="form-body">
                     <!-- Try to keep this under 5, and one line each -->
                     <!-- Keep for at least 48 hours, no more than a week -->
+                    <b>Feb 20, 2016</b><br />
+                    <ul>
+                        <li>Added <a href="crashrate.html">crash rate description</a></li>
+                        <li>Changed scale factor to crash rate per year</li>
+                    </ul>
                     <b>Feb 17, 2016</b><br/>
                     <ul>
                         <li>Elementary School splits data added</li>
                     </ul>
                     <b>Feb 14, 2016</b><br/>
                     <ul>
-                        <li>Safety/Accident data added</li>
-                        <li>View by Accident Heatmap added</li>
+                        <li>Safety/Crash data added</li>
+                        <li>View by Crash Heatmap added</li>
                         <li>Paint by Safest route added</li>
                         <li>Drag to paint feature restored</li>
                     </ul>

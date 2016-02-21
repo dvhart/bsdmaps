@@ -349,7 +349,7 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
         out += '    <div class="stats-header-cell">Students</div>';
         out += '    <div class="stats-header-cell">Capacity</div>';
         out += '    <div class="stats-header-cell">Proximity (miles)</div>';
-        out += '    <div class="stats-header-cell">Accident Rate</div>';
+        out += '    <div class="stats-header-cell">Crash Rate<sup><a href="crashrate.html">2</a></sup></div>';
         out += '    <div class="stats-header-cell">Transitions</div>';
         out += '    <div class="stats-header-cell">ES Splits<sup>1</sup></div>';
         out += '    <div class="stats-header-cell">FRL</div>';
@@ -388,12 +388,12 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
         out += '<div class="stats-summary-table">';
         out += '<div class="stats-header-row">';
         out += '    <div class="stats-header-cell">School</div>';
-        out += '    <div class="stats-header-cell">Cap %</div>';
-        out += '    <div class="stats-header-cell">Prox.</div>';
-        out += '    <div class="stats-header-cell">Acc.</div>';
-        out += '    <div class="stats-header-cell">Trans.</div>';
-        out += '    <div class="stats-header-cell">ES Splits</div>';
-        out += '    <div class="stats-header-cell">FRL %</div>';
+        out += '    <div class="stats-header-cell">Cap</div>';
+        out += '    <div class="stats-header-cell">Prox</div>';
+        out += '    <div class="stats-header-cell">Crash</div>';
+        out += '    <div class="stats-header-cell">Trans</div>';
+        out += '    <div class="stats-header-cell">Split</div>';
+        out += '    <div class="stats-header-cell">FRL</div>';
 
         out += '</div>';
         for (var i = 0; i < $scope.data.schools.length; i++) {

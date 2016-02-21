@@ -1,0 +1,98 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Crash Rate Computation</title>
+
+    <script src="angular.min.js"></script>
+    <script src="Chart.min.js"></script>
+    <script src="angular-chart.min.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?v=3.exp"></script>
+    <script src="Calculations.js"></script>
+    <script src="ServerApi.js"></script>
+    <script src="safety.js"></script>
+    <link href="style.css" rel="stylesheet" />
+    <link href="angular-chart.min.css" rel="stylesheet" />
+    <style type="text/css">
+        #container {
+            height: 100%;
+            width: 100%;
+            font-size: 0;
+        }
+
+        #panel, #safety-map-container {
+            display: inline-block;
+            *display: inline;
+            zoom: 1;
+            vertical-align: top;
+            font-size: 12px;
+        }
+
+        #panel {
+            width: 35%;
+            margin: 10px;
+        }
+
+        #safety-map-container {
+            width: 60%;
+        }
+        #safety-map-holder {
+            height: 870px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body ng-app="BoundaryEntry">
+    <div id="container" ng-controller="BoundaryController">
+        <div id="panel">
+            <div id="panel-content" width 100px>
+                <form class="css-form">
+                    
+                <br/><h1>Crash Rate Computation</h1>
+                Transportation safety is one of the required for decising criteria for determing schhol boundaries provided by the Beaverton school board 
+                <a href="https://www.beaverton.k12.or.us/dist/Admin%20Regs%20and%20Policies/JC.pdf">Policy JC</a>. 
+                However, transportation safety has not been considered in the boundary adjustment process to this point according to BSD staff 
+                and consultant. To fill this gap, we have teamed up with transpiration engineers in the community to quantify the 
+                crash rate of the different school boundary solutions. This is based on the crash rate formula used by the Oregon 
+                Department of Transpiration described here: <a href="http://www.oregon.gov/ODOT/TD/TDATA/car/docs/2014_Crash_Rate_Book.pdf">ODOT 2014 Crash Rate Book</a> page 25.<br /><br />
+
+                <b>Crash Rate</b> =  C * 1,000,000,000 / (L * ADT * D) <br /><br />
+                <b>C</b>= the number of crashes that occurred on the given road segment <br />
+                <b>L</b> = the distance between the segment’s beginning and ending milepoint, to the nearest one-hundredth of a mile <br />
+                <b>ADT</b> = average daily traffic<br />
+                <b>D</b> =  the number of days the highway segment was open for travel for the year, i.e., 365
+                <br /> <br />
+                Data to solve this equation is found in <a href="http://www.oregon.gov/ODOT/TD/TDATA/car/docs/2014_Crash_Rate_Book.pdf">ODOT Crash Rate Book</a>, 
+                Washington county <a href="http://www.co.washington.or.us/LUT/Divisions/TrafficEngineering/upload/Historical-ADT-data-2003-2014.pdf">average daily traffic</a>
+                and the Beaverton <a href="http://www.beavertonoregon.gov/DocumentCenter/View/7754">traffic counts</a> in that order of preference. 
+                Crash counts are compiled by the Oregon Department of Transportation. They include motor vehicle, bicycle, and pedestrian accidents 
+                injuries, and fatalities. This data can be explored here: 
+                <a href="https://crashmap.oregonmetro.gov/file/crashes.html#?zoom=12&cars&peds&bikes&alcohol&drug&sober&fatal&injuryA&injuryB=false&injuryC&property&day&night&twilight&dry&wet&snowIce&y2007&y2008&y2009&y2010&y2011&y2012&y2013&angle&headOn&rearEnd&sideSwipe&turning&other&scope=Window&sinks=false&colors=default&lat=45.4773458&lng=-122.814789">crash counts</a>.<br /><br />.
+                <br /> <br />
+                Combining this data produces the crash rate per mile of specific road sections (shown to the right). 
+                Next, we computed the route from the center of each grid code to each high school based on Google maps best route. 
+                The overlap distance between the student routes and crash rate sections were multiplied and summed to determine the 
+                crash rate for each route to each school. For each solution (map) in the School Boundary Explorer, we now display 
+                the crash rate per school and crash rate for the whole district by multiplying the sum of the crash rates by 360*2/1,000,000. 
+                This is approximately the annual crash rate travelling to and from the proposed school for each student daily for a year. 
+                This data is the crash rates of past accidents, not a prediction of future accidents. Compiling the data introduced human error. 
+                We have made our best effort to provide an accepted method to compare transportation safety of different solutions. 
+                We do not guarantee the correctness of the data but welcome your review and corrections.
+                <br /> <br />
+                To enable you to review and correct this data, the links above provide our data sources. The map to the right shows the routes 
+                within the Beaverton School District with crash and traffic data used to compute crash rate. Clicking on a road segment shows 
+                the compiled and calculated crash rate. Clicking the map provides a measurement tool to compute segment lengths. In the 
+                <a href="http://bsdmaps.sensibleboundaries.com/">School Boundary Explorer</a>, holding the "ctrl" key while clicking on a 
+                grid displays the computed safety value for the route on the last line in school alphabetical order. 
+                Please provide your corrections to <a href="mailto:bhlarson@gmail.com,dvhart@gmail.com?subject=BSD%20Map%20Tool%20Feedback:">Send Feedback</a>.
+                <br /> <br />
+                Section Length Measurement: {{data.sectionLength}}<br />
+            </div>
+        </div>
+        <div id="safety-map-container">
+            <ul></ul>
+            <div id="safety-map-holder"></div>
+        </div>
+    </div>
+</body>
+</html>

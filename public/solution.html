@@ -66,13 +66,13 @@
                             <label>Color Map By</label>
                             <select name="ColorMap" id="colormap" ng-model="data.colorMap" value="data.colorMap" ng-change="ColorMap()">
                                 <option value="Proposed">Proposed High School</option>
-                                <option value="Safety">Proposed HS Accident Rate</option>
-                                <option value="Aloha">Aloha Accident Rate</option>
-                                <option value="Beaverton">Beaverton Accident Rate</option>
-                                <option value="Cooper">Cooper Accident Rate</option>
-                                <option value="Southridge">Southridge Accident Rate</option>
-                                <option value="Sunset">Sunset Accident Rate</option>
-                                <option value="Westview">Westview Accident Rate</option>
+                                <option value="Safety">Proposed HS Crash Rate</option>
+                                <option value="Aloha">Aloha Crash Rate</option>
+                                <option value="Beaverton">Beaverton Crash Rate</option>
+                                <option value="Cooper">Cooper Crash Rate</option>
+                                <option value="Southridge">Southridge Crash Rate</option>
+                                <option value="Sunset">Sunset Crash Rate</option>
+                                <option value="Westview">Westview Crash Rate</option>
                             </select>
                         </div>
                     </form>
@@ -109,7 +109,7 @@
                             <input type="button" ng-click="LoadFromDB()" value="Find Maps" />
                         </div>
                         <div class="form-row">
-                            <select class='select-maps' multiple ng-multiple="true"
+                            <select class='select-maps' multiple ng-multiple="false"
                                 ng-model="data.selectedSolution" ng-change="SelectSolution()"
                                 ng-options="c.solutionName for c in data.solutions">
                             </select>
@@ -270,6 +270,24 @@
                 </div>
 
                 <hr/>
+                <div style="text-align: left">
+                    <ol>
+                        <li>Elementary Splits per high school represent the total
+                            number of elementary schools that are split and feeding
+                            to the high school. Total elementary splits represent
+                            the total number of splits in the district. An
+                            elementary school split three ways will contribute 1
+                            split to each high school and 3 splits to the total. An
+                            elementary school feeding only one high school will not
+                            contribute to either score.</li>
+                        <li>
+                            <a href="crashrate.html">Crash rate description</a>
+                        </li>
+
+                    </ol>
+                </div>
+
+                <hr/>
                 This is a community generated map and is not endorsed in any way
                 by the Beaverton School District.
             </div> <!-- page -->
@@ -321,7 +339,23 @@
                 <div class="form-body">
                     <!-- Try to keep this under 5, and one line each -->
                     <!-- Keep for at least 48 hours, no more than a week -->
-                    <b>Jan 28, 2015</b><br/>
+                    <b>Feb 20, 2016</b><br />
+                    <ul>
+                        <li>Added <a href="crashrate.html">crash rate description</a></li>
+                        <li>Changed scale factor to crash rate per year</li>
+                    </ul>
+                    <b>Feb 17, 2016</b><br/>
+                    <ul>
+                        <li>Elementary School splits data added</li>
+                    </ul>
+                    <b>Feb 14, 2016</b><br/>
+                    <ul>
+                        <li>Safety/Crash data added</li>
+                        <li>View by Crash Heatmap added</li>
+                        <li>Paint by Safest route added</li>
+                        <li>Drag to paint feature restored</li>
+                    </ul>
+                    <b>Jan 28, 2016</b><br/>
                     <ul>
                         <li>Use FRL from 2015 Elementary School data to more
                             closely approximate the BSD committee maps (within
@@ -331,13 +365,14 @@
                         <li>Add hotkeys 1-8 for proposed high school
                             choices.</li>
                     </ul>
-                    <b>Jan 26, 2015</b><br/>
+                    <!-- Archive
+                    <b>Jan 26, 2016</b><br/>
                     <ul>
-                        <!-- 2016-01-26 -->
                         <li>Assign by nearest high school.</li>
                         <li>New Stats Summary table in right panel.</li>
                         <li>Google Map Markers for each high school.</li>
                     </ul>
+                    -->
                 </div>
             </div> <!-- Site News -->
 
@@ -347,7 +382,7 @@
                     <p>The data used in this tool was manually extracted, and may
                     contain errors, from the following resources:</p>
                     <a href="https://www.beaverton.k12.or.us/depts/facilities/boundary/HS%20Boundary%20Adjustment%20Process/11.12.15/Springboard%20Committee%20Table%20Map.pdf">Grid Codes</a> |
-                    <a href="https://www.beaverton.k12.or.us/depts/facilities/boundary/Documents/AllFacilities.pdf">BSD School Boundaries</a>
+                    <a href="https://www.beaverton.k12.or.us/depts/facilities/boundary/Documents/AllFacilities.pdf">BSD School Boundaries</a> |
                     <hr/>
                     <a href="mailto:bhlarson@gmail.com,dvhart@gmail.com?subject=BSD%20Map%20Tool%20Feedback:">Send Feedback</a>
                     <hr/>
