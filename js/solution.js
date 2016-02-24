@@ -606,7 +606,17 @@ function Configure($scope) {
             if (school) {
                 color = school.color;
             }
-        } else {
+        } 
+        else if ($scope.data.colorMap == 'Distance') {
+            for (var i = 0; i < schoolData.hs.length; i++) {
+                if (highSchool == schoolData.hs[i].dbName) {
+                    var distances = feature.getProperty('distance');
+                    var distance = distances[i];
+                    color = HeatMapRG(1000, 5000, distance);
+                }
+            }
+        }
+        else {
             if ($scope.data.colorMap != 'Safety') {
                 highSchool = $scope.data.colorMap;
             }
