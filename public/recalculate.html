@@ -61,6 +61,18 @@
                     <br>
                     <input type="button" ng-click="RecalculateRoutes()" value="Calculate Routes" /> {{data.progress}}<br>
                     <input type="button" ng-click="CalculateSafety()" value="Calculate Safety" /> {{data.progressSafety}}<br>
+                    <br>
+                    <input type="file" on-read-file="showContent($fileContent)" />
+                    <div ng-if="content">
+                        <h2>File content is:</h2>
+                        <pre>{{ content }}</pre>
+                    </div>
+                    <br><br>
+                    <input type="file" on-read-file="parsePermit($fileContent)" />
+                    <div ng-if="content">
+                        <h2>File content is:</h2>
+                        <pre>{{ content }}</pre>
+                    </div>
 
                 </form>
             </div>
