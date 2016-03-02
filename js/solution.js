@@ -76,6 +76,16 @@ var schoolData = {
     ]
 };
 
+var selecting = false,
+    selectedMarkers = [];
+
+window.onkeydown = function (e) {
+    selecting = ((e.keyIdentifier == 'Control') || (e.ctrlKey == true));
+}
+window.onkeyup = function (e) {
+    selecting = false;
+}
+
 /*
  * This filter permits the printing of dynamically generated html that sce would
  * otherwise prevent. This is used, for example, by the GenStatsTable function.
@@ -614,7 +624,7 @@ function Configure($scope) {
         infoWindowMarker.setMap(null);
         map.data.overrideStyle(event.feature, { strokeWeight: 1 });
 
-        if (event.Ob.buttons == 1 && ($scope.data.dragFunc == "paint")) {
+        if (selecting == 1 && ($scope.data.dragFunc == "paint")) {
             var proposedHigh = $scope.data.proposedHigh;
             if (proposedHigh) {
                 // Record selected grid and grid data
@@ -651,7 +661,7 @@ function Configure($scope) {
 
 
     map.data.addListener('click', selectGrid = function (event) {
-        if (event.Ob.ctrlKey) {
+        if (selecting) {
             var thisGrid = event.feature;
         
             var accidentNum = thisGrid.getProperty("accidentRate");
