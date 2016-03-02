@@ -47,7 +47,9 @@ app.controller('BoundaryController', function ($scope, $http) {
         "time": [0, 0, 0, 0, 0, 0],
         "timeInTraffic": [0, 0, 0, 0, 0, 0],
         "progress": "recompute status",
-        "evalHigh": "Current"
+        "evalHigh": "Current",
+        "fileContents": [],
+        "permetContents": []
     };
 
     $scope.RecalculateRoutes = function () {
@@ -208,6 +210,14 @@ app.controller('BoundaryController', function ($scope, $http) {
 
     $scope.UpdateHigh = function () {
         Configure($scope, $http);
+    };
+    
+    $scope.showContent = function ($fileContent) {
+        $scope.data.fileContents = $fileContent;
+    };
+    
+    $scope.parsePermit = function ($fileContent) {
+        $scope.data.permetContents = $fileContent;
     };
 
     function initMap() {
@@ -582,6 +592,20 @@ function FindNeighborhood(map, location, callback) {
     });
 }
 
+function LocationFromAddress(map, address, callback) {
+    geocoder.geocode({ 'location': address }, function (results, status) {
+        if (status === google.maps.GeocoderStatus.OK) {
+            if (results[1]) {
+                callback(results);
+            } else {
+                window.alert('No results found');
+            }
+        } else {
+            window.alert('Geocoder failed due to: ' + status);
+        }
+    });
+}
+
 function FindSchool(schoolName, schoolsData) {
     var school;
     for (var i = 0; i < schoolsData.length && school == null; i++) {
@@ -629,3 +653,106 @@ function FindAccidentRate(path){
     });
     return accidentRate;
 }
+
+app.directive('onReadFile', function ($parse) {
+    return {
+        restrict: 'A',
+        scope: false,
+        link: function (scope, element, attrs) {
+            var fn = $parse(attrs.onReadFile);
+            
+            element.on('change', function (onChangeEvent) {
+                var reader = new FileReader();
+                
+                reader.onload = function (onLoadEvent) {
+                    scope.$apply(function () {
+                       
+                        var splitOnCr = onLoadEvent.target.result.split("\n");
+                        var csv = [];
+                        splitOnCr.forEach(function (line, iLine) {
+                            csv[iLine] = line.split("|");
+                            if (iLine >= splitOnCr.length - 1) {
+                                var permits = BuildingPermit(csv);
+                                fn(scope, { $fileContent: permits });
+                            }
+                        });
+                    });
+                };
+                reader.readAsText((onChangeEvent.srcElement |": ",onChangeEvent.target).files[0]);
+            });
+        }
+    };
+});
+
+function BuildingPermit(data) {
+    var permitsJSON = { "type": "FeatureCollection", "features": [] }
+    
+    data.forEach(function (permitEntry) {
+        if (permitEntry[16] == 101 || permitEntry[16] == 105) {
+            if (BSDZip(permitEntry[6])) {
+                if (NewActivity(permitEntry[0])) {
+                    var newFeature = AddFeature();
+                    permitsJSON.features.push(newFeature);
+                }
+            }
+        }
+    });
+    return permitsJSON;
+};
+
+function BSDZip(zip)
+{
+    var zipInBsd = false;
+    switch (zip) {
+        case 97003:
+        case 97078:        case 97229:        case 97006:        case 97225:        case 97005:        case 97007:        case 97008:
+        case 97223:
+        case 97124:
+            zipInBsd = true;
+        break
+    }
+    return zipInBsd;
+}
+
+function NewActivity(activity) {
+    var newActivity = false;
+    
+    return newActivity;
+}
+
+function AddFeature(newEntry){
+    var newPoint = {
+        "type": "Feature", "geometry": { "type": "Point", "coordinates": [] }, "properties": {
+            "activity": newEntry[0],
+            "project": newEntry[1],
+            "phone_no": newEntry[2],
+            "pa_add1": newEntry[3],
+            "pa_add2": newEntry[4],
+            "pa_add3": newEntry[5], 
+            "pa_zip": newEntry[6], 
+            "apptype": newEntry[7], 
+            "firstname": newEntry[8], 
+            "license": newEntry[9], 
+            "sub_date ": newEntry[10], 
+            "descript1": newEntry[11],
+            "descript2": newEntry[12], 
+            "type": newEntry[13], 
+            "housecount": newEntry[14], 
+            "units": newEntry[15], 
+            "class": newEntry[16],
+            "acc_date": newEntry[17], 
+            "ent_date": newEntry[18], 
+            "valuation": newEntry[19], 
+            "parcel": newEntry[20], 
+            "status": newEntry[21], 
+            "construction": newEntry[22], 
+            "diradd": newEntry[23], 
+            "streetadd": newEntry[24], 
+            "cityadd": newEntry[25], 
+            "numadd": newEntry[26],
+            "counter": newEntry[27]
+        }
+    };
+};
+
+
