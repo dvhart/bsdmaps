@@ -49,7 +49,8 @@ app.controller('BoundaryController', function ($scope, $http) {
         "progress": "recompute status",
         "evalHigh": "Current",
         "fileContents": [],
-        "permetContents": []
+        "permetContents": [],
+        "permitYear":0
     };
 
     $scope.RecalculateRoutes = function () {
@@ -592,7 +593,7 @@ function FindNeighborhood(map, location, callback) {
     });
 }
 
-function LocationFromAddress(map, address, callback) {
+function LocationFromAddress(address, callback) {
     geocoder.geocode({ 'location': address }, function (results, status) {
         if (status === google.maps.GeocoderStatus.OK) {
             if (results[1]) {
@@ -672,7 +673,7 @@ app.directive('onReadFile', function ($parse) {
                         splitOnCr.forEach(function (line, iLine) {
                             csv[iLine] = line.split("|");
                             if (iLine >= splitOnCr.length - 1) {
-                                var permits = BuildingPermit(csv);
+                                var permits = BuildingPermit(csv, scope.data);
                                 fn(scope, { $fileContent: permits });
                             }
                         });
@@ -684,14 +685,16 @@ app.directive('onReadFile', function ($parse) {
     };
 });
 
-function BuildingPermit(data) {
+function BuildingPermit(csv, data) {
     var permitsJSON = { "type": "FeatureCollection", "features": [] }
+    var activites = {}
     
-    data.forEach(function (permitEntry) {
+    csv.forEach(function (permitEntry, iPermit) {
         if (permitEntry[16] == 101 || permitEntry[16] == 105) {
             if (BSDZip(permitEntry[6])) {
-                if (NewActivity(permitEntry[0])) {
-                    var newFeature = AddFeature();
+                if (NewActivity(activites, permitEntry[0])) {
+                    activites[permitEntry[0]] = iPermit;
+                    var newFeature = AddFeature(permitEntry);
                     permitsJSON.features.push(newFeature);
                 }
             }
@@ -703,20 +706,26 @@ function BuildingPermit(data) {
 function BSDZip(zip)
 {
     var zipInBsd = false;
-    switch (zip) {
+    switch (Number(zip)) {
         case 97003:
         case 97078:        case 97229:        case 97006:        case 97225:        case 97005:        case 97007:        case 97008:
         case 97223:
         case 97124:
             zipInBsd = true;
-        break
+            break;
+        default:
+            zipInBsd = false;
     }
     return zipInBsd;
 }
 
-function NewActivity(activity) {
-    var newActivity = false;
+function NewActivity(activities, permitId) {
+    var newActivity = true;
     
+    if (activities[permitId]) {
+        newActivity = false;
+    }
+
     return newActivity;
 }
 
@@ -753,6 +762,7 @@ function AddFeature(newEntry){
             "counter": newEntry[27]
         }
     };
+    return newPoint;
 };
 
 
