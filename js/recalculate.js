@@ -49,8 +49,7 @@ app.controller('BoundaryController', function ($scope, $http) {
         "progress": "recompute status",
         "evalHigh": "Current",
         "fileContents": [],
-        "permetContents": [],
-        "permitYear":0
+        "fileParse": "Permit"
     };
 
     $scope.RecalculateRoutes = function () {
@@ -213,13 +212,10 @@ app.controller('BoundaryController', function ($scope, $http) {
         Configure($scope, $http);
     };
     
-    $scope.showContent = function ($fileContent) {
-        $scope.data.fileContents = $fileContent;
+    $scope.parseFile = function ($fileContent) {
+        $scope.data.fileData = $fileContent;
     };
     
-    $scope.parsePermit = function ($fileContent) {
-        $scope.data.permetContents = $fileContent;
-    };
 
     function initMap() {
         // Initialise the map.
@@ -667,16 +663,29 @@ app.directive('onReadFile', function ($parse) {
                 
                 reader.onload = function (onLoadEvent) {
                     scope.$apply(function () {
-                       
-                        var splitOnCr = onLoadEvent.target.result.split("\n");
-                        var csv = [];
-                        splitOnCr.forEach(function (line, iLine) {
-                            csv[iLine] = line.split("|");
-                            if (iLine >= splitOnCr.length - 1) {
-                                var permits = BuildingPermit(csv, scope.data);
-                                fn(scope, { $fileContent: permits });
-                            }
-                        });
+                        
+                        if (scope.data.fileParse == "Permit") {
+                            var splitOnCr = onLoadEvent.target.result.split("\n");
+                            var csv = [];
+                            splitOnCr.forEach(function (line, iLine) {
+                                csv[iLine] = line.split("|");
+                                if (iLine >= splitOnCr.length - 1) {
+                                    var permits = BuildingPermit(csv, scope.data);
+                                    fn(scope, { $fileContent: permits });
+                                }
+                            });
+                        }
+                        else if (scope.data.fileParse == "Enrollment") {
+                            var splitOnCr = onLoadEvent.target.result.split("\n");
+                            var csv = [];
+                            splitOnCr.forEach(function (line, iLine) {
+                                csv[iLine] = line.split(",");
+                                if (iLine >= splitOnCr.length - 1) {
+                                    var permits = EntrollmentData(csv, scope.data);
+                                    fn(scope, { $fileContent: permits });
+                                }
+                            });
+                        }
                     });
                 };
                 reader.readAsText((onChangeEvent.srcElement |": ",onChangeEvent.target).files[0]);
@@ -708,7 +717,13 @@ function BSDZip(zip)
     var zipInBsd = false;
     switch (Number(zip)) {
         case 97003:
-        case 97078:        case 97229:        case 97006:        case 97225:        case 97005:        case 97007:        case 97008:
+        case 97078:
+        case 97229:
+        case 97006:
+        case 97225:
+        case 97005:
+        case 97007:
+        case 97008:
         case 97223:
         case 97124:
             zipInBsd = true;
@@ -763,6 +778,24 @@ function AddFeature(newEntry){
         }
     };
     return newPoint;
+};
+
+function EntrollmentData(csv, data) {
+    //var permitsJSON = { "type": "FeatureCollection", "features": [] }
+    //var activites = {}
+    
+    csv.forEach(function (permitEntry, iPermit) {
+        //if (permitEntry[16] == 101 || permitEntry[16] == 105) {
+        //    if (BSDZip(permitEntry[6])) {
+        //        if (NewActivity(activites, permitEntry[0])) {
+        //            activites[permitEntry[0]] = iPermit;
+        //            var newFeature = AddFeature(permitEntry);
+        //            permitsJSON.features.push(newFeature);
+        //        }
+        //    }
+        //}
+    });
+    return permitsJSON;
 };
 
 

@@ -64,23 +64,21 @@
                     <br>
 
                     <div class="form-row">
-                        <label>Building Permit Year</label>
-                        <input type="text" ng-model="data.permitYear" />
-                        <input type="file" on-read-file="showContent($fileContent)" />
-                        <div ng-if="content">
+                       <a href="http://www.co.washington.or.us/LUT/Divisions/Building/Reports/building-permit-search.cfm">Download Building Permits</a><br>
+                       <a href="http://www.ode.state.or.us/sfda/reports/r0073Select.asp">Download Enrollment Report</a><br><br>
+
+                       Data File to Parse:
+                        <select name="EvalHigh" id="evalHigh" ng-model="data.fileParse" value="data.fileParse"">
+                            <option value="Permit">Building Permits</option>
+                            <option value="Enrollment">Enrollment Report</option>
+                        </select><br>
+                        <input type="file" on-read-file="parseFile($fileContent)" />
+                        <div ng-if="data.fileData">
                             <h2>File content is:</h2>
-                            <pre>{{ content }}</pre>
+                            <pre>{{ data.fileData }}</pre>
                         </div>
                     </div>
-
-
                     <br><br>
-                    <input type="file" on-read-file="parsePermit($fileContent)"  />
-                    <div ng-if="content">
-                        <h2>File content is:</h2>
-                        <pre>{{ content }}</pre>
-                    </div>
-
                 </form>
             </div>
             <pre>data = {{data | json}}</pre>
