@@ -203,6 +203,7 @@ app.post('/EditGrid', function (request, res) {
     });
 });
 
+// Access to Solutions
 app.post('/NewSolution', function (request, res) {
     console.time("/NewSolution");
     var solutionString = '';
@@ -375,6 +376,7 @@ app.post('/Solution', function (request, response) {
     });
 });
 
+// Access to safety sections of roads
 app.get('/GetSection', function (request, response) {
     console.time("/GetSection");
     dbGrid.collection('sections').find().toArray(function (err, items) {
@@ -461,6 +463,7 @@ app.post('/DeleteSection', function (request, res) {
     });
 });
 
+// Access to route data
 app.get('/GetRoutes', function (request, response) {
     console.time("/GetRoutes");
     dbGrid.collection('routes').find().toArray(function (err, items) {
@@ -501,6 +504,49 @@ app.post('/SetRoutes', function (request, res) {
         }
     });
 });
+
+// Access to school data
+app.get('/GetSchools', function (request, response) {
+    console.time("/GetSchools");
+    dbGrid.collection('schools').find().toArray(function (err, items) {
+        if (err) {
+            console.log("/GetSchools error" + err);
+            return next(err);
+        }
+        response.send(JSON.stringify(items));
+        console.timeEnd("/GetSchools")
+    });
+});
+
+app.post('/SetSchools', function (request, res) {
+    console.time("/SetSchools");
+    var putFeatures = '';
+    
+    request.on('data', function (data) {
+        putFeatures += data;
+        if (putFeatures.slength > 1e6)
+            request.connection.destroy();
+    });
+    
+    request.on('end', function () {
+        
+        if (putFeatures != '') {
+            var newFeatures = JSON.parse(putFeatures);
+            
+            dbGrid.collection('schools').remove({}); // remove features from database
+            dbGrid.collection('schools').insert(newFeatures, function (err, result) {
+                if (err != null) {
+                    console.log("/SetSchools error" + err);
+                }
+                else {
+                    res.send(JSON.stringify(result));
+                    console.timeEnd("/SetSchools");
+                }
+            });
+        }
+    });
+});
+
 
 // spin up server
 MongoClient.connect(urlBsdGrid, function (err1, database1) {
