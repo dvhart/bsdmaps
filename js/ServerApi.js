@@ -45,3 +45,28 @@ function RefreshFromSafetyDB(dbData, renderMap) {
         return dbRoutes;
     }
 };
+
+function LoadSchools($http, callback) {
+    $http.get('/GetSchools').then(function (getSchools) {
+        var schoolArray = getSchools.data
+        var schoolsObj = {};
+        for (var i = 0; i < schoolArray.length; i++) {
+            schoolsObj[schoolArray[i].id] = schoolArray[i];
+        }
+        callback(schoolsObj);
+    });
+}
+
+function SaveSchools($http, schoolsObj) {
+    var schoolArray = [];
+    
+    for (var id in schoolsObj) {
+        schoolArray.push(schoolsObj[id]);
+    }
+    
+    $http.post('/SetSchools', schoolArray).then(function successCallback(response) {
+        console.log(response);
+    }, function errorCallback(response) {
+        console.log(response);
+    });
+}
