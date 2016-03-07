@@ -49,7 +49,8 @@ app.controller('BoundaryController', function ($scope, $http) {
         "progress": "recompute status",
         "evalHigh": "Current",
         "fileContents": [],
-        "fileParse": "Permit"
+        "fileParse": "Permit",
+        "schools":{}
     };
 
     $scope.RecalculateRoutes = function () {
@@ -651,41 +652,47 @@ function FindAccidentRate(path){
     return accidentRate;
 }
 
-app.directive('onReadFile', function ($parse) {
+app.directive('onReadFile', function ($parse, $http) {
     return {
         restrict: 'A',
         scope: false,
-        link: function (scope, element, attrs) {
+        link: function ($scope, element, attrs) {
             var fn = $parse(attrs.onReadFile);
             
             element.on('change', function (onChangeEvent) {
                 var reader = new FileReader();
                 
                 reader.onload = function (onLoadEvent) {
-                    scope.$apply(function () {
+                    $scope.$apply(function () {
                         
-                        if (scope.data.fileParse == "Permit") {
+                        if ($scope.data.fileParse == "Permit") {
                             var splitOnCr = onLoadEvent.target.result.split("\n");
                             var csv = [];
                             splitOnCr.forEach(function (line, iLine) {
                                 csv[iLine] = line.split("|");
                                 if (iLine >= splitOnCr.length - 1) {
-                                    var permits = BuildingPermit(csv, scope.data);
-                                    fn(scope, { $fileContent: permits });
+                                    var permits = BuildingPermit(csv, $scope.data);
+                                    fn($scope, { $fileContent: permits });
                                 }
                             });
                         }
-                        else if (scope.data.fileParse == "Enrollment") {
+                        else if ($scope.data.fileParse == "Enrollment") {
                             var splitOnCr = onLoadEvent.target.result.split("\n");
                             var csv = [];
                             splitOnCr.forEach(function (line, iLine) {
                                 csv[iLine] = line.split(",");
                                 if (iLine >= splitOnCr.length - 1) {
-                                    var permits = EntrollmentData(csv, scope.data);
-                                    fn(scope, { $fileContent: permits });
+                                    var permits = EntrollmentData(csv, $http, $scope.data);
+                                    fn($scope, { $fileContent: permits });
                                 }
                             });
                         }
+                        else if ($scope.data.fileParse == "ScoolJson") {
+                            var schoolJson = JSON.parse(onLoadEvent.target.result);
+                            SchoolInit(schoolJson, $http, $scope.data);
+
+                        }
+
                     });
                 };
                 reader.readAsText((onChangeEvent.srcElement |": ",onChangeEvent.target).files[0]);
@@ -780,22 +787,85 @@ function AddFeature(newEntry){
     return newPoint;
 };
 
-function EntrollmentData(csv, data) {
-    //var permitsJSON = { "type": "FeatureCollection", "features": [] }
-    //var activites = {}
-    
-    csv.forEach(function (permitEntry, iPermit) {
-        //if (permitEntry[16] == 101 || permitEntry[16] == 105) {
-        //    if (BSDZip(permitEntry[6])) {
-        //        if (NewActivity(activites, permitEntry[0])) {
-        //            activites[permitEntry[0]] = iPermit;
-        //            var newFeature = AddFeature(permitEntry);
-        //            permitsJSON.features.push(newFeature);
-        //        }
-        //    }
-        //}
+function LoadSchools($http, callback)
+{
+    $http.get('/GetSchools').then(function (getSchools) {
+        var schoolArray = getSchools.data
+        var schoolsObj = {};
+        for (var i = 0; i < schoolArray.length; i++) {
+            schoolsObj[schoolArray[i].id] = schoolArray[i];
+        }
+        callback(schoolsObj);
     });
-    return permitsJSON;
+}
+
+function SaveSchools($http, schoolsObj)
+{
+     var schoolArray = [];
+    
+    for (var id in schoolsObj) {
+        schoolArray.push(schoolsObj[id]);
+    }
+
+    $http.post('/SetSchools', schoolArray).then(function successCallback(response) {
+        console.log(response);
+    }, function errorCallback(response) {
+        console.log(response);
+    });
+}
+
+function EntrollmentData(csvA, $http, data) {
+    
+    var csv = csvA;
+
+    if(csv.length > 1)
+    {
+        LoadSchools($http, function (schoolsObj) {
+            schoolsObj[csv[1][1]].enrollment[csv[1][0]] = { "StudCnt":csv[1][4],  "KStudCnt":csv[1][8],  "01StudCnt":csv[1][9], 
+            "02StudCnt":csv[1][10],"03StudCnt":csv[1][11],"04StudCnt":csv[1][12],"05StudCnt":csv[1][13], "06StudCnt":csv[1][14],
+            "07StudCnt":csv[1][15],"08StudCnt":csv[1][16],"09StudCnt":csv[1][17],"10StudCnt":csv[1][18], "11StudCnt":csv[1][19],
+            "12StudCnt":csv[1][20],"UEStudCnt":csv[1][21],"USStudCnt":csv[1][22],"P8StudCnt":csv[1][23],"912StudCnt":csv[1][24]};
+
+            schoolsObj[csv[1][2]].enrollment[csv[1][0]] = { "StudCnt":csv[1][5],  "KStudCnt":csv[1][26], "01StudCnt":csv[1][27], 
+            "02StudCnt":csv[1][28],"03StudCnt":csv[1][29],"04StudCnt":csv[1][30],"05StudCnt":csv[1][31], "06StudCnt":csv[1][32],
+            "07StudCnt":csv[1][33],"08StudCnt":csv[1][34],"09StudCnt":csv[1][35],"10StudCnt":csv[1][36], "11StudCnt":csv[1][37],
+            "12StudCnt":csv[1][38],"UEStudCnt":csv[1][39],"USStudCnt":csv[1][40],"P8StudCnt":csv[1][41],"912StudCnt":csv[1][42]};
+
+            for(var i=1; i<csv.length; i++ ){
+                if(csv[i].length >= 60)
+                {
+                    if(schoolsObj[csv[i][3]])
+                    {
+                        schoolsObj[csv[i][3]].enrollment[csv[i][0]] = { "StudCnt":csv[i][6],  "KStudCnt":csv[i][44], "01StudCnt":csv[i][45], 
+                        "02StudCnt":csv[i][46],"03StudCnt":csv[i][47],"04StudCnt":csv[i][48],"05StudCnt":csv[i][49], "06StudCnt":csv[i][50],
+                        "07StudCnt":csv[i][51],"08StudCnt":csv[i][52],"09StudCnt":csv[i][53],"10StudCnt":csv[i][54], "11StudCnt":csv[i][55],
+                        "12StudCnt":csv[i][56],"UEStudCnt":csv[i][57],"USStudCnt":csv[i][58],"P8StudCnt":csv[i][59],"912StudCnt":csv[i][60]};                        
+                    }
+                    else
+                    {
+                        console.log("Missing SchlInstID "+csv[i][3]);
+                    }
+
+                }
+            }
+            data.schools = schoolsObj;
+            SaveSchools($http, schoolsObj);
+        });        
+    }
+
 };
+
+function SchoolInit(schoolJson, $http, data)
+{
+    LoadSchools($http, function (schoolsObj) {
+        for(var i=0; i<schoolJson.schools.length; i++)
+        {
+            var school = schoolJson.schools[i];
+            schoolsObj[school.id] = school;
+        }
+        data.schools = schoolsObj;
+        SaveSchools($http, schoolsObj);
+    });
+}
 
 

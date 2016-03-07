@@ -71,6 +71,7 @@
                         <select name="EvalHigh" id="evalHigh" ng-model="data.fileParse" value="data.fileParse"">
                             <option value="Permit">Building Permits</option>
                             <option value="Enrollment">Enrollment Report</option>
+                            <option value="ScoolJson">Schools.json</option>
                         </select><br>
                         <input type="file" on-read-file="parseFile($fileContent)" />
                         <div ng-if="data.fileData">
