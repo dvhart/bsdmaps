@@ -1,0 +1,64 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Crash Rate Computation</title>
+
+    <script src="angular.min.js"></script>
+    <script src="Chart.min.js"></script>
+    <script src="angular-chart.min.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?v=3.exp"></script>
+    <script src="Calculations.js"></script>
+    <script src="ServerApi.js"></script>
+    <script src="enrollment.js"></script>
+    <link href="style.css" rel="stylesheet" />
+    <link href="angular-chart.min.css" rel="stylesheet" />
+    <style type="text/css">
+        #container {
+            height: 100%;
+            width: 100%;
+            font-size: 0;
+        }
+
+        #panel, #safety-map-container {
+            display: inline-block;
+            *display: inline;
+            zoom: 1;
+            vertical-align: top;
+            font-size: 12px;
+        }
+
+        #panel {
+            width: 35%;
+            margin: 10px;
+        }
+
+        #enrollment-container {
+            width: 60%;
+        }
+        #enrollment-holder {
+            height: 870px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body ng-app="BoundaryEntry">
+    <div id="container" ng-controller="BoundaryController">
+        <div id="panel">
+            <div id="panel-content" width 100px>
+                <form class="css-form">
+                    
+                <br/><h1>Title</h1>
+                Text
+            </div>
+        </div>
+        <div id="enrollment-container">
+            <ul></ul>
+            <div id="enrollment-holder"></div>
+            <canvas id="districtPopulationYear" class="chart chart-line" chart-data="data.district.enrollment"
+                    chart-labels="data.district.grade" chart-legend="true" chart-series="data.district.year"
+                    chart-click="onClick"></canvas> 
+        </div>
+    </div>
+</body>
+</html>
