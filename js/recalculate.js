@@ -796,12 +796,12 @@ function EntrollmentData(csvA, $http, data) {
         LoadSchools($http, function (schoolsObj) {
             schoolsObj[csv[1][1]].enrollment[csv[1][0]] = { "StudCnt":csv[1][4],  "grade":[csv[1][8], csv[1][9],csv[1][10],csv[1][11],
                 csv[1][12], csv[1][13], csv[1][14], csv[1][15], csv[1][16], csv[1][17], csv[1][18], csv[1][19], csv[1][20]],
-                "UEStudCnt": csv[1][21], "USStudCnt": csv[1][22], "P8StudCnt": csv[1][23], "912StudCnt": csv[1][24]
+                "UEStudCnt": csv[1][21], "USStudCnt": csv[1][22], "StudCntP8": csv[1][23], "StudCnt912": csv[1][24]
             };
 
             schoolsObj[csv[1][2]].enrollment[csv[1][0]] = { "StudCnt":csv[1][5],  "grade":[csv[1][26], csv[1][27],csv[1][28],
                 csv[1][29],csv[1][30],csv[1][31], csv[1][32],csv[1][33],csv[1][34],csv[1][35],csv[1][36], csv[1][37],csv[1][38]],
-                "UEStudCnt":csv[1][39],"USStudCnt":csv[1][40],"P8StudCnt":csv[1][41],"912StudCnt":csv[1][42]};
+                "UEStudCnt":csv[1][39],"USStudCnt":csv[1][40],"StudCntP8":csv[1][41],"StudCnt912":csv[1][42]};
 
             for(var i=1; i<csv.length; i++ ){
                 if(csv[i].length >= 60)
@@ -810,7 +810,7 @@ function EntrollmentData(csvA, $http, data) {
                     {
                         schoolsObj[csv[i][3]].enrollment[csv[i][0]] = { "StudCnt":csv[i][6],  "KStudCnt":csv[i][44], "grade":[csv[i][45], 
                             csv[i][46],csv[i][47],csv[i][48],csv[i][49], csv[i][50],csv[i][51],csv[i][52],csv[i][53],csv[i][54], csv[i][55],csv[i][56]],
-                            "UEStudCnt":csv[i][57],"USStudCnt":csv[i][58],"P8StudCnt":csv[i][59],"912StudCnt":csv[i][60]};                        
+                            "UEStudCnt":csv[i][57],"USStudCnt":csv[i][58],"StudCntP8":csv[i][59],"StudCnt912":csv[i][60]};                        
                     }
                     else
                     {

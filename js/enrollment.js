@@ -15,15 +15,16 @@ var overlapPolylines = [];
 var newRoute;
 var maxAccidentRate = 20;
 var minAccidentRate = 0;
-var BSDID = 2243;
-var Sunset = 1188;
-var Aloha = 1186;
-var Southridge = 2783;
+
+var countyId = 34;
+var districtId = 2243;
+
 
 app.controller('BoundaryController', function ($scope, $http) {
     $scope.data = {
         "schools":{},
-        "district":{}
+        "district": {},
+        "high": []
     };
     
     $scope.onClick = function (points, evt) {
@@ -44,13 +45,15 @@ function SchoolInit( $http, data)
     LoadSchools($http, function (schoolsObj) {
         data.schools = schoolsObj;
 
+        FindHigh(data);
+
         LoadDistrictData(data);
     });
 }
 
 function LoadDistrictData(data)
 {
-    var schoolId = Aloha;
+    var schoolId = 34;
     if (data.schools && data.schools[schoolId]) {
         data.district = { "enrollment": [], "grade": ["k", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"], "year": [] };
         
@@ -60,6 +63,28 @@ function LoadDistrictData(data)
             data.district.enrollment.push(enrolement.grade);
         }
 
+    }
+}
+
+function FindHigh(data) {
+    if (data.schools) {
+        
+        for (var schoolId in data.schools) {
+            var hsStudents = false;
+            var school = data.schools[schoolId];
+            
+            var keys = Object.keys(school.enrollment);
+            var isHs = false;
+            for (var iKey = 0; iKey < keys.length && !isHs; iKey++) {
+                var numHsStudents = Number(school.enrollment[keys[iKey]].StudCnt912);
+                if (numHsStudents > 0) {
+                    isHs = true;
+                }
+            }
+            if (isHs) {
+                data.high.push([schoolId, school.displayName]);
+            }
+        }
     }
 }
 
