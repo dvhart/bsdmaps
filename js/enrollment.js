@@ -24,12 +24,20 @@ app.controller('BoundaryController', function ($scope, $http) {
     $scope.data = {
         "schools":{},
         "district": {},
-        "high": []
+        "high": [],
+        "plotData": []
     };
     
     $scope.onClick = function (points, evt) {
         console.log(points, evt);
     };
+    
+    $scope.PlotChange = function ()
+    {
+        if ($scope.data.plotData) {
+            LoadDistrictData($scope.data, $scope.data.plotData[0]);
+        }
+    }
 
     function init() {
         
@@ -47,13 +55,12 @@ function SchoolInit( $http, data)
 
         FindHigh(data);
 
-        LoadDistrictData(data);
+        LoadDistrictData(data, 34);
     });
 }
 
-function LoadDistrictData(data)
+function LoadDistrictData(data, schoolId)
 {
-    var schoolId = 34;
     if (data.schools && data.schools[schoolId]) {
         data.district = { "enrollment": [], "grade": ["k", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"], "year": [] };
         
