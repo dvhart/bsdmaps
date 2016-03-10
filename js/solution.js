@@ -175,14 +175,15 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
         "milesTraveled":0,
         "total_transitions": 0,
         "total_split_es": 0,
+        "total_split_ms": 0,
         "total_frl_p": 0,
         "students": [
             [2500, 2500, 2500, 2500, 2500, 2500],  // student count
             [0, 0, 0, 0, 0, 0]],                   // school capacity
         "capacity_p": [[0, 0, 0, 0, 0, 0]],        // percent of capacity
         "transitions": [[0, 0, 0, 0, 0, 0]],
-        "es_splits": [[0, 0, 0, 0, 0, 0]],
         "split_es": [[0, 0, 0, 0, 0, 0]],
+        "split_ms": [[0, 0, 0, 0, 0, 0]],
         "frl_p": [[0, 0, 0, 0, 0, 0]],
         "solutionName":"",
         "solutionDescription":"",
@@ -363,7 +364,7 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
         out += '    <div class="stats-header-cell">Crash Rate<sup><a href="crashrate.html">2</a></sup></div>';
         out += '    <div class="stats-header-cell">Transitions</div>';
         out += '    <div class="stats-header-cell">Split ES<sup>1</sup></div>';
-
+        out += '    <div class="stats-header-cell">Split MS<sup>1</sup></div>';
         out += '    <div class="stats-header-cell">FRL</div>';
         out += '</div>';
         for (var i = 0; i < $scope.data.schools.length; i++) {
@@ -375,6 +376,7 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
             out += '    <div class="stats-cell">' + $scope.data.accidentRate[0][i] + '</div>';
             out += '    <div class="stats-cell">' + $scope.data.transitions[0][i] + '</div>';
             out += '    <div class="stats-cell">' + $scope.data.split_es[0][i] + '</div>';
+            out += '    <div class="stats-cell">' + $scope.data.split_ms[0][i] + '</div>';
             out += '    <div class="stats-cell">' + $scope.data.frl_p[0][i] + '%</div>';
             out += '</div>';
         }
@@ -386,6 +388,7 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
         out += '    <div class="stats-footer-cell">' + $scope.data.totalAccidentRate + '</div>';
         out += '    <div class="stats-footer-cell">' + $scope.data.total_transitions + '</div>';
         out += '    <div class="stats-footer-cell">' + $scope.data.total_split_es + '</div>';
+        out += '    <div class="stats-footer-cell">' + $scope.data.total_split_ms + '</div>';
         out += '    <div class="stats-footer-cell">' + $scope.data.total_frl_p + '%</div>';
         out += '</div>';
         out += '</div> <!-- Stats Table -->';
@@ -551,7 +554,7 @@ function UpdateScopeData($scope, results) {
         $scope.data.distance[0][i] = results.schools[i].distance;
         $scope.data.transitions[0][i] = results.schools[i].transitions;
         $scope.data.split_es[0][i] = results.schools[i].split_es;
-
+        $scope.data.split_ms[0][i] = results.schools[i].split_ms;
         $scope.data.frl_p[0][i] = results.schools[i].frl_p;
         $scope.data.accidentRate[0][i] = results.schools[i].accidentRate.toFixed(2);
 
@@ -565,6 +568,7 @@ function UpdateScopeData($scope, results) {
     $scope.data.milesTraveled = results.distance;
     $scope.data.total_transitions = results.transitions;
     $scope.data.total_split_es = results.split_es;
+    $scope.data.total_split_ms = results.split_ms;    
     $scope.data.total_frl_p = (100 * frl / students).toFixed(2);
     $scope.data.totalAccidentRate = results.totalAccidentRate.toFixed(2);
 
@@ -786,17 +790,19 @@ function JsonToSolution(solution, gridData)
 function Results(grids, schoolData)
 {
     var numSchools = schoolData.hs.length;
-    var es_splits = {};
-    var results = {transitions:0, distance:0, schools:[], split_es:0};
+    var split_es = {};
+    var split_ms = {};
+    var results = {transitions:0, distance:0, schools:[], split_es:0, split_ms:0};
     for(var i=0; i<numSchools; i++)
     {
-        results.schools[i] = {dbname:schoolData.hs[i].dbName, students:0, capacity_p:0, distance:0, transitions:0, split_es:0, frl:0, frl_p:0, accidentRate:0};
+        results.schools[i] = {dbname:schoolData.hs[i].dbName, students:0, capacity_p:0, distance:0, transitions:0, split_es:0, split_ms:0, frl:0, frl_p:0, accidentRate:0};
     }
 
     results.totalAccidentRate = 0;
 
     grids.forEach(function (grid){
         var hs = grid.properties.proposedHigh;
+        var ms = grid.properties.middle;
         var es = grid.properties.elementary;
         for(var i=0; i<numSchools; i++)
         {
@@ -818,11 +824,18 @@ function Results(grids, schoolData)
         }
 
         // Create a dictionary key:es value [] of hs the es feeds to
-        if (!(es in es_splits)) {
-            es_splits[es] = [];
+        if (!(es in split_es)) {
+            split_es[es] = [];
         }
-        if (es_splits[es].indexOf(hs) == -1) {
-            es_splits[es].push(hs);
+        if (split_es[es].indexOf(hs) == -1) {
+            split_es[es].push(hs);
+        }
+
+        if (!(ms in split_ms)) {
+            split_ms[ms] = [];
+        }
+        if (split_ms[ms].indexOf(hs) == -1) {
+            split_ms[ms].push(hs);
         }
     });
 
@@ -842,10 +855,18 @@ function Results(grids, schoolData)
          * For every split elementary school, if this high school is listed,
          * increment the split_es for this high school.
          */
-        for (key in es_splits) {
-            if (es_splits[key].length > 1) {
-                if (es_splits[key].indexOf(results.schools[i].dbname) >= 0) {
+        for (key in split_es) {
+            if (split_es[key].length > 1) {
+                if (split_es[key].indexOf(results.schools[i].dbname) >= 0) {
                     results.schools[i].split_es += 1;
+                }
+            }
+        }
+        
+        for (key in split_ms) {
+            if (split_ms[key].length > 1) {
+                if (split_ms[key].indexOf(results.schools[i].dbname) >= 0) {
+                    results.schools[i].split_ms += 1;
                 }
             }
         }
@@ -862,9 +883,15 @@ function Results(grids, schoolData)
     results.distance = results.distance.toFixed(2);
 
     // Sum the number of split elementary schools
-    for (key in es_splits) {
-        if (es_splits[key].length > 1) {
+    for (key in split_es) {
+        if (split_es[key].length > 1) {
             results.split_es++;
+        }
+    }
+    
+    for (key in split_ms) {
+        if (split_ms[key].length > 1) {
+            results.split_ms++;
         }
     }
 
