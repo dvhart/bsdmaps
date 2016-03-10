@@ -222,37 +222,38 @@ app.post('/NewSolution', function (request, res) {
             if (!newSolution.solutionName || newSolution.solutionName == "") {
                 res.send("Soluiton must be named");
             }
-
-            dbGrid.collection('solutions').find({"solutionName": newSolution.solutionName}).toArray(function (err, items) {
-                if (err) {
-                    console.log("/NewSolution error" + err);
-                    res.send("Database find error");
-                }
-                else if(SolutionInDb(newSolution, items)) {
-                    console.log("/NewSolution Solution already in Db" + err);
-                    res.send("Solution " + newSolution.solutionName+ " already in Database");
-                }
-                else{
-                    dbGrid.collection('solutions').insertOne(newSolution, function (err, result) {
-                        if (err != null) {
-                            console.log("/NewSolution error " + err);
-                            res.send("Database insert error");
-                        }
-                        else {
-                            console.log("/NewSolution result " + result);
-
-                            if (result.result.ok && result.insertedCount == 1) {
-                                res.send("Map saved successfully");
-
+            else {
+                dbGrid.collection('solutions').find({ "solutionName": newSolution.solutionName }).toArray(function (err, items) {
+                    if (err) {
+                        console.log("/NewSolution error" + err);
+                        res.send("Database find error");
+                    }
+                    else if (SolutionInDb(newSolution, items)) {
+                        console.log("/NewSolution Solution already in Db" + err);
+                        res.send("Solution " + newSolution.solutionName + " already in Database");
+                    }
+                    else {
+                        dbGrid.collection('solutions').insertOne(newSolution, function (err, result) {
+                            if (err != null) {
+                                console.log("/NewSolution error " + err);
+                                res.send("Database insert error");
                             }
                             else {
-                                res.send("Save error");
+                                console.log("/NewSolution result " + result);
+                                
+                                if (result.result.ok && result.insertedCount == 1) {
+                                    res.send("Map saved successfully");
+
+                                }
+                                else {
+                                    res.send("Save error");
+                                }
+                                console.timeEnd("/NewSolution");
                             }
-                            console.timeEnd("/NewSolution");
-                        }
-                    });
-                }
-            });
+                        });
+                    }
+                });
+            }
         }
 
     });
