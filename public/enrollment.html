@@ -51,8 +51,8 @@
                 <form class="css-form">
                     
                 <br/><h1>Title</h1>
-                    <select ng-options="hs[1] for hs in data.high" ng-model="data.plotData" ng-change="PlotChange()" value="data.high[0][1]">
-                    </select>
+                    <select ng-options="hs[1] for hs in data.high" ng-model="data.plotData" ng-change="PlotChange()" value="data.high[0][1]"></select>
+                    <select ng-options="hs[1] for year in data.year" ng-model="data.plotYear" ng-change="PlotChange()" value="data.year[0][1]"></select>
             </div>
         </div>
         <div id="enrollment-container">
@@ -62,6 +62,9 @@
                     chart-labels="data.district.grade" chart-legend="true" chart-series="data.district.year"
                     chart-click="onClick" chart-colours=""></canvas> 
         </div>
+        <div class="page no-break">
+            <div id="map-holder"></div>
+        </div> <!-- page -->
     </div>
 </body>
 </html>
