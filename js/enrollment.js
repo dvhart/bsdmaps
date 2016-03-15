@@ -27,7 +27,7 @@ app.controller('BoundaryController', function ($scope, $http) {
         "high": [],
         "plotData": [],
         "grids": {},
-        "studens": {},
+        "students": {},
         "construction": {},
         "schools": {}
     };
@@ -42,6 +42,13 @@ app.controller('BoundaryController', function ($scope, $http) {
             LoadDistrictData($scope.data, $scope.data.plotData[0]);
         }
     }
+    
+    $scope.ComputeEnrollment = function ()
+    {
+        StudentsToGrids($scope.data.students, $scope.data.grids);
+        ConstructionToGrids($scope.data.construction, $scope.data.grids);
+        BSD2020Estimate($scope.data.construction, $scope.data.grids);
+    }
 
     function init() {
         
@@ -49,18 +56,18 @@ app.controller('BoundaryController', function ($scope, $http) {
 
         // Initialise the map.
         var myLatLng = { lat: 45.498, lng: -122.82 };
-        var mapProp = {
-            center: myLatLng,
-            zoom: 12,
-            mapTypeId: google.maps.MapTypeId.ROADMAP
-        };
+        //var mapProp = {
+        //    center: myLatLng,
+        //    zoom: 12,
+        //    mapTypeId: google.maps.MapTypeId.ROADMAP
+        //};
         
-        map = new google.maps.Map(document.getElementById('map-holder'), mapProp);
-        directionsService = new google.maps.DirectionsService;
-        var renderOptions = { preserveViewport: true };
-        directionsDisplay = new google.maps.DirectionsRenderer(renderOptions);
-        geocoder = new google.maps.Geocoder;
-        infowindow = new google.maps.InfoWindow;
+        //map = new google.maps.Map(document.getElementById('map-holder'), mapProp);
+        //directionsService = new google.maps.DirectionsService;
+        //var renderOptions = { preserveViewport: true };
+        //directionsDisplay = new google.maps.DirectionsRenderer(renderOptions);
+        //geocoder = new google.maps.Geocoder;
+        //infowindow = new google.maps.InfoWindow;
        
         // NOTE: This uses cross-domain XHR, and may not work on older browsers.
         LoadGeoJson($http, $scope, map);
@@ -144,7 +151,7 @@ function YearHigh(data) {
 function LoadGeoJson($http, $scope, map) {
     var gridCodes = "GridCode.geojson";
     var construction = "ResDevProjects.geojson";
-    var students = "StuGeocode2014.geojson";
+    var students = "BSDStudents2014.geojson";
     var schools = "Schools.geojson";
 
     $http.get(gridCodes).success(function (gridsJson) {
@@ -158,20 +165,20 @@ function LoadGeoJson($http, $scope, map) {
 
                     $scope.data.grids = gridsJson;
                     $scope.data.construction = constructionJson;                    
-                    $scope.data.studens = studentsJson;
+                    $scope.data.students = studentsJson;
                     $scope.data.schools = schoolsJson;
                                         
-                    var newData = new google.maps.Data({ map: map });
-                    newData.addGeoJson(gridsJson);
-                    newData.addGeoJson(constructionJson);
+                    //var newData = new google.maps.Data({ map: map });
+                    //newData.addGeoJson(gridsJson);
+                    ///newData.addGeoJson(constructionJson);
                     //newData.addGeoJson(studentsJson);
                     //newData.addGeoJson(schoolsJson);
                     
                     // No error means GeoJSON was valid!
-                    map.data.setMap(null);
-                    map.data = newData;
+                    //map.data.setMap(null);
+                    //map.data = newData;
                     
-                    Configure($scope);
+                    //Configure($scope);
                 });
 
             });
@@ -365,3 +372,103 @@ function Configure($scope) {
 };
 
 
+function StudentsToGrids(students, grids)
+{
+    grids.features.forEach(function (feature) {
+        feature.properties.students = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    });    
+
+    students.features.forEach(function(student){
+        var location = student.geometry.coordinates;
+        var grade = student.properties.GRD;
+        var iGrid = FindGridIndex(location, grids);
+
+        grids.features[iGrid].properties.students[grade]++;
+    });
+}
+
+function FindGridIndex(location, grids)
+{
+   var gridIndex;
+
+   for(var iGrid = 0; !gridIndex && iGrid < grids.features.length; iGrid++)
+   {
+       var grid = grids.features[iGrid];
+        if(WithnBounds(location, grid.properties.bounds))
+        {
+            if(WithinPolygon(location, grid))
+            {
+                gridIndex = iGrid;
+            }
+        }
+   }
+   return gridIndex;
+}
+
+function WithnBounds(location, bounds)
+{
+    var withinBounds = false;
+    if(location[0] >= bounds[0][0]){
+        if(location[0] <= bounds[1][0]){
+            if(location[1] >= bounds[0][1]){
+                if(location[1]<= bounds[1][1]){
+                    withinBounds = true;
+                }
+            }
+        }
+    }
+    return withinBounds;
+}
+
+function WithinPolygon(location, grid)
+{
+    var polygon = GridJsonTo(grid);
+    var loc = new google.maps.LatLng(location[1], location[0]);
+    var within = google.maps.geometry.poly.containsLocation(loc, polygon);
+    return within;
+}
+
+function GridJsonTo(grid) 
+{
+    var paths = [];
+    var exteriorDirection;
+    var interiorDirection;
+    for (var i = 0; i < grid.geometry.coordinates.length; i++) {
+        var path = [];
+        for (var j = 0; j < grid.geometry.coordinates[i].length; j++) {
+            var ll = new google.maps.LatLng(grid.geometry.coordinates[i][j][1], grid.geometry.coordinates[i][j][0]);
+            path.push(ll);
+        }
+        paths.push(path);
+    }
+
+    googleObj = new google.maps.Polygon({paths: paths});
+    if (grid.properties) {
+        googleObj.set("geojsonProperties", grid.properties);
+    }
+    return googleObj;
+}
+
+function CCW(path) {
+    var isCCW;
+    var a = 0;
+    for (var i = 0; i < path.length - 2; i++) {
+        a += ((path[i + 1].lat() - path[i].lat()) * (path[i + 2].lng() - path[i].lng()) - (path[i + 2].lat() - path[i].lat()) * (path[i + 1].lng() - path[i].lng()));
+    }
+    if (a > 0) {
+        isCCW = true;
+    }
+    else {
+        isCCW = false;
+    }
+    return isCCW;
+};
+
+function ConstructionToGrids(construction, grids)
+{
+
+}
+function BSD2020Estimate(construction, grids)
+{
+    
+}

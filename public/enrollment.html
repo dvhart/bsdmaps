@@ -7,7 +7,8 @@
     <script src="angular.min.js"></script>
     <script src="Chart.min.js"></script>
     <script src="angular-chart.min.js"></script>
-    <script src="https://maps.googleapis.com/maps/api/js?v=3.exp"></script>
+    <script src="earcut.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?v=3.22&libraries=geometry"></script>
     <script src="Calculations.js"></script>
     <script src="ServerApi.js"></script>
     <script src="enrollment.js"></script>
@@ -49,8 +50,8 @@
         <div id="panel">
             <div id="panel-content" width 100px>
                 <form class="css-form">
-                    
-                <br/><h1>Title</h1>
+                <input type="button" ng-click="ComputeEnrollment()" value="Compute Enrollment" />
+                <br/><h1>Plot Enrollment</h1>
                     <select ng-options="hs[1] for hs in data.high" ng-model="data.plotData" ng-change="PlotChange()" value="data.high[0][1]"></select>
                     <select ng-options="hs[1] for year in data.year" ng-model="data.plotYear" ng-change="PlotChange()" value="data.year[0][1]"></select>
             </div>
