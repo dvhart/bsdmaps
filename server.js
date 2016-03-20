@@ -547,6 +547,48 @@ app.post('/SetSchools', function (request, res) {
     });
 });
 
+// Access to school data
+app.get('/GetBSData', function (request, response) {
+    console.time("/GetBSData");
+    dbGrid.collection('bsddata').find().toArray(function (err, items) {
+        if (err) {
+            console.log("/GetBSData error" + err);
+            return next(err);
+        }
+        response.send(JSON.stringify(items));
+        console.timeEnd("/GetBSData")
+    });
+});
+
+app.post('/SetBSData', function (request, res) {
+    console.time("/SetBSData");
+    var putFeatures = '';
+    
+    request.on('data', function (data) {
+        putFeatures += data;
+        if (putFeatures.slength > 1e6)
+            request.connection.destroy();
+    });
+    
+    request.on('end', function () {
+        
+        if (putFeatures != '') {
+            var newFeatures = JSON.parse(putFeatures);
+            
+            dbGrid.collection('bsddata').remove({}); // remove features from database
+            dbGrid.collection('bsddata').insert(newFeatures, function (err, result) {
+                if (err != null) {
+                    console.log("/SetBSData error" + err);
+                }
+                else {
+                    res.send(JSON.stringify(result));
+                    console.timeEnd("/SetBSData");
+                }
+            });
+        }
+    });
+});
+
 
 // spin up server
 MongoClient.connect(urlBsdGrid, function (err1, database1) {
