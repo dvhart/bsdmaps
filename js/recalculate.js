@@ -808,7 +808,7 @@ function EntrollmentData(csvA, $http, data) {
                 {
                     if(schoolsObj[csv[i][3]])
                     {
-                        schoolsObj[csv[i][3]].enrollment[csv[i][0]] = { "StudCnt":csv[i][6],  "KStudCnt":csv[i][44], "grade":[csv[i][45], 
+                        schoolsObj[csv[i][3]].enrollment[csv[i][0]] = { "StudCnt":csv[i][6], "grade":[csv[i][44],csv[i][45], 
                             csv[i][46],csv[i][47],csv[i][48],csv[i][49], csv[i][50],csv[i][51],csv[i][52],csv[i][53],csv[i][54], csv[i][55],csv[i][56]],
                             "UEStudCnt":csv[i][57],"USStudCnt":csv[i][58],"StudCntP8":csv[i][59],"StudCnt912":csv[i][60]};                        
                     }
