@@ -73,7 +73,13 @@
 						<option value="14">2013</option>
 						<option value="15">2014</option>
 						<option value="16">2015</option>
-                    </select>					
+                    </select>
+					
+					<select name="GraphType" id="graphType" ng-model="data.graphType" ng-change="PlotChange()" value="data.graphType" multiple>
+                        <option value="year">Year</option>
+                        <option value="cohort">Cohort</option>
+                    </select>
+					
 					
             </div>
         </div>
@@ -82,7 +88,7 @@
             <div id="enrollment-holder"></div>
             <canvas id="districtPopulationYear" class="chart chart-line" chart-data="data.district.enrollment"
                     chart-labels="data.district.grade" chart-legend="true" chart-series="data.district.year"
-                    chart-click="onClick"></canvas> 
+                    chart-click="onClick" chart-options="{datasetFill:false}"></canvas> 
         </div>
         <div class="page no-break">
             <div id="map-holder"></div>
