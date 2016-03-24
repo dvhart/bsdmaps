@@ -33,6 +33,7 @@ app.controller('BoundaryController', function ($scope, $http) {
         "constructionJson": {},
         "plotYears": [],
         "plotSchool":0,
+		"graphType": "year"
     };
     
     $scope.onClick = function (points, evt) {
@@ -41,7 +42,12 @@ app.controller('BoundaryController', function ($scope, $http) {
     
     $scope.PlotChange = function ()
     {
-    	LoadDistrictData($scope.data, $scope.data.plotSchool[0], $scope.data.plotYears, true);
+    	if($scope.data.graphType == "year"){
+    		LoadDistrictData($scope.data, $scope.data.plotSchool[0], $scope.data.plotYears, true);    		
+    	}
+    	else if($scope.data.graphType == "cohort" && $scope.data.plotSchool[0] && $scope.data.plotYears[0]){
+    		LoadDistrictCohortData($scope.data, $scope.data.plotSchool[0], $scope.data.plotYears[0])
+    	}
     }
     
     $scope.ComputeEnrollment = function ()
@@ -125,17 +131,21 @@ function LoadDistrictData(data, schoolId, years, withFeeders)
     if (data.schools && data.schools[schoolId]) {
     	var school = data.schools[schoolId];
         data.district = { "enrollment": [], "grade": ["k", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"], "year": [] };
+		
 		if(years && years.length > 0)
 		{
-			var keys = Object.keys(school.enrollment);
+			//var keys = Object.keys(school.enrollment);
 			years.forEach(function(year){
 				var key = iKey[Number(year)];
-				data.district.year = key;
+				data.district.year = year;
 				var enrollment = school.enrollment[key];
 				var enrollmentNum = [];
-				enrollment.grade.forEach(function (value, index){
-					enrollmentNum[index] = Number(value);
-				});
+				if(enrollment)
+				{
+					enrollment.grade.forEach(function (value, index){
+						enrollmentNum[index] = Number(value);
+					});					
+				}
 				data.district.enrollment.push(enrollmentNum);			
 			});			
 		}
@@ -149,6 +159,7 @@ function LoadDistrictData(data, schoolId, years, withFeeders)
 					enrollmentNum[index] = Number(value);
 				});				
 				data.district.enrollment.push(enrollmentNum);
+				console.log(school.displayName +": "+ enrollmentNum);
 			}			
 		}
     }
@@ -166,30 +177,99 @@ function LoadDistrictData(data, schoolId, years, withFeeders)
 				years.forEach(function(year, iYear){
 					var key = iKey[Number(year)];
 					var esEnrolement = es.enrollment[key];
-					var msEnrolement = ms.enrollment[key];			
+					var msEnrolement = ms.enrollment[key];		
 
 					if(esEnrolement)
 					{
-						for(var i = 0; i<=5; i++)
+						for(var i = 0; i<=8; i++)
 						{
-							var esStudents = grid.properties.students[i];
-							data.district.enrollment[iYear][i] += esStudents * Number(esEnrolement.StudCnt) / es.norm;
-						}						
+							data.district.enrollment[iYear][i] += grid.properties.students[i] * Number(esEnrolement.grade[i]) / es.norm[i];
+						}
 					}
 
 					if(msEnrolement)
 					{
-					for(var i = 6; i<=8; i++)
+						for(var i = 6; i<=8; i++)
 						{
-							var msStudents = grid.properties.students[i]
-							data.district.enrollment[iYear][i] += msStudents * Number(msEnrolement.StudCnt) / ms.norm;
+							data.district.enrollment[iYear][i] += grid.properties.students[i] * Number(msEnrolement.grade[i]) / ms.norm[i];
 						}						
 					}
+
+					//if(esEnrolement){
+						//console.log(grid.properties.PA_NUMBER+" year:"+year+" HS:"+school.displayName +" MS:" + es.displayName +" "+esEnrolement.StudCnt+ + " MS:" + ms.displayName+ " " +msEnrolement.StudCnt);
+						//console.log("esStudCnt:" + esEnrolement.StudCnt + " esNorm:" + es.norm+ " msStudCnt:" + msEnrolement.StudCnt + " msNorm:" + ms.norm);					
+					//}
+					//console.log("students:" + grid.properties.students[i]);
+					//console.log("Enrollment:"+data.district.enrollment[iYear]);
 				});
-				console.log("Found HS");
 			}
     	});
     }
+	
+	//if(years)
+	//{
+	//	var iYear = iKey[Number(years[0])];
+	//	console.log(data.schools[schoolId].displayName + ", "+data.district.enrollment[0]);		
+	//}
+}
+
+function LoadDistrictCohortData(data, schoolId, year)
+{
+	var iKey = ['"7/1/1999"','"7/1/2000"','"7/1/2001"','"7/1/2002"','"7/1/2003"','"7/1/2004"','"7/1/2005"','"7/1/2006"','"7/1/2007"','"7/1/2008"','"7/1/2009"','"7/1/2010"','"7/1/2011"','"7/1/2012"','"7/1/2013"','"7/1/2014"','"7/1/2015"'];
+	var gradeOffset = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+	var school = data.schools[schoolId];
+    data.district = { "enrollment": [], "grade": ["PreK", "k", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"], "year": [year] };
+
+    if (data.schools && data.schools[schoolId]) {
+
+		data.district.enrollment[0] = [0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+    	// High school data from school database
+		for(var iCohart = 0; iCohart <= 12; iCohart++){
+			var key = iKey[Number(year) + iCohart];
+			var enrollment = school.enrollment[key];
+			if(enrollment)
+			{
+				data.district.enrollment[0][iCohart+1] = Number(enrollment.grade[iCohart]);					
+			}						
+		}
+
+		// Feeder schools weighted by enrollment per grid
+		data.gridsJson.features.forEach(function(grid)
+		{
+			var hs = SchoolToId(grid.properties.HIGH_DESC);			
+			if(hs == schoolId)
+			{
+				var es = data.schools[SchoolToId(grid.properties.ELEM_DESC)];
+				var ms = data.schools[SchoolToId(grid.properties.MID_DESC)];
+
+				for(var iCohart = 0; iCohart <= 8; iCohart++){
+					var key = iKey[Number(year) + iCohart];
+					var esEnrolement = es.enrollment[key];
+					var msEnrolement = ms.enrollment[key];		
+
+					if(esEnrolement)
+					{
+						data.district.enrollment[0][iCohart+1] += grid.properties.students[iCohart] * Number(esEnrolement.grade[iCohart]) / es.norm[iCohart];
+					}
+
+					if(msEnrolement)
+					{
+						data.district.enrollment[0][iCohart+1] += grid.properties.students[iCohart] * Number(msEnrolement.grade[iCohart]) / ms.norm[iCohart];						
+					}
+
+					//if(esEnrolement){
+						//console.log(grid.properties.PA_NUMBER+" year:"+year+" HS:"+school.displayName +" MS:" + es.displayName +" "+esEnrolement.StudCnt+ + " MS:" + ms.displayName+ " " +msEnrolement.StudCnt);
+						//console.log("esStudCnt:" + esEnrolement.StudCnt + " esNorm:" + es.norm+ " msStudCnt:" + msEnrolement.StudCnt + " msNorm:" + ms.norm);					
+					//}
+					//console.log("students:" + grid.properties.students[i]);
+					//console.log("Enrollment:"+data.district.enrollment[iYear]);
+				}
+			}
+		});
+    }
+    else{
+    	console.log("LoadDistrictCohortData school data not available");
+    }				
 }
 
 function ParseHighSchoolData(data) {
@@ -313,78 +393,32 @@ function FindSchoolEnrollment2020(grids, schools)
 
 function ProjectEnrollment(grids, schools)
 {
-	var schoolPA = {};
+	for (var key in schools)
+	{	
+		schools[key].norm = [0,0,0,0,0,0,0,0,0,0,0,0,0];	
+	}
+
+	// use enrollment per grid as normilization factor beause annual enrollment per grid is unavailable
 	grids.features.forEach(function(grid){
-		var ELEM_DESC = grid.properties.ELEM_DESC;
-		var MID_DESC = grid.properties.MID_DESC;
-		var HIGH_DESC = grid.properties.HIGH_DESC;
-		var DDP_DISP = grid.properties.DDP_DISP;
+		var elem = SchoolToId(grid.properties.ELEM_DESC);
+		var mid = SchoolToId(grid.properties.MID_DESC);
+		var high = SchoolToId(grid.properties.HIGH_DESC);
 
-		ELEM_DESC = ELEM_DESC.replace(" ES", "");
-		ELEM_DESC = ELEM_DESC.replace(" K8", "");
-		MID_DESC = MID_DESC.replace(" MS", "");
-		HIGH_DESC = HIGH_DESC.replace(" HS", "");
-
-		var esStudents = 0;
-		var msStudents = 0;
-		var hsStudents = 0;
-		for(var i=0; i<=5; i++)
+		for(var i=0; i<=12; i++)
 		{
-			esStudents += grid.properties.students[i];
+			schools[elem].norm[i] += grid.properties.students[i];
+			schools[mid].norm[i] += grid.properties.students[i];
+			schools[high].norm[i] += grid.properties.students[i];
 		}
-		for(var i=6; i<=8; i++)
-		{
-			msStudents += grid.properties.students[i];
-		}
-		for(var i=9; i<=12; i++)
-		{
-			hsStudents += grid.properties.students[i];
-		}		
-		
-		if(schoolPA[ELEM_DESC])
-		{
-			schoolPA[ELEM_DESC] += esStudents;
-		}
-		else
-		{
-			schoolPA[ELEM_DESC] = esStudents;
-		}
-
-		if(schoolPA[MID_DESC])
-		{
-			schoolPA[MID_DESC] += msStudents;
-		}
-		else
-		{
-			schoolPA[MID_DESC] = msStudents;
-		}
-
-		if(schoolPA[HIGH_DESC])
-		{
-			schoolPA[HIGH_DESC] += hsStudents;
-		}
-		else
-		{
-			schoolPA[HIGH_DESC] = hsStudents;
-		}				
 	});
-
-	for (var key in schoolPA)
-	{
-		var schoolName = key;
-		var matches = [];
-		
-		for(var key in schools)
-		{
-			var schoolFullName = schools[key].fullName.replace('-', ' ');
-			var match = schoolFullName.match(schoolName);
-			if(match)
-			{
-				matches.push({match, key});
-			}
+	
+	// Write out for checked
+	for(var key in schools){
+		console.log(schools[key].displayName);
+		if(schools[key].enrollment['"7/1/2014"']){
+			console.log(schools[key].enrollment['"7/1/2014"'].grade);			
 		}
-		
-		schools[matches[0].key].norm = schoolPA[schoolName];
+		console.log(schools[key].norm);
 	}
 }
 
