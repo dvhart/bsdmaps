@@ -48,6 +48,10 @@ app.controller('BoundaryController', function ($scope, $http) {
     	else if($scope.data.graphType == "cohort" && $scope.data.plotSchool[0] && $scope.data.plotYears[0]){
     		LoadDistrictCohortData($scope.data, $scope.data.plotSchool[0], $scope.data.plotYears[0])
     	}
+		else if($scope.data.graphType == "model_actual")
+		{
+			LoadModelvsActualData($scope.data, $scope.data.plotSchool[0]); 
+		}
     }
     
     $scope.ComputeEnrollment = function ()
@@ -126,6 +130,7 @@ function GridInit($http, data, callback)
 
 function LoadDistrictData(data, schoolId, years, withFeeders)
 {
+	
 	var iKey = ['"7/1/1999"','"7/1/2000"','"7/1/2001"','"7/1/2002"','"7/1/2003"','"7/1/2004"','"7/1/2005"','"7/1/2006"','"7/1/2007"','"7/1/2008"','"7/1/2009"','"7/1/2010"','"7/1/2011"','"7/1/2012"','"7/1/2013"','"7/1/2014"','"7/1/2015"'];
 
     if (data.schools && data.schools[schoolId]) {
@@ -159,7 +164,7 @@ function LoadDistrictData(data, schoolId, years, withFeeders)
 					enrollmentNum[index] = Number(value);
 				});				
 				data.district.enrollment.push(enrollmentNum);
-				console.log(school.displayName +": "+ enrollmentNum);
+				//console.log(school.displayName +": "+ enrollmentNum);
 			}			
 		}
     }
@@ -270,6 +275,33 @@ function LoadDistrictCohortData(data, schoolId, year)
     else{
     	console.log("LoadDistrictCohortData school data not available");
     }				
+}
+
+function LoadModelvsActualData(data, schoolId)
+{
+	var iKey = ['"7/1/1999"','"7/1/2000"','"7/1/2001"','"7/1/2002"','"7/1/2003"','"7/1/2004"','"7/1/2005"','"7/1/2006"','"7/1/2007"','"7/1/2008"','"7/1/2009"','"7/1/2010"','"7/1/2011"','"7/1/2012"','"7/1/2013"','"7/1/2014"','"7/1/2015"','"7/1/2016"','"7/1/2017"','"7/1/2018"','"7/1/2019"','"7/1/2020"'];
+	var school = data.schools[schoolId];
+
+	var predictedEnrollment = [0,0,0,0,0,0];
+	for(var i=0; i< 16; i++)
+	{
+		LoadDistrictData(data, schoolId, [i], true);
+		var enrollment = EstProgression(data.district.enrollment[0]);
+		predictedEnrollment[i+6] = enrollment;
+	}
+	
+    data.district = { "enrollment": [], "grade": iKey, "set": ["actual", "model"] };
+	data.district.enrollment[1] = predictedEnrollment;
+
+    // Historic high school data from school database
+	data.district.enrollment[0] = [];
+	iKey.forEach(function (year, iYear){
+		var enrollment = school.enrollment[year];
+		if(enrollment)
+		{
+			data.district.enrollment[0][iYear] = Number(enrollment.StudCnt);					
+		}
+	});
 }
 
 function ParseHighSchoolData(data) {
@@ -413,13 +445,13 @@ function ProjectEnrollment(grids, schools)
 	});
 	
 	// Write out for checked
-	for(var key in schools){
-		console.log(schools[key].displayName);
-		if(schools[key].enrollment['"7/1/2014"']){
-			console.log(schools[key].enrollment['"7/1/2014"'].grade);			
-		}
-		console.log(schools[key].norm);
-	}
+	//for(var key in schools){
+	//	console.log(schools[key].displayName);
+	//	if(schools[key].enrollment['"7/1/2014"']){
+	//		console.log(schools[key].enrollment['"7/1/2014"'].grade);			
+	//	}
+	//	console.log(schools[key].norm);
+	//}
 }
 
 
@@ -812,7 +844,7 @@ function BSD2020Estimate(grids)
 	var totalProgression = 0;
 	var totalNewConstruction = 0;
 	grids.features.forEach(function(grid){
-		var estProgression = EstProgression(grid);
+		var estProgression = EstProgression(grid.properties.students);
 		var estConstruction = EstConstruciton(grid);
 
 		totalProgression += estProgression;
@@ -839,14 +871,14 @@ function BSD2020Estimate(grids)
 	console.log("totalProgression:"+totalProgression+" totalNewConstruction:"+totalNewConstruction);
 }
 
-function EstProgression(grid)
+function EstProgression(students)
 {
 	var estStudents = 0;
 	var yearProgression = 6
 	var progression = [1,1,1,1.013055,0.989824,0.930494,0.923087,1,1,1,1,1,1];
 	for(var i=9-yearProgression; i<=12-yearProgression; i++)
 	{
-		estStudents += grid.properties.students[i]*progression[i];
+		estStudents += students[i]*progression[i];
 	}
 	return estStudents;
 }
