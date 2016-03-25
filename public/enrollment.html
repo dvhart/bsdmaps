@@ -78,6 +78,7 @@
 					<select name="GraphType" id="graphType" ng-model="data.graphType" ng-change="PlotChange()" value="data.graphType" multiple>
                         <option value="year">Year</option>
                         <option value="cohort">Cohort</option>
+                        <option value="model_actual">Model & Actual</option>						
                     </select>
 					
 					
@@ -88,7 +89,11 @@
             <div id="enrollment-holder"></div>
             <canvas id="districtPopulationYear" class="chart chart-line" chart-data="data.district.enrollment"
                     chart-labels="data.district.grade" chart-legend="true" chart-series="data.district.year"
-                    chart-click="onClick" chart-options="{datasetFill:false}"></canvas> 
+                    chart-click="onClick" chart-options="{datasetFill:false}" colours: [{
+					fillColor: 'rgba(47, 132, 71, 0.8)',
+					strokeColor: 'rgba(47, 132, 71, 0.8)',
+					highlightFill: 'rgba(47, 132, 71, 0.8)',
+					highlightStroke: 'rgba(47, 132, 71, 0.8)'}]"></canvas> 
         </div>
         <div class="page no-break">
             <div id="map-holder"></div>
