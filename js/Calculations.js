@@ -75,3 +75,87 @@ function AccidentRate(totalAccidents, studyYears, averageAnnualDailyTraffice, se
 
     return rate;
 }
+
+function AddFeatureBounds(geoJson) {
+    for (var iFeature = 0; iFeature < geoJson.features.length; iFeature++) {
+        var feature = geoJson.features[iFeature];
+        
+        var pt = feature.geometry.coordinates[0][0];
+        var bounds = [[pt[0], pt[1]], [pt[0], pt[1]]];
+        for (var iCoordinates = 0; iCoordinates < feature.geometry.coordinates.length; iCoordinates++) {
+            var coordinate = feature.geometry.coordinates[iCoordinates];
+            for (var iCoordinate = 0; iCoordinate < coordinate.length; iCoordinate++) {
+                pt = coordinate[iCoordinate];
+                
+                if (pt[0] < bounds[0][0]) {
+                    bounds[0][0] = pt[0];
+                }
+                if (pt[1] < bounds[0][1]) {
+                    bounds[0][1] = pt[1];
+                }
+                if (pt[0] > bounds[1][0]) {
+                    bounds[1][0] = pt[0];
+                }
+                if (pt[1] > bounds[1][1]) {
+                    bounds[1][1] = pt[1];
+                }
+            }
+        }
+        feature.properties.bounds = bounds;
+    }
+}
+
+function WithnBounds(location, bounds) {
+    var withinBounds = false;
+    if (location[0] >= bounds[0][0]) {
+        if (location[0] <= bounds[1][0]) {
+            if (location[1] >= bounds[0][1]) {
+                if (location[1] <= bounds[1][1]) {
+                    withinBounds = true;
+                }
+            }
+        }
+    }
+    return withinBounds;
+}
+
+function WithinPolygon(location, grid) {
+    var polygon = GridJsonToPolygon(grid);
+    var loc = new google.maps.LatLng(location[1], location[0]);
+    var within = google.maps.geometry.poly.containsLocation(loc, polygon);
+    return within;
+}
+
+function FindGridIndex(location, grids) {
+    var gridIndex;
+    
+    for (var iGrid = 0; !gridIndex && iGrid < grids.features.length; iGrid++) {
+        var grid = grids.features[iGrid];
+        if (WithnBounds(location, grid.properties.bounds)) {
+            if (WithinPolygon(location, grid)) {
+                gridIndex = iGrid;
+            }
+        }
+    }
+    return gridIndex;
+}
+
+function GridJsonToPolygon(grid) {
+    var paths = [];
+    var exteriorDirection;
+    var interiorDirection;
+    for (var i = 0; i < grid.geometry.coordinates.length; i++) {
+        var path = [];
+        for (var j = 0; j < grid.geometry.coordinates[i].length; j++) {
+            var ll = new google.maps.LatLng(grid.geometry.coordinates[i][j][1], grid.geometry.coordinates[i][j][0]);
+            path.push(ll);
+        }
+        paths.push(path);
+    }
+    
+    googleObj = new google.maps.Polygon({ paths: paths });
+    if (grid.properties) {
+        googleObj.set("geojsonProperties", grid.properties);
+    }
+    return googleObj;
+}

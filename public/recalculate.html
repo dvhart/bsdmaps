@@ -73,7 +73,8 @@
                             <option value="Enrollment">Enrollment Report</option>
                             <option value="ScoolJson">Schools.json</option>
                         </select><br>
-                        <input type="file" on-read-file="parseFile($fileContent)" />
+                        <input type="file" on-read-file="parseFile($fileContent)" /><br>
+						<input type="button" ng-click="GeocodePermits()" value="Permit to GC" /> {{data.geocodeProgress}}<br>
                         <div ng-if="data.fileData">
                             <h2>File content is:</h2>
                             <pre>{{ data.fileData }}</pre>

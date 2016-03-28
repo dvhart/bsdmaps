@@ -65,9 +65,9 @@ app.controller('BoundaryController', function ($scope, $http) {
         console.log("Posted to DB");
 		$http.get('/GetBSData').then(function (bsdData) {
 			console.log("/GetBSData " + bsdData.statusText);			
-			if(bsdData.statusText == "OK" && bsdData.data && bsdData.data[0])
+			if(bsdData.statusText == "OK" && bsdData.data)
 			{
-				$scope.data.gridsJson = bsdData.data[0];
+				$scope.data.gridsJson = bsdData.data;
 				ConstructionToGrids($scope.data.constructionJson, $scope.data.gridsJson);
 				BSD2020Estimate($scope.data.gridsJson);
 				console.log("ComputedEstimate");				
@@ -94,7 +94,6 @@ app.controller('BoundaryController', function ($scope, $http) {
 			geocoder = new google.maps.Geocoder;
 			infowindow = new google.maps.InfoWindow;
 
-			// NOTE: This uses cross-domain XHR, and may not work on older browsers.
 			LoadGeoJson($http, $scope, map); 	
         });
     };
@@ -114,18 +113,6 @@ function SchoolInit( $http, data, callback)
 
         callback();
     });
-}
-
-function GridInit($http, data, callback)
-{
-	$http.get('/GetBSData').then(function (bsdData) {
-		console.log("/GetBSData " + bsdData.statusText);			
-		if(bsdData.statusText == "OK" && bsdData.data && bsdData.data[0])
-		{
-			data.gridsJson = bsdData.data[0];
-		}
-		callback();
-	});
 }
 
 function LoadDistrictData(data, schoolId, years, withFeeders)
@@ -327,46 +314,32 @@ function ParseHighSchoolData(data) {
 }
 
 function LoadGeoJson($http, $scope, map) {
-    var gridCodes = "GridCode.geojson";
-    var construction = "ResDevProjects.geojson";
-    var students = "BSDStudents2014.geojson";
-    var schools = "Schools.geojson";
+    
+    LoadGeoJsonFiles($http, function (constructionJson, studentsJson, schoolsJson) {
+        $scope.data.constructionJson = constructionJson;
+        $scope.data.studentsJson = studentsJson;
+        $scope.data.schoolsJson = schoolsJson;
 
-    $http.get(gridCodes).success(function (gridsJson) {
-        $http.get(construction).success(function (constructionJson) {
-            $http.get(students).success(function (studentsJson) {
-                $http.get(schools).success(function (schoolsJson) {
-
-                    $scope.data.gridsJson = gridsJson;
-                    $scope.data.constructionJson = constructionJson;                    
-                    $scope.data.studentsJson = studentsJson;
-                    $scope.data.schoolsJson = schoolsJson;
-
-                	GridInit($http, $scope.data, function(){
-                		                    // Add geometry limits to speed matching
-                    	GeomLimits( $scope.data.gridsJson);
-                    	GeomLimits($scope.data.constructionJson);
-
-
-                                        
-                    	var newData = new google.maps.Data({ map: map });
-                    	newData.addGeoJson(gridsJson);
-                    	newData.addGeoJson(constructionJson);
-                    	//newData.addGeoJson(studentsJson);
-                    	//newData.addGeoJson(schoolsJson);
-                    
-                    	// No error means GeoJSON was valid!
-                    	map.data.setMap(null);
-                    	map.data = newData;
-
-                    	FindSchoolEnrollment2020($scope.data.gridsJson, $scope.data.schools);
-						ProjectEnrollment($scope.data.gridsJson, $scope.data.schools);
-                    
-                    	Configure($scope);
-                	});
-                });
-
-            });
+        LoadBSDGrids($http, function (gridsJson) {
+            $scope.data.gridsJson = gridsJson;
+            // Add geometry limits to speed matching
+            AddFeatureBounds($scope.data.gridsJson);
+            AddFeatureBounds($scope.data.constructionJson);
+            
+            var newData = new google.maps.Data({ map: map });
+            newData.addGeoJson($scope.data.gridsJson);
+            newData.addGeoJson(constructionJson);
+            //newData.addGeoJson(studentsJson);
+            //newData.addGeoJson(schoolsJson);
+            
+            // No error means GeoJSON was valid!
+            map.data.setMap(null);
+            map.data = newData;
+            
+            FindSchoolEnrollment2020($scope.data.gridsJson, $scope.data.schools);
+            ProjectEnrollment($scope.data.gridsJson, $scope.data.schools);
+            
+            Configure($scope);
         });
     });
 }
@@ -454,43 +427,6 @@ function ProjectEnrollment(grids, schools)
 	//}
 }
 
-
-function GeomLimits(geoJson)
-{
-    for(var iFeature = 0; iFeature < geoJson.features.length; iFeature++){
-    	var feature = geoJson.features[iFeature];
-
-        var pt = feature.geometry.coordinates[0][0];
-        var bounds = [[pt[0], pt[1]], [pt[0], pt[1]]];
-        for(var iCoordinates=0; iCoordinates <  feature.geometry.coordinates.length; iCoordinates++)
-        {
-            var coordinate = feature.geometry.coordinates[iCoordinates];
-            for(var iCoordinate=0;iCoordinate<coordinate.length;iCoordinate++)
-            {
-                pt = coordinate[iCoordinate];
-                
-                if(pt[0] < bounds[0][0])
-                {
-                    bounds[0][0] = pt[0];
-                }
-                if(pt[1] < bounds[0][1])
-                {
-                    bounds[0][1] = pt[1];
-                }
-                if(pt[0] > bounds[1][0])
-                {
-                    bounds[1][0] = pt[0];
-                }
-                if(pt[1] > bounds[1][1])
-                {
-                    bounds[1][1] = pt[1];
-                }                
-            }
-        }
-        feature.properties.bounds = bounds;
-    	
-    }
-}
 
 function Configure($scope) {
     // Initialise the map.
@@ -659,48 +595,8 @@ function StudentsToGrids(students, grids)
     });
 }
 
-function FindGridIndex(location, grids)
-{
-   var gridIndex;
 
-   for(var iGrid = 0; !gridIndex && iGrid < grids.features.length; iGrid++)
-   {
-       var grid = grids.features[iGrid];
-        if(WithnBounds(location, grid.properties.bounds))
-        {
-            if(WithinPolygon(location, grid))
-            {
-                gridIndex = iGrid;
-            }
-        }
-   }
-   return gridIndex;
-}
-
-function WithnBounds(location, bounds)
-{
-    var withinBounds = false;
-    if(location[0] >= bounds[0][0]){
-        if(location[0] <= bounds[1][0]){
-            if(location[1] >= bounds[0][1]){
-                if(location[1]<= bounds[1][1]){
-                    withinBounds = true;
-                }
-            }
-        }
-    }
-    return withinBounds;
-}
-
-function WithinPolygon(location, grid)
-{
-    var polygon = GridJsonTo(grid);
-    var loc = new google.maps.LatLng(location[1], location[0]);
-    var within = google.maps.geometry.poly.containsLocation(loc, polygon);
-    return within;
-}
-
-function GridJsonTo(grid) 
+function GridJsonToPolygon(grid) 
 {
     var paths = [];
     var exteriorDirection;
@@ -843,16 +739,18 @@ function BSD2020Estimate(grids)
 {
 	var totalProgression = 0;
 	var totalNewConstruction = 0;
-	grids.features.forEach(function(grid){
-		var estProgression = EstProgression(grid.properties.students);
-		var estConstruction = EstConstruciton(grid);
+    grids.features.forEach(function (grid){
+        //var constStudents = EstConstruciton(grid);
+        //var estProgression = EstProgression(grid.properties.students, constStudents);
+        var estConstruction = EstConstruciton(grid);
+        var estProgression = EstProgression(grid.properties.students);
+
 
 		totalProgression += estProgression;
-		totalNewConstruction += estConstruction
 		
-		var estStudents = estProgression+estConstruction;
+		var estStudents = estProgression + estConstruction;
 		var difference = estStudents - grid.properties.DDP_DISP;
-		//console.log("Grid:" + grid.properties.PA_NUMBER + " BSD2020:" + grid.properties.DDP_DISP, " recompted:" + estStudents + " Advanced:"+estProgression+" Const:"+estConstruction+" difference:" + difference);
+		//console.log("Grid:" + grid.properties.PA_NUMBER + " BSD2020:" + grid.properties.DDP_DISP, " recompted:" + estStudents + " estProgression:"+estProgression+" difference:" + difference);
 		if(/*estProgression > 0.1 && estProgression <= 1.2 &&*/ grid.properties.TTL_DU.length > 0)
 		{
 			var TTL = 0
@@ -863,7 +761,7 @@ function BSD2020Estimate(grids)
 			var scaleFactorWithProgression  = (grid.properties.DDP_DISP - estProgression)/TTL;
 			var scaleFactorWitoutProgression = (grid.properties.DDP_DISP)/TTL;
 			var constType = grid.properties.TYPE;
-			console.log("Grid:" + grid.properties.PA_NUMBER + " BSD2020:" + grid.properties.DDP_DISP+ " recompted:" + estStudents + " Advanced:"+estProgression+" Const:"+estConstruction+" difference:" + difference);
+			console.log("Grid:" + grid.properties.PA_NUMBER + " BSD2020:" + grid.properties.DDP_DISP+ " recompted:" + estStudents + " difference:" + difference);
 			console.log(constType + " sfp:" + scaleFactorWithProgression + " sfnp:" + scaleFactorWitoutProgression);
 		}
 	});
@@ -871,7 +769,7 @@ function BSD2020Estimate(grids)
 	console.log("totalProgression:"+totalProgression+" totalNewConstruction:"+totalNewConstruction);
 }
 
-function EstProgression(students)
+function EstProgression(students/*, constStudents*/)
 {
 	var estStudents = 0;
 	var yearProgression = 6
@@ -879,20 +777,89 @@ function EstProgression(students)
 	for(var i=9-yearProgression; i<=12-yearProgression; i++)
 	{
 		estStudents += students[i]*progression[i];
+		//if(constStudents[i]){
+		//	estStudents += constStudents[i]*progression[i];
+		//}
 	}
 	return estStudents;
 }
 
 function EstConstruciton(grid)
 {
-	var estStudents = 0; 
+  //  var estStudents = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    
+  //  var esg = 0.36/6.0;
+  //  var msg = 0.12/3.0;
+    
+  //  var studentGeneration;
+  //  switch (grid.properties.ELEM_DESC) {
+  //      case "Bonny Slope ES":
+  //      case "Cedar Mill ES":
+  //      case "Jacob Wismer ES":
+  //      case "Springville K8":
+  //          studentGeneration = {
+  //              "SFD": [esg, esg, esg, esg, esg, esg, msg, msg, msg, 0.1/4.0, 0.1/4.0, 0.1/4.0, 0.1/4.0],
+  //              "SFA": [0.10/6.0, 0.10/6.0, 0.10/6.0, 0.10/6.0, 0.10/6.0, 0.10/6.0, 0.05/3.0, 0.05/3.0, 0.05/3.0, 0.05/4.0, 0.05/4.0, 0.05/4.0, 0.05/4.0], 
+  //              "MFA": [0.10/6.0, 0.10/6.0, 0.10/6.0, 0.10/6.0, 0.10/6.0, 0.10/6.0, 0.04/3.0, 0.04/3.0, 0.04/3.0, 0.06/4.0, 0.06/4.0, 0.06/4.0, 0.06/4.0], 
+  //              "APT": [0.10/6.0, 0.10/6.0, 0.10/6.0, 0.10/6.0, 0.10/6.0, 0.10/6.0, 0.04/3.0, 0.04/3.0, 0.04/3.0, 0.06/4.0, 0.06/4.0, 0.06/4.0, 0.06/4.0],
+  //          };
+  //          break;
+  //      default:
+  //          studentGeneration = {
+  //              "SFD": [0.33/6.0, 0.33/6.0, 0.33/6.0, 0.33/6.0, 0.33/6.0, 0.33/6.0, 0.11/3.0, 0.11/3.0, 0.11/3.0, 0.1/4.0, 0.1/4.0, 0.1/4.0, 0.1/4.0],
+  //              "SFA": [0.07/6.0, 0.07/6.0, 0.07/6.0, 0.07/6.0, 0.07/6.0, 0.07/6.0, 0.03/3.0, 0.03/3.0, 0.03/3.0, 0.04/4.0, 0.04/4.0, 0.04/4.0, 0.04/4.0], 
+  //              "MFA": [0.10/6.0, 0.10/6.0, 0.10/6.0, 0.10/6.0, 0.10/6.0, 0.10/6.0, 0.04/3.0, 0.04/3.0, 0.04/3.0, 0.06/4.0, 0.06/4.0, 0.06/4.0, 0.06/4.0], 
+  //              "APT": [0.10/6.0, 0.10/6.0, 0.10/6.0, 0.10/6.0, 0.10/6.0, 0.10/6.0, 0.04/3.0, 0.04/3.0, 0.04/3.0, 0.06/4.0, 0.06/4.0, 0.06/4.0, 0.06/4.0],
+  //          };
+  //  }
+
+    
+  //  var TTL_DU = [];
+  //  if (grid.properties.TTL_DU) {
+  //      TTL_DU = grid.properties.TTL_DU;
+  //  }
+    
+  //  for (var i = 0; i < TTL_DU.length; i++) {
+		//var studentProb= []
+		//if (grid.properties.TYPE[i] == "SFD") {
+		//	studentProb = studentGeneration.SFD;
+		//}
+		//else if (grid.properties.TYPE[i] == "SFA") {
+		//	studentProb = studentGeneration.SFA;
+		//}
+		//else if (grid.properties.TYPE[i] == "MFA") {
+		//	studentProb = studentGeneration.MFA;
+		//}
+		//else if (grid.properties.TYPE[i] == "APT") {
+		//	studentProb = studentGeneration.APT;
+		//} 
+		
+		//for(var j=0; j<estStudents.length; j++){
+   	
+		//	estStudents[j] += TTL_DU[i]* studentProb[j];			
+		//}
+		
+  //  }
+
+  	var estStudents = 0;
+   	var sfdRate = 0.19;
+
+    switch (grid.properties.ELEM_DESC) {
+        case "Bonny Slope ES":
+        case "Cedar Mill ES":
+        case "Jacob Wismer ES":
+        case "Springville K8":
+			sfdRate = 0.21;
+            break;
+    }    
+
 	if(grid.properties.TTL_DU && grid.properties.TTL_DU.length)
 	{
 		for(var i=0; i<grid.properties.TTL_DU.length; i++)
 		{
 			var TTL_DU = grid.properties.TTL_DU[i];
 			if(grid.properties.TYPE[i] == "SFD"){
-				estStudents += 0.20*TTL_DU;
+				estStudents += sfdRate*TTL_DU;
 				//estStudents += 0.20*TTL_DU;
 			}
 			else if(grid.properties.TYPE[i] == "SFA"){

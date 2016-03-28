@@ -549,19 +549,37 @@ app.post('/SetSchools', function (request, res) {
 
 // Access to school data
 app.get('/GetBSData', function (request, response) {
-    console.time("/GetBSData");
-    dbGrid.collection('bsddata').find().toArray(function (err, items) {
-        if (err) {
-            console.log("/GetBSData error" + err);
-            return next(err);
-        }
-        response.send(JSON.stringify(items));
-        console.timeEnd("/GetBSData")
-    });
+    GetFromDb('bsddata', request, response)
 });
 
 app.post('/SetBSData', function (request, res) {
-    console.time("/SetBSData");
+    SetToDb('bsddata', request, res);
+});
+
+app.get('/GetPermits', function (request, response) {
+    GetFromDb('permits', request, response)
+});
+
+app.post('/SetPermits', function (request, res) {
+    SetToDb('permits', request, res);
+});
+
+function  GetFromDb(getName, request, response)
+{
+    console.time(getName);
+    dbGrid.collection(getName).find().toArray(function (err, items) {
+        if (err) {
+            console.log(getName + " error " + err);
+            return next(err);
+        }
+        response.send(JSON.stringify(items[0]));
+        console.timeEnd(getName);
+    });
+}
+
+function SetToDb(collectionName, request, res)
+{
+    console.time(collectionName);
     var putFeatures = '';
     
     request.on('data', function (data) {
@@ -575,20 +593,19 @@ app.post('/SetBSData', function (request, res) {
         if (putFeatures != '') {
             var newFeatures = JSON.parse(putFeatures);
             
-            dbGrid.collection('bsddata').remove({}); // remove features from database
-            dbGrid.collection('bsddata').insert(newFeatures, function (err, result) {
+            dbGrid.collection(collectionName).remove({}); // remove features from database
+            dbGrid.collection(collectionName).insert(newFeatures, function (err, result) {
                 if (err != null) {
-                    console.log("/SetBSData error" + err);
+                    console.log(collectionName + "error" + err);
                 }
                 else {
                     res.send(JSON.stringify(result));
-                    console.timeEnd("/SetBSData");
+                    console.timeEnd(collectionName);
                 }
             });
         }
     });
-});
-
+}
 
 // spin up server
 MongoClient.connect(urlBsdGrid, function (err1, database1) {
