@@ -71,6 +71,50 @@ function SaveSchools($http, schoolsObj) {
     });
 }
 
+function SavePermits($http, permitsObj, callback) {
+    $http.post('/SetPermits', permitsObj).then(function successCallback(response) {
+    	if(callback)
+    	{
+    		callback(response);	
+    	}
+    }, function errorCallback(response) {
+        console.log("SavePermits error:"+response);
+    });
+}
+
+function LoadBSDGrids($http, callback) {
+    $http.get('/GetBSData').then(function (bsdData) {
+        console.log("/GetBSData " + bsdData.statusText);
+        var gridJson;
+        if (bsdData.statusText == "OK" && bsdData.data) {
+            gridJson = bsdData.data;
+        }
+        callback(gridJson);
+    });
+}
+
+function SaveBSDGrids($http, bsGrids, callback) {
+    $http.post('/SetBSData', bsGrids).then(function successCallback(response) {
+        callback(response);
+    }, function errorCallback(response) {
+        callback(response);
+    });
+}
+
+
+function LoadPermits($http, callback) {
+    $http.get('/GetPermits').then(function (getPermits) {
+        var permits = getPermits.data;
+
+		if(!permits.features)
+		{
+			permits = {"type": "FeatureCollection","features":[]};
+		}
+
+        callback(permits);
+    });
+}
+
 function SchoolToId(school)
 {
 	switch (school)
@@ -285,4 +329,18 @@ function SchoolToId(school)
 			return 1179;
 	}
 	return null;
+}
+
+function LoadGeoJsonFiles($http, callback) {
+    var construction = "ResDevProjects.geojson";
+    var students = "BSDStudents2014.geojson";
+    var schools = "Schools.geojson";
+    
+    $http.get(construction).success(function (constructionJson) {
+        $http.get(students).success(function (studentsJson) {
+            $http.get(schools).success(function (schoolsJson) {
+                callback(constructionJson, studentsJson, schoolsJson);
+            });
+        });
+    });
 }
