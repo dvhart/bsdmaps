@@ -33,7 +33,8 @@ app.controller('BoundaryController', function ($scope, $http) {
         "constructionJson": {},
         "plotYears": [],
         "plotSchool":0,
-		"graphType": "year"
+        "graphType": "year",
+        "permits": {}
     };
     
     $scope.onClick = function (points, evt) {
@@ -76,7 +77,6 @@ app.controller('BoundaryController', function ($scope, $http) {
     }
 
     function init() {
-        
         SchoolInit($http, $scope.data, function(){
 			// Initialise the map.
 			var myLatLng = { lat: 45.498, lng: -122.82 };
@@ -85,7 +85,7 @@ app.controller('BoundaryController', function ($scope, $http) {
 				zoom: 12,
 				zoom: 12,
 				mapTypeId: google.maps.MapTypeId.ROADMAP
-			};
+            };
 
 			map = new google.maps.Map(document.getElementById('map-holder'), mapProp);
 			directionsService = new google.maps.DirectionsService;
@@ -93,8 +93,16 @@ app.controller('BoundaryController', function ($scope, $http) {
 			directionsDisplay = new google.maps.DirectionsRenderer(renderOptions);
 			geocoder = new google.maps.Geocoder;
 			infowindow = new google.maps.InfoWindow;
-
-			LoadGeoJson($http, $scope, map); 	
+            LoadPermits($http, function (permits) {
+                $scope.data.permits = { "type": "FeatureCollection", "features": [] };                
+                permits.features.forEach(function (feature) {
+                    if (feature.properties.gc) {
+                        $scope.data.permits.features.push(feature); 
+                    }
+                });
+                
+                LoadGeoJson($http, $scope, map);	
+            });
         });
     };
 
@@ -329,6 +337,7 @@ function LoadGeoJson($http, $scope, map) {
             var newData = new google.maps.Data({ map: map });
             newData.addGeoJson($scope.data.gridsJson);
             newData.addGeoJson(constructionJson);
+            newData.addGeoJson($scope.data.permits);
             //newData.addGeoJson(studentsJson);
             //newData.addGeoJson(schoolsJson);
             
@@ -740,13 +749,13 @@ function BSD2020Estimate(grids)
 	var totalProgression = 0;
 	var totalNewConstruction = 0;
     grids.features.forEach(function (grid){
-        //var constStudents = EstConstruciton(grid);
+        var constStudents = EstConstruciton(grid);
         //var estProgression = EstProgression(grid.properties.students, constStudents);
         var estConstruction = EstConstruciton(grid);
         var estProgression = EstProgression(grid.properties.students);
 
 
-		totalProgression += estProgression;
+		totalProgression += estProgression + constStudents;
 		
 		var estStudents = estProgression + estConstruction;
 		var difference = estStudents - grid.properties.DDP_DISP;
@@ -841,15 +850,14 @@ function EstConstruciton(grid)
 		
   //  }
 
-  	var estStudents = 0;
-   	var sfdRate = 0.19;
+   	var sfdRate = 0.16;
 
     switch (grid.properties.ELEM_DESC) {
         case "Bonny Slope ES":
         case "Cedar Mill ES":
         case "Jacob Wismer ES":
         case "Springville K8":
-			sfdRate = 0.21;
+			sfdRate = 0.22;
             break;
     }    
 
