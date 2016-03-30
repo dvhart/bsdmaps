@@ -259,19 +259,18 @@ app.controller('BoundaryController', function ($scope, $http) {
         $http.get('/GetFeatures').then(function (response) {
             RefreshFromGrids(response.data);
 
-            $http.get('/GetSection').then(function (sectionResponse) {
-                sections = RefreshFromSafetyDB(sectionResponse, map);
+ //           $http.get('/GetSection').then(function (sectionResponse) {
+ //               sections = RefreshFromSafetyDB(sectionResponse, map);
 
-                $http.get('/GetRoutes').then(function (getRoutes) {
-                    routes = getRoutes.data;
+ //               $http.get('/GetRoutes').then(function (getRoutes) {
+ //                   routes = getRoutes.data;
                     LoadGeoJson($http, $scope, function(){
-                    	 Configure($scope, $http);
+                        Configure($scope, $http);
+                        PermitGeocode($http, $scope);
                     });
                                
-                });
-            });
-
-
+//                });
+//            });
         });
     };
 
@@ -736,99 +735,108 @@ function BuildingPermit($http, csv, data, callback) {
 function PermitGeocode($http, $scope) {
     var data = $scope.data;
     data.geocodeProgress = "Geocoding Permits";
+    //var iPermit = 8000 * Math.random();
+    //iPermit = iPermit.toFixed(0);
     var iPermit = 0;
     var failureCount = 0;
+    var fastInterval = 1200;
+    var slowInterval = 2500;
+    var intervalDelayMs = fastInterval;
     
     LoadPermits($http, function (permits) {
-        if (permits.features && permits.features.length > 0)
-            var fastInterval = 1500;
-        var slowInterval = 10000;
-        var intervalDelayMs = fastInterval;
-        
         // Delay update
         var intervalID = setInterval(function () {
-            console.log("PermitGeocode start interval");
-            //clearInterval(intervalID); // Debug only
-            var needLocation = false;
-            // Skip grids that already have populated field
-            while (iPermit < permits.features.length && !needLocation) {
-                // Find all routes that match the grid code.
-                var location = permits.features[iPermit].geometry.coordinates[0];
-                if (location) {
-                    iPermit++;
-                }
-                else {
-                    needLocation = true;
-                }
-            }
-            console.log("PermitGeocode permit "+iPermit);
             
-            if (!needLocation) { // Done.  Save and exit
+            
+            if (!permits.features || !permits.features.length > 0) {
                 clearInterval(intervalID); // Done.  Don't restart interval timer
-                console.log("PermitGeocode exit success - !needLocation");
-                SaveBSDGrids($http, data.gridsJson, function(result){
-                    SavePermits($http, permits, function (result) {
-                        data.geocodeProgress = "Geocoding permits complete successfully.";
-                    }); 
-                });
+                console.log("Failed to load permits");
+                data.geocodeProgress = "Failed to load permits.";
+                //$scope.$apply();
             }
             else {
-                var permitEntry = permits.features[iPermit];
-                var address = permitEntry.properties.numadd +" "+permitEntry.properties.diradd+" "+ permitEntry.properties.streetadd +" "+permitEntry.properties.cityadd+" OR";
-                LocationFromAddress(address, function (result) {
-                    if (result[0] && result[0].geometry) {
-                        var location = result[0].geometry.location;
-                        var coordinates = [location.lng(), location.lat()];
-                        permits.features[iPermit].geometry.coordinates = coordinates;
-                        
-                        var iGrid = FindGridIndex(coordinates, data.gridsJson);
-                        if(iGrid) {
-                            if(!data.gridsJson.features[iGrid].properties.permits || Array.isArray(data.gridsJson.features[iGrid].properties.permits)){
-                                data.gridsJson.features[iGrid].properties.permits = {};
-                            }
-                            var permitKey = permits.features[iPermit].properties.activity;
-                            data.gridsJson.features[iGrid].properties.permits[permitKey] = 
-                                permits.features[iPermit].properties.descript1;
-
-                            permits.features[iPermit].properties.gc = data.gridsJson.features[iGrid].properties.PA_NUMBER;
+                console.log("PermitGeocode start interval");
+                //clearInterval(intervalID); // Debug only
+                var needLocation = false;
+                // Skip grids that already have populated field
+                while (iPermit < permits.features.length && !needLocation) {
+                    // Find all routes that match the grid code.
+                    var location = permits.features[iPermit].geometry.coordinates[0];
+                    if (location) {
+                        iPermit++;
+                    }
+                    else {
+                        needLocation = true;
+                    }
+                }
+                console.log("PermitGeocode permit " + iPermit);
+                
+                if (!needLocation) { // Done.  Save and exit
+                    clearInterval(intervalID); // Done.  Don't restart interval timer
+                    console.log("PermitGeocode exit success - !needLocation");
+                    SaveBSDGrids($http, data.gridsJson, function (result) {
+                        SavePermits($http, permits, function (result) {
+                            data.geocodeProgress = "Geocoding permits complete successfully.";
+                            //$scope.$apply();
+                        });
+                    });
+                }
+                else {
+                    var permitEntry = permits.features[iPermit];
+                    var address = permitEntry.properties.numadd + " " + permitEntry.properties.diradd + " " + permitEntry.properties.streetadd + ", " + permitEntry.properties.cityadd + " OR";
+                    LocationFromAddress(address, function (result) {
+                        if (result[0] && result[0].geometry) {
+                            var location = result[0].geometry.location;
+                            var coordinates = [location.lng(), location.lat()];
+                            permits.features[iPermit].geometry.coordinates = coordinates;
                             
-                            SaveBSDGrids($http, data.gridsJson, function(result){
+                            var iGrid = FindGridIndex(coordinates, data.gridsJson);
+                            if (iGrid) {
+                                if (!data.gridsJson.features[iGrid].properties.permits || Array.isArray(data.gridsJson.features[iGrid].properties.permits)) {
+                                    data.gridsJson.features[iGrid].properties.permits = {};
+                                }
+                                var permitKey = permits.features[iPermit].properties.activity;
+                                data.gridsJson.features[iGrid].properties.permits[permitKey] = 
+                                permits.features[iPermit].properties.descript1;
+                                
+                                permits.features[iPermit].properties.gc = data.gridsJson.features[iGrid].properties.PA_NUMBER;
+                                
+                                //SaveBSDGrids($http, data.gridsJson, function (result) {
+                                    //SavePermits($http, permits, function (result) {
+                                        data.geocodeProgress = iPermit+" "+permits.features[iPermit].properties.acc_date + 
+                                        " GC" + data.gridsJson.features[iGrid].properties.PA_NUMBER + 
+                                        " permit:" + permits.features[iPermit].properties.activity +
+                                        " " + permits.features[iPermit].properties.descript1;
+                                        failureCount = 0;
+                                        intervalDelayMs = fastInterval;
+                                        console.log(data.geocodeProgress);
+                                    //});
+                                //});
+                            }
+                        }
+                        else { // Google does not like to give the data all at once.  Save off to database and try again later
+                            failureCount++;
+                            console.log("PermitGeocode exit success - !needLocation failureCount:" + failureCount);                            
+                            SaveBSDGrids($http, data.gridsJson, function (result) {
                                 SavePermits($http, permits, function (result) {
-                                    data.geocodeProgress = permits.features[iPermit].properties.acc_date + 
-                                        " GC"+ data.gridsJson.features[iGrid].properties.PA_NUMBER + 
-                                        " permit:"+ permits.features[iPermit].properties.activity  +
-                                        " "+ permits.features[iPermit].properties.descript1;
-                                    failureCount = 0;
-                                    intervalDelayMs = fastInterval;
-                                    console.log(data.geocodeProgress); 
-                                });                                
+                                    if (failureCount > 10) {
+                                        data.geocodeProgress = "Geocoding Permits incomplete.";
+                                        clearInterval(intervalID); // Done.  Don't restart interval timer
 
-                            });
-
-                        }                       
-                    }
-                    else { // Google does not like to give the data all at once.  Save off to database and try again later
-                        failureCount++;
-                        console.log("PermitGeocode exit success - !needLocation failureCount:"+failureCount);
-                        if (failureCount > 10) {
-                            clearInterval(intervalID); // Done.  Don't restart interval timer
-                            SaveBSDGrids($http, data.gridsJson, function(result){
-                                SavePermits($http, permits, function (result) {
-                                    data.geocodeProgress = "Geocoding Permits incomplete.  ";
-                                }); 
+                                    }
+                                    else {
+                                        intervalDelayMs = slowInterval;
+                                    }
+                                        //$scope.$apply();
+                                });
                             });
                         }
-                        else {
-                            intervalDelayMs = slowInterval;
-                        }
-
-                    }
-                });
+                    });
+                }
             }
+
         }, intervalDelayMs);
     });
-    
-    //
 };
 
 function BSDCity(city)
@@ -980,11 +988,12 @@ function SchoolInit(schoolJson, $http, data)
     });
 }
 
-function LoadGeoJson($http, $scope) {       
+function LoadGeoJson($http, $scope, callback) {       
 	LoadBSDGrids($http, function (gridsJson) {
 		$scope.data.gridsJson = gridsJson;
 		// Add geometry limits to speed matching
-		AddFeatureBounds($scope.data.gridsJson);
+		//AddFeatureBounds($scope.data.gridsJson);
+		callback();
 	});
 }
 
