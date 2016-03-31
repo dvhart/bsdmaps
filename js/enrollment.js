@@ -1,6 +1,7 @@
 var app = angular.module('BoundaryEntry', ['chart.js']);
 var app = angular.module('BoundaryEntry', ['chart.js']);
 var map;
+var heatmap;
 var directionsService;
 var directionsDisplay;
 var geocoder;
@@ -32,6 +33,7 @@ app.controller('BoundaryController', function ($scope, $http) {
         "studentsJson": {},
         "constructionJson": {},
         "plotYears": [],
+        "mapYears":[],
         "plotSchool":0,
         "graphType": "year",
         "permits": {},
@@ -83,6 +85,8 @@ app.controller('BoundaryController', function ($scope, $http) {
 			}
 		});
     }
+    
+
 
     function init() {
         SchoolInit($http, $scope.data, function(){
@@ -95,12 +99,12 @@ app.controller('BoundaryController', function ($scope, $http) {
 				mapTypeId: google.maps.MapTypeId.ROADMAP
             };
 
-			map = new google.maps.Map(document.getElementById('map-holder'), mapProp);
+			map = new google.maps.Map(document.getElementById('safety-map-holder'), mapProp);
 			directionsService = new google.maps.DirectionsService;
 			var renderOptions = { preserveViewport: true };
 			directionsDisplay = new google.maps.DirectionsRenderer(renderOptions);
 			geocoder = new google.maps.Geocoder;
-			infowindow = new google.maps.InfoWindow;
+            infowindow = new google.maps.InfoWindow;
             LoadPermits($http, function (permits) {
                 $scope.data.permits = { "type": "FeatureCollection", "features": [] };                
                 permits.features.forEach(function (feature) {
@@ -110,7 +114,10 @@ app.controller('BoundaryController', function ($scope, $http) {
                     $scope.data.permitLookup[feature.properties.activity] = feature;
                 });
                 
-                
+                heatmap = new google.maps.visualization.HeatmapLayer({
+                    data: getPoints($scope.data.permits, $scope.data.mapYears),
+                    map: map
+                });
                 LoadGeoJson($http, $scope, map);	
             });
         });
@@ -342,7 +349,6 @@ function LoadModelvsActualData(data, schoolId)
 }
 
 function PlotPermitData(data, schoolId) {
-
     var plotData = [[]];
     var xLables = [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016];
 
@@ -354,8 +360,15 @@ function PlotPermitData(data, schoolId) {
                 var type = Number(permitData.properties.class);
                 var units = Number(permitData.properties.housecount);
                 var school = SchoolToId(feature.properties.HIGH_DESC);
-
-                plotData[0][year - 2000] += units;
+                if(schoolId[0]==2243 || school == schoolId[0])
+                {
+					if (!plotData[0][year - 2000]) {
+						plotData[0][year - 2000] = units;
+					}
+					else {
+						plotData[0][year - 2000] += units;
+					}  	
+                }
             }
         }
     });
@@ -413,7 +426,7 @@ function LoadGeoJson($http, $scope, map) {
             var newData = new google.maps.Data({ map: map });
             newData.addGeoJson($scope.data.gridsJson);
             newData.addGeoJson(constructionJson);
-            newData.addGeoJson($scope.data.permits);
+            //newData.addGeoJson($scope.data.permits);
             //newData.addGeoJson(studentsJson);
             //newData.addGeoJson(schoolsJson);
             
@@ -991,5 +1004,13 @@ function EstStudentsFromConstruciton(grid, data, year) {
         }
     }
     return estStudents;
+}
+
+function getPoints(permits, years) {
+    var locations = [];
+    permits.features.forEach(function(feature){
+		locations.push(new google.maps.LatLng(feature.geometry.coordinates[1],feature.geometry.coordinates[0]));
+    });
+    return locations;
 }
 

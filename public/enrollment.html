@@ -2,18 +2,17 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Crash Rate Computation</title>
+    <title>BSD 2020 Enrollment Verification</title>
 
     <script src="angular.min.js"></script>
     <script src="Chart.min.js"></script>
     <script src="angular-chart.min.js"></script>
-    <script src="https://maps.googleapis.com/maps/api/js?v=3.22&libraries=geometry"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?v=3.22&libraries=geometry&libraries=visualization"></script>
     <script src="Calculations.js"></script>
     <script src="ServerApi.js"></script>
     <script src="enrollment.js"></script>
     <link href="style.css" rel="stylesheet" />
     <link href="angular-chart.min.css" rel="stylesheet" />
-<!--
     <style type="text/css">
         #container {
             height: 100%;
@@ -30,28 +29,49 @@
         }
 
         #panel {
-            width: 35%;
+            width: 45%;
             margin: 10px;
         }
 
-        #enrollment-container {
-            width: 60%;
+        #safety-map-container {
+            width: 50%;
         }
-        #enrollment-holder {
+        #safety-map-holder {
             height: 870px;
             width: 100%;
         }
     </style>
--->
 </head>
 <body ng-app="BoundaryEntry">
     <div id="container" ng-controller="BoundaryController">
         <div id="panel">
             <div id="panel-content" width 100px>
                 <form class="css-form">
+                 <br /><h1>BSD 2020 Enrollment Model Validation</h1>
                 <input type="button" ng-click="ComputeEnrollment()" value="BSD Grid Enrollment" />
+                    &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
+                     Map Permit Year:
+                    <select name="GraphYear" id="graphYear" ng-model="data.mapYears" ng-change="PlotChange()" value="data.plotYear" multiple>
+                        <option value="0">1999</option>
+                        <option value="1">2000</option>
+                        <option value="2">2001</option>
+                        <option value="3">2002</option>
+                        <option value="4">2003</option>
+                        <option value="5">2004</option>
+                        <option value="6">2005</option>
+                        <option value="7">2006</option>
+                        <option value="8">2007</option>
+                        <option value="9">2008</option>
+                        <option value="10">2009</option>
+                        <option value="11">2010</option>
+                        <option value="12">2011</option>
+                        <option value="13">2012</option>
+                        <option value="14">2013</option>
+                        <option value="15">2014</option>
+                        <option value="16">2015</option>
+                    </select>
                 <br/><h1>Plot Enrollment</h1>
-                    <select ng-options="hs[1] for hs in data.high" ng-model="data.plotSchool" ng-change="PlotChange()" value="data.high[0][1]"></select>
+                    School: <select ng-options="hs[1] for hs in data.high" ng-model="data.plotSchool" ng-change="PlotChange()" value="data.high[0][1]"></select>
 
                     <select name="GraphYear" id="graphYear" ng-model="data.plotYears" ng-change="PlotChange()" value="data.plotYear" multiple>
                         <option value="0">1999</option>
@@ -79,12 +99,6 @@
                         <option value="model_actual">Model & Actual</option>						
                     </select>
 					
-					
-            </div>
-        </div>
-        <div id="enrollment-container">
-            <ul></ul>
-            <div id="enrollment-holder"></div>
             <canvas id="districtPopulationYear" class="chart chart-line" chart-data="data.district.enrollment"
                     chart-labels="data.district.grade" chart-legend="true" chart-series="data.district.year"
                     chart-click="onClick" chart-options="{datasetFill:false}" colours: [{
@@ -93,8 +107,8 @@
 					highlightFill: 'rgba(47, 132, 71, 0.8)',
 					highlightStroke: 'rgba(47, 132, 71, 0.8)'}]"></canvas> 
             <br><br>
-            Building Permits
-            <select ng-options="hs[1] for hs in data.high" ng-model="data.schoolPermits" ng-change="PermitPlotChange()" value="data.schoolPermits"></select>
+            Building Permits:
+            <select ng-options="hs[1] for hs in data.high" ng-model="data.schoolPermits" ng-change="PermitPlotChange()"></select>
 
             <canvas id="buildingPermits" class="chart chart-line" chart-data="data.permitPlot.data"
                     chart-labels="data.permitPlot.xAxisLables" chart-legend="true" chart-series="data.permitPlot.seriesLabels"
@@ -102,11 +116,13 @@
                     fillColor 'rgba(47, 132, 71, 0.8)' ,
                     strokeColor 'rgba(47, 132, 71, 0.8)' ,
                     highlightFill 'rgba(47, 132, 71, 0.8)' ,
-                    highlightStroke 'rgba(47, 132, 71, 0.8)' }]"></canvas> 
+                    highlightStroke 'rgba(47, 132, 71, 0.8)' }]"></canvas>					
+            </div>
         </div>
-        <div class="page no-break">
-            <div id="map-holder"></div>
-        </div> <!-- page -->
+        <div id="safety-map-container">
+            <ul></ul>
+            <div id="safety-map-holder"></div>
+        </div>
     </div>
 </body>
 </html>
