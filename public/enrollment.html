@@ -92,9 +92,12 @@
 					strokeColor: 'rgba(47, 132, 71, 0.8)',
 					highlightFill: 'rgba(47, 132, 71, 0.8)',
 					highlightStroke: 'rgba(47, 132, 71, 0.8)'}]"></canvas> 
+            <br><br>
+            Building Permits
+            <select ng-options="hs[1] for hs in data.high" ng-model="data.schoolPermits" ng-change="PermitPlotChange()" value="data.schoolPermits"></select>
 
-            <canvas id="buildingPermits" class="chart chart-line" chart-data="data.permits.data"
-                    chart-labels="data.permits.lables" chart-legend="true" chart-series="data.permits.x"
+            <canvas id="buildingPermits" class="chart chart-line" chart-data="data.permitPlot.data"
+                    chart-labels="data.permitPlot.xAxisLables" chart-legend="true" chart-series="data.permitPlot.seriesLabels"
                     chart-click="onClick" chart-options="{datasetFill:false}" colours [{
                     fillColor 'rgba(47, 132, 71, 0.8)' ,
                     strokeColor 'rgba(47, 132, 71, 0.8)' ,

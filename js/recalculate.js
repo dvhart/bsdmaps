@@ -816,7 +816,7 @@ function PermitGeocode($http, $scope) {
                         }
                         else { // Google does not like to give the data all at once.  Save off to database and try again later
                             failureCount++;
-                            console.log("PermitGeocode exit success - !needLocation failureCount:" + failureCount);                            
+                            console.log("PermitGeocode exit success - !needLocation failureCount:" + failureCount);                    
                             SaveBSDGrids($http, data.gridsJson, function (result) {
                                 SavePermits($http, permits, function (result) {
                                     if (failureCount > 10) {
