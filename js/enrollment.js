@@ -20,6 +20,10 @@ var minAccidentRate = 0;
 
 var countyIdcountyId = 34;
 var districtId = 2243;
+var studyYear = 2014;
+var projectionYear = 2020;
+var projectionSpan = projectionYear - studyYear;
+var BSD_GRADES = 13;
 
 
 app.controller('BoundaryController', function ($scope, $http) {
@@ -80,7 +84,7 @@ app.controller('BoundaryController', function ($scope, $http) {
 			{
 				$scope.data.gridsJson = bsdData.data;
 				ConstructionToGrids($scope.data.constructionJson, $scope.data.gridsJson);
-				BSD2020Estimate($scope.data.gridsJson);
+				BSD2020Estimate($scope.data.gridsJson, $scope.data.constructionJson);
 				console.log("ComputedEstimate");				
 			}
 		});
@@ -114,10 +118,6 @@ app.controller('BoundaryController', function ($scope, $http) {
                     $scope.data.permitLookup[feature.properties.activity] = feature;
                 });
                 
-                heatmap = new google.maps.visualization.HeatmapLayer({
-                    data: getPoints($scope.data.permits, $scope.data.mapYears),
-                    map: map
-                });
                 LoadGeoJson($http, $scope, map);	
             });
         });
@@ -131,20 +131,15 @@ function SchoolInit( $http, data, callback)
 {
     LoadSchools($http, function (schoolsObj) {
         data.schools = schoolsObj;
-
         ParseHighSchoolData(data);
-
-        LoadDistrictData(data, 34);
-
         callback();
     });
 }
 
 function LoadDistrictData(data, schoolId, years, withFeeders)
 {
-	
 	var iKey = ['"7/1/1999"','"7/1/2000"','"7/1/2001"','"7/1/2002"','"7/1/2003"','"7/1/2004"','"7/1/2005"','"7/1/2006"','"7/1/2007"','"7/1/2008"','"7/1/2009"','"7/1/2010"','"7/1/2011"','"7/1/2012"','"7/1/2013"','"7/1/2014"','"7/1/2015"'];
-
+    
     if (data.schools && data.schools[schoolId]) {
     	var school = data.schools[schoolId];
         data.district = { "enrollment": [], "construction": [], "grade": ["k", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"], "year": [] };
@@ -186,7 +181,7 @@ function LoadDistrictData(data, schoolId, years, withFeeders)
     	data.gridsJson.features.forEach(function(grid)
     	{
 			var hs = SchoolToId(grid.properties.HIGH_DESC);			
-			if(hs == schoolId || schoolId == 2243)
+			if(hs == schoolId || schoolId == districtId)
 			{
 				var es = data.schools[SchoolToId(grid.properties.ELEM_DESC)];
 				var ms = data.schools[SchoolToId(grid.properties.MID_DESC)];
@@ -199,7 +194,7 @@ function LoadDistrictData(data, schoolId, years, withFeeders)
                     {
                     	data.district.construction[iYear] = [0,0,0,0,0,0,0,0,0,0,0,0,0];
                     }	
-					if(esEnrolement && schoolId != 2243)
+					if(esEnrolement && schoolId != districtId)
 					{
 						for(var i = 0; i<=8; i++)
 						{
@@ -207,16 +202,20 @@ function LoadDistrictData(data, schoolId, years, withFeeders)
 						}
 					}
 
-					if(msEnrolement && schoolId != 2243)
+					if(msEnrolement && schoolId != districtId)
 					{
 						for(var i = 6; i<=8; i++)
 						{
 							data.district.enrollment[iYear][i] += grid.properties.students[i] * Number(msEnrolement.grade[i]) / ms.norm[i];
 						}						
                     }
-                    var constStudents = EstStudentsFromConstruciton(grid, data, year + 1999);
-                    for (var i = 0; i < constStudents.length; i++) {
-                        data.district.construction[iYear][i] += constStudents[i];
+                    
+                    var constStudentsArray = EstStudentsFromConstruciton(grid, data, year + 1999);
+                    if(data.district.construction[iYear]){
+                    	data.district.construction[iYear] = Sum(data.district.construction[iYear],constStudentsArray);                    	
+                    }
+                    else {
+                    	data.district.construction[iYear]=constStudentsArray;
                     }
 
 					//if(esEnrolement){
@@ -306,23 +305,29 @@ function LoadModelvsActualData(data, schoolId)
 	var school = data.schools[schoolId];
 
 	var predictedEnrollment = [];
+//	var enrolledStudents = InitArray(13, 0);
+//	var constStudents = InitArray(13, 0);
 	for(var i=0; i< 16; i++)
 	{
 		data.construction = 0;
 		LoadDistrictData(data, schoolId, [i], true);
-		var students = [];
-		for(var j=0; j<data.district.enrollment[0].length; j++)
-		{
-			students[j] = data.district.enrollment[0][j] + data.district.construction[0][j];
-        }
-        var prediction = EstProgression(students);
+		
+//		enrolledStudents = Sum(enrolledStudents, data.district.enrollment[0]);
+//		constStudents = Sum(constStudents, data.district.construction[0]);
+        var studentArray = Sum(data.district.enrollment[0], data.district.construction[0])
+        var promotedStudent=PromoteStudents(studentArray, projectionSpan);
+		var prediction = HSStudents(promotedStudent);
         
         var calendarYear = i + 1999;
-        console.log(school + " year " + calendarYear + " prediction " + prediction + " enrollment " + data.district.enrollment[0] + " construction " + data.district.construction[0]);
-        //EstStudentsFromGridConstruciton(grid, data, year)
+        console.log(school + " year " + calendarYear + " prediction:" + prediction + " enrollment:" + data.district.enrollment[0] + " construction:" + data.district.construction[0] + " promoted:"+promotedStudent);
 		predictedEnrollment[i+6] = prediction;
-		console.log(i + "constuction:"+data.construction);
+		console.log(i + " constuction units:"+data.construction);
 	}
+
+//	enrolledStudents = PromoteStudents(enrolledStudents, projectionSpan);
+//	var studentsEnrolled = HSStudents(enrolledStudents);
+//	constStudents = PromoteStudents(constStudents, projectionSpan);
+//	var studentsConst = HSStudents(constStudents);
 	
     data.district = { "enrollment": [], "grade": iKey, "set": ["actual", "model"] };
 	data.district.enrollment[1] = predictedEnrollment;
@@ -334,7 +339,7 @@ function LoadModelvsActualData(data, schoolId)
 		if(enrollment)
 		{
 			var actualStudents = Number(enrollment.StudCnt912)
-			if(schoolId == 2243)
+			if(schoolId == districtId)
 			{
 				actualStudents = Number(data.schools[1186].enrollment[year].StudCnt912);
 				actualStudents += Number(data.schools[1187].enrollment[year].StudCnt912);
@@ -360,7 +365,7 @@ function PlotPermitData(data, schoolId) {
                 var type = Number(permitData.properties.class);
                 var units = Number(permitData.properties.housecount);
                 var school = SchoolToId(feature.properties.HIGH_DESC);
-                if(schoolId[0]==2243 || school == schoolId[0])
+                if(schoolId[0]==districtId || school == schoolId[0])
                 {
 					if (!plotData[0][year - 2000]) {
 						plotData[0][year - 2000] = units;
@@ -376,16 +381,6 @@ function PlotPermitData(data, schoolId) {
     //chart-labels="data.permitPlot.lables" chart-legend="true" chart-series="data.permitPlot.xAxis"'
     data.permitPlot = { "data": plotData, "xAxisLables": xLables, "seriesLabels": ["BSD"] };
 
-}
-
-function Year(dateStr) {
-    var d = Date.parse(dateStr);
-    var minutes = 1000 * 60;
-    var hours = minutes * 60;
-    var days = hours * 24;
-    var years = days * 365;
-    var y = Math.trunc(1970 + d / years);
-    return y;
 }
 
 function ParseHighSchoolData(data) {
@@ -437,6 +432,11 @@ function LoadGeoJson($http, $scope, map) {
             FindSchoolEnrollment2020($scope.data.gridsJson, $scope.data.schools);
             ProjectEnrollment($scope.data.gridsJson, $scope.data.schools);
             PlotPermitData($scope.data, 0);
+            
+            heatmap = new google.maps.visualization.HeatmapLayer({
+                data: getPoints($scope.data.permits, $scope.data.mapYears),
+                map: map
+            });
             
             Configure($scope);
         });
@@ -528,6 +528,8 @@ function ProjectEnrollment(grids, schools)
 
 
 function Configure($scope) {
+
+	LoadDistrictData($scope.data, countyIdcountyId);
     // Initialise the map.
     //map.data.setControls(['LineString', 'Polygon']);
     
@@ -564,7 +566,7 @@ function Configure($scope) {
         //    }
         //}
         
-        return { editable: false, draggable: false, strokeWeight: 1, fillColor: color };
+        return { editable: false, draggable: false, strokeWeight: 1, fillColor: color, fillOpacity: 0.0};
     });
     
     map.data.addListener('addfeature' , function (ev) {
@@ -834,38 +836,61 @@ function BoundsOverlap(poly, grids)
 	return gridIndex;
 }
 
-function BSD2020Estimate(grids)
+function BSD2020Estimate(grids, constructionJson)
 {
-	var totalProgression = 0;
-	var totalNewConstruction = 0;
+    var totalProjectedStudents = 0;
+    var totalBSDStudents = 0;
+    var avergeError = 0;
+    var constructionError = 0;
+    
+    // Store construction area array by grid code
+    var constructionLookup = {};
+    constructionJson.features.forEach(function (feature) {
+        if (constructionLookup[Number(feature.properties.STDYAREA)]) {
+            constructionLookup[Number(feature.properties.STDYAREA)].push(feature);
+        }
+        else {
+            constructionLookup[Number(feature.properties.STDYAREA)] = [feature];
+        }
+    });
+    
     grids.features.forEach(function (grid){
-        var constStudents = EstConstruciton(grid);
-        //var estProgression = EstProgression(grid.properties.students, constStudents);
-        var estConstruction = EstConstruciton(grid);
-        var estProgression = EstProgression(grid.properties.students);
+        //var estStudents = EstProgression(grid.properties.students) + EstConstruciton(grid);      
 
+        var estPromotion = PromoteStudents(grid.properties.students,projectionSpan);
+        var estConstruction = EstConstrucitonBSD2020(grid, constructionLookup, projectionYear);
+        var gridStudents = Sum(estPromotion, estConstruction);
+        var estStudents = HSStudents(gridStudents);
 
-		totalProgression += estProgression + constStudents;
-		
-		var estStudents = estProgression + estConstruction;
-		var difference = estStudents - grid.properties.DDP_DISP;
-		console.log("Grid:" + grid.properties.PA_NUMBER + " BSD2020:" + grid.properties.DDP_DISP, " recompted:" + estStudents + " estProgression:"+estProgression+" difference:" + difference);
-		//if(/*estProgression > 0.1 && estProgression <= 1.2 &&*/ grid.properties.TTL_DU.length > 0)
-		//{
-		//	var TTL = 0
-		//	for(var iTTL = 0; iTTL<grid.properties.TTL_DU.length; iTTL++)
-		//	{
-		//		TTL += grid.properties.TTL_DU[iTTL];
-		//	}
-		//	var scaleFactorWithProgression  = (grid.properties.DDP_DISP - estProgression)/TTL;
-		//	var scaleFactorWitoutProgression = (grid.properties.DDP_DISP)/TTL;
-		//	var constType = grid.properties.TYPE;
-		//	console.log("Grid:" + grid.properties.PA_NUMBER + " BSD2020:" + grid.properties.DDP_DISP+ " recompted:" + estStudents + " difference:" + difference);
-		//	console.log(constType + " sfp:" + scaleFactorWithProgression + " sfnp:" + scaleFactorWitoutProgression);
-		//}
+        // Log Results
+        totalProjectedStudents += estStudents;
+        totalBSDStudents += grid.properties.DDP_DISP
+        var modelError = Math.abs(estStudents - grid.properties.DDP_DISP);
+        avergeError += modelError
+        
+//		console.log("Grid:" + grid.properties.PA_NUMBER + " BSD2020:" + grid.properties.DDP_DISP, " difference1:" + difference1 + " difference2:"+ difference2 + " students:"+grid.properties.students);
+        if (/* modelError > 1.0 estProgression > 0.1 && estProgression <= 1.2 &&*/ grid.properties.TTL_DU.length > 0) {
+            constructionError += modelError;
+            //console.log("Grid:" + grid.properties.PA_NUMBER + " BSD2020:" + grid.properties.DDP_DISP, " modelError:" + modelError + " students:" + grid.properties.students);
+			//var TTL = 0
+			//for(var iTTL = 0; iTTL<grid.properties.TTL_DU.length; iTTL++)
+			//{
+			//	TTL += grid.properties.TTL_DU[iTTL];
+			//}
+			//var scaleFactorWithProgression  = (grid.properties.DDP_DISP - estProgression)/TTL;
+			//var scaleFactorWitoutProgression = (grid.properties.DDP_DISP)/TTL;
+			//var constType = grid.properties.TYPE;
+			//console.log("Grid:" + grid.properties.PA_NUMBER + " BSD2020:" + grid.properties.DDP_DISP+ " recompted:" + estStudents + " difference:" + difference);
+			//console.log(constType + " sfp:" + scaleFactorWithProgression + " sfnp:" + scaleFactorWitoutProgression);
+		}  
+
 	});
 
-	console.log("totalProgression:"+totalProgression+" totalNewConstruction:"+totalNewConstruction);
+	var percentError = 100*Math.abs(totalBSDStudents-totalProjectedStudents)/totalBSDStudents;
+	averageError = avergeError / grids.features.length;
+
+	console.log("BSD Projected Students:"+ totalBSDStudents.toFixed(3) + " Reverse Enginnered Model Students:" + totalProjectedStudents.toFixed(3)
+	+ " percent error:" +percentError.toFixed(3)+"%"+" avergeError:"+ averageError.toFixed(3)+" students");
 }
 
 function EstProgression(students/*, constStudents*/)
@@ -883,103 +908,80 @@ function EstProgression(students/*, constStudents*/)
 	return estStudents;
 }
 
-function EstConstruciton(grid)
+function PromoteStudents(students, years)
 {
-    var sfdRate = 0.16;
+    var progression =[1,1,1,1.243718942,1.10998072,0.954883453,0.574595332,0.86953753,1.538136848,1.215197243,1.043448532,0.947282306,1];
+    //var progression = [1,1,1,3.062498113,0.404784509,1.520186301,2.272240567,0.174060091,1.359198795,2.992270046,0.380521746,1.50808518,1];
+    //var progression = [1,1,1,3.050327544,0.403903568,1.533511151,2.291625975,0.17126898,1.36615342,2.980378568,0.379693608,1.521303961,1];
+    //var progression = [1, 1, 1, 1.85303184, 0.578138291, 1.191937752, 1.528760346, 0.263974194, 1.965911442, 1.810538804, 0.543484711, 1.182449585, 1];
+    //var progression = [1, 1, 1, 1.432208648, 1.947391378, 1.665685262, 0.358502044, 1.0686238, 0.569198921, 1.399365773, 1.830664838, 1.652425928, 1];
+   // var progression = [1, 1, 1, 1.354243375, 0.834672069, 0.84, 0.852842273, 0.85086777, 1.470314858, 1.32318837, 0.784641867, 0.833313358, 1];
+    //var progression = [1, 1, 1, 1.023469829, 0.827572393, 1.01, 1.01, 0.820748977, 1.428561322, 1, 0.777967746, 1.001960109, 1];
+    //var progression = [1, 1, 1, 1.004023902, 1.011032133, 1.003, 1, 1, 0.995, 0.981, 0.950430919, 0.995015831, 1];
+    var estStudents = ProgressStudents(students, progression, years);
 
-    switch (grid.properties.ELEM_DESC) {
-        case "Bonny Slope ES":
-        case "Cedar Mill ES":
-        case "Jacob Wismer ES":
-        case "Springville K8":
-			sfdRate = 0.22;
-            break;
-    }  
-    var estStudents = 0; 
-	if(grid.properties.TTL_DU && grid.properties.TTL_DU.length)
-	{
-		for(var i=0; i<grid.properties.TTL_DU.length; i++)
-		{
-			var TTL_DU = grid.properties.TTL_DU[i];
-			if(grid.properties.TYPE[i] == "SFD"){
-				estStudents += sfdRate*TTL_DU;
-				//estStudents += 0.20*TTL_DU;
-			}
-			else if(grid.properties.TYPE[i] == "SFA"){
-				estStudents += 0.04*TTL_DU;			
-			}
-			else if(grid.properties.TYPE[i] == "MFA"){
-			estStudents += 0.066*TTL_DU;			
-			}
-			else if(grid.properties.TYPE[i] == "APT"){
-			estStudents += 0.065*TTL_DU;			
-			}		
-		}
-	}
 	return estStudents;
 }
 
 
-function EstStudentsFromGridConstruciton(grid, data, year) {
-    var sfdRate = 0.16;
-    switch (grid.properties.ELEM_DESC) {
-        case "Bonny Slope ES":
-        case "Cedar Mill ES":
-        case "Jacob Wismer ES":
-        case "Springville K8":
-            sfdRate = 0.22;
-            break;
-    }
-    var estStudents = 0;
-    if (grid.properties.permits) {
-        for (var permitKey in grid.properties.permits) {
-            var permit = data.permitLookup[permitKey];
-            if (permit && year == Year(permit.properties.acc_date)) {
-                var permitData = data.permitLookup[permitKey];
-                var type = permitData.properties.class;
-                var units = permitData.properties.housecount;
 
-                if (type == "101") {
-                    estStudents += sfdRate * units;
-                }
-                else if (grid.properties.TYPE[i] == "105") {
-                    estStudents += 0.065 * units;
-                }
-            }
-        }
+//function EstConstruciton(grid)
+//{
+//    var sfdRate = 0.16;
+
+//    switch (grid.properties.ELEM_DESC) {
+//        case "Bonny Slope ES":
+//        case "Cedar Mill ES":
+//        case "Jacob Wismer ES":
+//        case "Springville K8":
+//			sfdRate = 0.22;
+//            break;
+//    }  
+//    var estStudents = 0; 
+//	if(grid.properties.TTL_DU && grid.properties.TTL_DU.length)
+//	{
+//		for(var i=0; i<grid.properties.TTL_DU.length; i++)
+//		{
+//			var TTL_DU = grid.properties.TTL_DU[i];
+//			if(grid.properties.TYPE[i] == "SFD"){
+//				estStudents += sfdRate*TTL_DU;
+//				//estStudents += 0.20*TTL_DU;
+//			}
+//			else if(grid.properties.TYPE[i] == "SFA"){
+//				estStudents += 0.04*TTL_DU;			
+//			}
+//			else if(grid.properties.TYPE[i] == "MFA"){
+//			estStudents += 0.066*TTL_DU;			
+//			}
+//			else if(grid.properties.TYPE[i] == "APT"){
+//			estStudents += 0.065*TTL_DU;			
+//			}		
+//		}
+//	}
+//	return estStudents;
+//}
+
+
+function EstConstrucitonBSD2020(grid, constructionLookup, finalYear) {
+    var studentGenerationTable = StudentGenerationBSD2020(SchoolToId(grid.properties.ELEM_DESC));
+    
+    var estStudents = InitArray(BSD_GRADES,0); // Initialize zero array
+    var projects = constructionLookup[Number(grid.properties.PA_NUMBER)];
+    if (projects) {
+        projects.forEach(function (project) {
+            var studentGeneration = studentGenerationTable[project.properties.TYPE];
+            estStudents = AddStudents(estStudents, finalYear, studentGeneration, project.properties.PH1_, project.properties.PH1_COMP);
+            estStudents = AddStudents(estStudents, finalYear, studentGeneration, project.properties.PH2_, project.properties.PH2_COMP);            
+            estStudents = AddStudents(estStudents, finalYear, studentGeneration, project.properties.PH3_, project.properties.PH3_COMP);
+            estStudents = AddStudents(estStudents, finalYear, studentGeneration, project.properties.PH4_, project.properties.PH4_COMP);
+         });
     }
 
     return estStudents;
 }
 
 function EstStudentsFromConstruciton(grid, data, year) {
-      var estStudents = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-    
-      var esg = 0.41/6.0;
-      var msg = 0.13/3.0;
-    
-      var studentGeneration;
-      switch (grid.properties.ELEM_DESC) {
-          case "Bonny Slope ES":
-          case "Cedar Mill ES":
-          case "Jacob Wismer ES":
-          case "Springville K8":
-              studentGeneration = {
-                  "SFD": [esg, esg, esg, esg, esg, esg, msg, msg, msg, 0.1/4.0, 0.1/4.0, 0.1/4.0, 0.1/4.0],
-                  "SFA": [0.10/6.0, 0.10/6.0, 0.10/6.0, 0.10/6.0, 0.10/6.0, 0.10/6.0, 0.05/3.0, 0.05/3.0, 0.05/3.0, 0.05/4.0, 0.05/4.0, 0.05/4.0, 0.05/4.0], 
-                  "MFA": [0.10/6.0, 0.10/6.0, 0.10/6.0, 0.10/6.0, 0.10/6.0, 0.10/6.0, 0.04/3.0, 0.04/3.0, 0.04/3.0, 0.06/4.0, 0.06/4.0, 0.06/4.0, 0.06/4.0], 
-                  "APT": [0.10/6.0, 0.10/6.0, 0.10/6.0, 0.10/6.0, 0.10/6.0, 0.10/6.0, 0.04/3.0, 0.04/3.0, 0.04/3.0, 0.06/4.0, 0.06/4.0, 0.06/4.0, 0.06/4.0],
-              };
-              break;
-          default:
-              studentGeneration = {
-                  "SFD": [0.33/6.0, 0.33/6.0, 0.33/6.0, 0.33/6.0, 0.33/6.0, 0.33/6.0, 0.11/3.0, 0.11/3.0, 0.11/3.0, 0.1/4.0, 0.1/4.0, 0.1/4.0, 0.1/4.0],
-                  "SFA": [0.07/6.0, 0.07/6.0, 0.07/6.0, 0.07/6.0, 0.07/6.0, 0.07/6.0, 0.03/3.0, 0.03/3.0, 0.03/3.0, 0.04/4.0, 0.04/4.0, 0.04/4.0, 0.04/4.0], 
-                  "MFA": [0.10/6.0, 0.10/6.0, 0.10/6.0, 0.10/6.0, 0.10/6.0, 0.10/6.0, 0.04/3.0, 0.04/3.0, 0.04/3.0, 0.06/4.0, 0.06/4.0, 0.06/4.0, 0.06/4.0], 
-                  "APT": [0.10/6.0, 0.10/6.0, 0.10/6.0, 0.10/6.0, 0.10/6.0, 0.10/6.0, 0.04/3.0, 0.04/3.0, 0.04/3.0, 0.06/4.0, 0.06/4.0, 0.06/4.0, 0.06/4.0],
-              };
-    }
-    
+    var studentGeneration = StudentGenerationBSD2020(SchoolToId(grid.properties.ELEM_DESC));
     var estStudents = [0,0,0,0,0,0,0,0,0,0,0,0,0];
     if (grid.properties.permits) {
         for (var permitKey in grid.properties.permits) {
@@ -1006,6 +1008,35 @@ function EstStudentsFromConstruciton(grid, data, year) {
     return estStudents;
 }
 
+function StudentGenerationBSD2020(schoolID)
+{  
+    var esg = 0.41 / 6.0;
+    var msg = 0.13 / 3.0;
+    
+    var studentGeneration;
+    switch (schoolID) {
+        case 4671:
+        case 4671:
+        case 3437:
+        case 4712:
+            studentGeneration = {
+                "SFD": [esg, esg, esg, esg, esg, esg, msg, msg, msg, 0.1 / 4.0, 0.1 / 4.0, 0.1 / 4.0, 0.1 / 4.0],
+                "SFA": [0.10 / 6.0, 0.10 / 6.0, 0.10 / 6.0, 0.10 / 6.0, 0.10 / 6.0, 0.10 / 6.0, 0.05 / 3.0, 0.05 / 3.0, 0.05 / 3.0, 0.05 / 4.0, 0.05 / 4.0, 0.05 / 4.0, 0.05 / 4.0], 
+                "MFA": [0.10 / 6.0, 0.10 / 6.0, 0.10 / 6.0, 0.10 / 6.0, 0.10 / 6.0, 0.10 / 6.0, 0.04 / 3.0, 0.04 / 3.0, 0.04 / 3.0, 0.06 / 4.0, 0.06 / 4.0, 0.06 / 4.0, 0.06 / 4.0], 
+                "APT": [0.10 / 6.0, 0.10 / 6.0, 0.10 / 6.0, 0.10 / 6.0, 0.10 / 6.0, 0.10 / 6.0, 0.04 / 3.0, 0.04 / 3.0, 0.04 / 3.0, 0.06 / 4.0, 0.06 / 4.0, 0.06 / 4.0, 0.06 / 4.0],
+            };
+            break;
+        default:
+            studentGeneration = {
+                "SFD": [0.33 / 6.0, 0.33 / 6.0, 0.33 / 6.0, 0.33 / 6.0, 0.33 / 6.0, 0.33 / 6.0, 0.11 / 3.0, 0.11 / 3.0, 0.11 / 3.0, 0.1 / 4.0, 0.1 / 4.0, 0.1 / 4.0, 0.1 / 4.0],
+                "SFA": [0.07 / 6.0, 0.07 / 6.0, 0.07 / 6.0, 0.07 / 6.0, 0.07 / 6.0, 0.07 / 6.0, 0.03 / 3.0, 0.03 / 3.0, 0.03 / 3.0, 0.04 / 4.0, 0.04 / 4.0, 0.04 / 4.0, 0.04 / 4.0], 
+                "MFA": [0.10 / 6.0, 0.10 / 6.0, 0.10 / 6.0, 0.10 / 6.0, 0.10 / 6.0, 0.10 / 6.0, 0.04 / 3.0, 0.04 / 3.0, 0.04 / 3.0, 0.06 / 4.0, 0.06 / 4.0, 0.06 / 4.0, 0.06 / 4.0], 
+                "APT": [0.10 / 6.0, 0.10 / 6.0, 0.10 / 6.0, 0.10 / 6.0, 0.10 / 6.0, 0.10 / 6.0, 0.04 / 3.0, 0.04 / 3.0, 0.04 / 3.0, 0.06 / 4.0, 0.06 / 4.0, 0.06 / 4.0, 0.06 / 4.0],
+            };
+    }
+    return studentGeneration;
+}
+
 function getPoints(permits, years) {
     var locations = [];
     permits.features.forEach(function(feature){
@@ -1014,3 +1045,12 @@ function getPoints(permits, years) {
     return locations;
 }
 
+function AddStudents(estStudents, finalYear, studentGeneration, construction, constYear) {
+    if (construction) {
+        var yearsToPromote = finalYear - Year(constYear);
+        var studentGen = Multiply(studentGeneration, construction)
+        var studentsYear = PromoteStudents(studentGen, yearsToPromote);
+        estStudents = Sum(estStudents, studentsYear);
+    }
+    return estStudents;
+}
