@@ -220,9 +220,6 @@ function RefreshFromDB(dbData) {
                 grid.properties.id = grid._id;
             }
 
-            if (grid.properties.gc == 908) {
-                console.log("RefreshFromDB " + grid.properties.gc);
-            }
         });
 
         var newData = new google.maps.Data({map: map});
