@@ -55,17 +55,21 @@ app.controller('BoundaryController', function ($scope, $http) {
         "gridsJson": {},
         "constructionJson": {},
         "studentsJson": {},
-        "schoolsJson": {}
+        "schoolsJson": {},
+        "updateGrids":""
     };
 
     $scope.RecalculateRoutes = function () {
+        console.log("Starting RecalculateRoutes");
         var destinations = [];
         schools.forEach(function (school) {
             destinations.push(school.location);
         });
 
         $http.get('/GetFeatures').then(function (getFeatures) {
+            console.log("Retrieved features");
             $http.get('/GetRoutes').then(function (getRoutes) {
+                console.log("Retrieved routes");
 
                 var end = getFeatures.data.length;
                 //end = 8; // Testing
@@ -74,7 +78,7 @@ app.controller('BoundaryController', function ($scope, $http) {
 
                 var grids = getFeatures.data;
                 var routes = getRoutes.data;
-                var intervalDelayMs = 10000;
+                var intervalDelayMs = 1000;
 
                 // Delay update
                 var intervalID = setInterval(function () {
@@ -87,7 +91,8 @@ app.controller('BoundaryController', function ($scope, $http) {
                     var route;
                     while (iGrid < end && !needPath) {
                         // Find all routes that match the grid code.
-
+                        
+                        console.log("Grid "+iGrid+" of "+ end);
                         jRoute = 0;
                         iRoute = [];
                         route = null;
@@ -119,6 +124,9 @@ app.controller('BoundaryController', function ($scope, $http) {
                             needPath = true;
                         }
                         else if (!routes[jRoute].path[iSchool]) {
+
+                        }
+                        else if (!grids[iGrid].properties.distance || !grids[iGrid].properties.distance[iSchool]) {
                             needPath = true;
                         }
                         else {
@@ -128,23 +136,29 @@ app.controller('BoundaryController', function ($scope, $http) {
                                 iGrid++;
                             }
                         }
-                        console.log(iGrid + " "+ jRoute + " " +iSchool);
+                        console.log("Grid index:"+iGrid + " route index"+ jRoute + " school index" +iSchool);
                     }
 
                     if (!needPath) { // Done.  Save and exit
                         clearInterval(intervalID); // Done.  Don't restart interval timer
-                        //$http.post('/SetFeatures', grids);
+                        $http.post('/SetFeatures', grids);
                         $http.post('/SetRoutes', routes);
                         $scope.data.progress = "Recalculate Complete grids:" + iGrid;
                         $scope.$apply();
                     }
                     else {
-                        if (!grids[iGrid].properties.distance) grids[iGrid].properties.distance = [];
-                        if (!grids[iGrid].properties.time) grids[iGrid].properties.time = [];
-                        if (!grids[iGrid].properties.path) grids[iGrid].properties.path = [];
+                        if (!grids[iGrid].properties.distance) {
+                            grids[iGrid].properties.distance = [];
+                        }
+                        if (!grids[iGrid].properties.time) {
+                            grids[iGrid].properties.time = [];
+                        }
+                        if (!grids[iGrid].properties.path) {
+                            grids[iGrid].properties.path = [];
+                        }
 
                         var center = PolygonCenter(grids[iGrid].geometry.coordinates);
-
+                        console.log("Find path for grid:"+iGrid+" gc:"+grids[iGrid].properties.gc);
                         directionsDisplay.setMap(map);
                         FindPath(center, destinations[iSchool], departDate, function (findPathResponse, polyline) {
 
@@ -159,15 +173,13 @@ app.controller('BoundaryController', function ($scope, $http) {
                                 $scope.data.distance = grids[iGrid].properties.distance;
                                 $scope.data.duration = grids[iGrid].properties.time[iSchool];
 
-                                $scope.data.progress = "Grid " + iGrid + " of " + grids.length + " route " + iSchool + " distance " + distance + " duration " + duration;
-                                $scope.$apply();
+                                console.log("Grid " + iGrid + " of " + grids.length + " route " + iSchool + " distance " + distance + " duration " + duration);
                             }
                             else { // Google does not like to give the data all at once.  Save off to database and try again later
                                 clearInterval(intervalID); // Done.  Don't restart interval timer
-                                //$http.post('/SetFeatures', grids);
+                                $http.post('/SetFeatures', grids);
                                 $http.post('/SetRoutes', routes);
                                 $scope.data.progress = "Recalculate Finished Incoplete grids:" + iGrid;
-                                $scope.$apply();
                             }
                         });
                     }
@@ -199,7 +211,7 @@ app.controller('BoundaryController', function ($scope, $http) {
                         if (gridRoutes) {
                             gridRoutes.path.forEach(function (path, iPath) {
                                 grid.properties.accidentRate[iPath] = FindAccidentRate(path);
-                                var status = "gc " + grid.properties.gc + " rate " + grid.properties.accidentRate[iPath];
+                                var status = iGrid + " gc " + grid.properties.gc + " rate " + grid.properties.accidentRate[iPath];
                                 console.log(status)
                                 $scope.data.progressSafety = status;
                             });
@@ -209,7 +221,7 @@ app.controller('BoundaryController', function ($scope, $http) {
 
                 $http.post('/SetFeatures', getFeatures.data);
                 $scope.data.progressSafety = "Done Computing Accident Rate";
-                $scope.$apply();
+                //$scope.$apply();
             });
         });
     };
@@ -217,6 +229,94 @@ app.controller('BoundaryController', function ($scope, $http) {
     $scope.UpdateHigh = function () {
         Configure($scope, $http);
     };
+    
+    $scope.UpdateGrids = function () {
+        $scope.data.updateGrids = "Beginning Update";
+        
+        LoadBSDGrids($http, function (gridsJson) {
+            $scope.data.updateGrids = "GeoJson Grids Loaded";
+            LoadGrids($http, function (gridsDB) {
+                LoadSchools($http, function (schools) {
+                    $scope.data.updateGrids = "Database Grids Loaded";
+                    $scope.data.schools = schools;
+                    var gridLookup = {};
+                    var dbGridLookup = {};
+                    for (var i = 0; i < gridsJson.features.length; i++) {
+                        var key = gridsJson.features[i].properties.STDYAREA;
+                        if (gridLookup[key]) {
+                            console.log("Index:" + i + " Repeated grid code " + key);
+                        }
+                        gridLookup[key] = gridsJson.features[i];
+                    }
+                    $scope.data.gridsJson = gridsJson;
+                    var correctedGrids = [];
+                    for (var i = 0; i < gridsDB.length; i++) {
+                        var gc = gridsDB[i].properties.gc;
+                        var geoJsonGrid = gridLookup[gc];
+                        if (!geoJsonGrid) {
+                            if (gridsDB[i].properties.gc > Math.floor(gridsDB[i].properties.gc)) {
+                                var gcb = Math.floor(gridsDB[i].properties.gc).toString() + "B";
+                                geoJsonGrid = gridLookup[gcb];
+                                if (geoJsonGrid) {
+                                    gc = gcb;
+                                }
+                            }
+                            else if (gridsDB[i].properties.gc) {
+                                var gca = gridsDB[i].properties.gc.toString() + "A";
+                                geoJsonGrid = gridLookup[gca];
+                                if (geoJsonGrid) {
+                                    gc = gca;
+                                }
+                            }
+                            else {
+                                console.log("Grid " + i + " unassigned");
+                            }
+                        }
+                        
+                        if (geoJsonGrid) {
+                            var newGrid = gridsDB[i];
+                            newGrid.geometry = geoJsonGrid.geometry;
+                            newGrid.properties.hs2020 = geoJsonGrid.properties.DDP_DISP;
+                            newGrid.properties.high = schools[SchoolToId(geoJsonGrid.properties.HIGH_DESC)].dbName;
+                            newGrid.properties.middle = schools[SchoolToId(geoJsonGrid.properties.MID_DESC)].dbName;
+                            newGrid.properties.elementary = schools[SchoolToId(geoJsonGrid.properties.ELEM_DESC)].dbName;
+                            dbGridLookup[gc] = newGrid;
+                            correctedGrids.push(newGrid);
+                            delete gridLookup[gc];
+                            console.log(gc + " entered");
+                        }
+                        else if (dbGridLookup[gc]) {
+                            console.log("* " + gc + " repeated");
+                        }
+                        else if (gridsDB[i].properties.gc) {
+                            {
+                                console.log("Unable to find gc " + gridsDB[i].properties.gc);
+                            }
+                        }
+                    }
+                    
+                    for (var key in gridLookup) {
+                        console.log("Add unassigned grid " + key);
+                        var missingGrid = { "type": "Feature", "geometry": {}, "properties": {} };
+                        missingGrid.geometry = gridLookup[key].geometry;
+                        missingGrid.properties.centroid = Centroid(gridLookup[key].geometry.coordinates[0]);
+                        missingGrid.properties.gc = Number(gridLookup[key].properties.STDYAREA);
+                        missingGrid.properties.hs2020 = gridLookup[key].properties.DDP_DISP;
+                        missingGrid.properties.high = schools[SchoolToId(gridLookup[key].properties.HIGH_DESC)].dbName;
+                        missingGrid.properties.middle = schools[SchoolToId(gridLookup[key].properties.MID_DESC)].dbName;
+                        missingGrid.properties.elementary = schools[SchoolToId(gridLookup[key].properties.ELEM_DESC)].dbName;
+                        correctedGrids.push(missingGrid);
+                    }
+                    console.log(correctedGrids.length + " grids assigned");
+                    SaveGrids($http, correctedGrids, function (response) {
+                        $scope.data.updateGrids = "Update " + correctedGrids.length + +" grids";
+                    });
+
+                });
+            });
+        });
+        $scope.data.updateGrids = "Complete";
+    }
     
     $scope.parseFile = function ($fileContent) {
         $scope.data.fileData = $fileContent;
@@ -259,18 +359,18 @@ app.controller('BoundaryController', function ($scope, $http) {
         $http.get('/GetFeatures').then(function (response) {
             RefreshFromGrids(response.data);
 
- //           $http.get('/GetSection').then(function (sectionResponse) {
- //               sections = RefreshFromSafetyDB(sectionResponse, map);
+            $http.get('/GetSection').then(function (sectionResponse) {
+                sections = RefreshFromSafetyDB(sectionResponse, map);
 
- //               $http.get('/GetRoutes').then(function (getRoutes) {
- //                   routes = getRoutes.data;
+                $http.get('/GetRoutes').then(function (getRoutes) {
+                    routes = getRoutes.data;
                     LoadGeoJson($http, $scope, function(){
                         Configure($scope, $http);
-                        PermitGeocode($http, $scope);
+                        //PermitGeocode($http, $scope);
                     });
                                
-//                });
-//            });
+                });
+            });
         });
     };
 
