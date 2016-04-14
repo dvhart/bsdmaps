@@ -10,6 +10,25 @@
 //    routes = RefreshFromSafetyDB(response, map);
 //});
 
+function LoadGrids($http, callback) {
+    $http.get('/GetFeatures').then(function (features) {
+        console.log("/GetFeatures " + features.statusText);
+        var grids;
+        if (features.statusText == "OK" && features.data) {
+            grids = features.data;
+        }
+        callback(grids);
+    });
+}
+
+function SaveGrids($http, grids, callback) {
+    $http.post('/SetFeatures', grids).then(function successCallback(response) {
+        callback(response);
+    }, function errorCallback(response) {
+        callback(response);
+    });
+}
+
 
 function RefreshFromSafetyDB(dbData, renderMap) {
     var dbRoutes = []

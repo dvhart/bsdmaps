@@ -868,7 +868,7 @@ function BSD2020Estimate(grids, constructionJson)
         var modelError = Math.abs(estStudents - grid.properties.DDP_DISP);
         avergeError += modelError
         
-//		console.log("Grid:" + grid.properties.PA_NUMBER + " BSD2020:" + grid.properties.DDP_DISP, " difference1:" + difference1 + " difference2:"+ difference2 + " students:"+grid.properties.students);
+        console.log("Grid:" + grid.properties.PA_NUMBER + " BSD2020:" + grid.properties.DDP_DISP+ " recomputed:"+ estStudents + " modelError:" + modelError);
         if (/* modelError > 1.0 estProgression > 0.1 && estProgression <= 1.2 &&*/ grid.properties.TTL_DU.length > 0) {
             constructionError += modelError;
             //console.log("Grid:" + grid.properties.PA_NUMBER + " BSD2020:" + grid.properties.DDP_DISP, " modelError:" + modelError + " students:" + grid.properties.students);
@@ -889,8 +889,8 @@ function BSD2020Estimate(grids, constructionJson)
 	var percentError = 100*Math.abs(totalBSDStudents-totalProjectedStudents)/totalBSDStudents;
 	averageError = avergeError / grids.features.length;
 
-	console.log("BSD Projected Students:"+ totalBSDStudents.toFixed(3) + " Reverse Enginnered Model Students:" + totalProjectedStudents.toFixed(3)
-	+ " percent error:" +percentError.toFixed(3)+"%"+" avergeError:"+ averageError.toFixed(3)+" students");
+	console.log("BSD 2020 Enrollment Forecast:"+ totalBSDStudents.toFixed(3) + " Verification Forecast:" + totalProjectedStudents.toFixed(3)
+	+ " Percent Error:" +percentError.toFixed(3)+"%  Average Error:"+ averageError.toFixed(3)+" students" +" construction error:"+ constructionError);
 }
 
 function EstProgression(students/*, constStudents*/)

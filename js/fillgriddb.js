@@ -378,21 +378,6 @@ function Configure($scope) {
     //google.maps.event.addDomListener(window, 'resize', resizeGeoJsonInput);
 }
 
-function Centroid(locations)
-{
-    var centroidLocation = [0, 0];
-
-    if (locations != null && locations.length > 1) {
-        for (var i = 0; i < locations.length-1; i++) {
-            centroidLocation[0] += locations[i][0];
-            centroidLocation[1] += locations[i][1];
-        }
-        centroidLocation[0] /= (locations.length-1);
-        centroidLocation[1] /= (locations.length-1);
-    }
-    return centroidLocation
-}
-
 function deleteMarkers(markersArray) {
     for (var i = 0; i < markersArray.length; i++) {
         markersArray[i].setMap(null);
