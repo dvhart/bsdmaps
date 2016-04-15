@@ -340,8 +340,8 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
 
             $scope.data.solutionName = selectedSolution[0]["solutionName"];
             $scope.data.solutionDescription = selectedSolution[0]["solutionDescription"];
-            $scope.data.solutionUsername = selectedSolution[0]["solutionUsername"];
-            $scope.data.solutionEmail = selectedSolution[0]["email"];
+            //$scope.data.solutionUsername = selectedSolution[0]["solutionUsername"];
+            //$scope.data.solutionEmail = selectedSolution[0]["email"];
             $scope.data.solutionUrl = selectedSolution[0]["url"];
 
             results = Results(geoJson.features, schoolData);
