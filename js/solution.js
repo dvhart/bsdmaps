@@ -628,7 +628,7 @@ function Configure($scope) {
         infoWindowMarker.setMap(null);
         map.data.overrideStyle(event.feature, { strokeWeight: 1 });
 
-        if (selecting == 1 && ($scope.data.dragFunc == "paint")) {
+        if (event.Fb.buttons & 0x1 && $scope.data.dragFunc == "paint") {
             var proposedHigh = $scope.data.proposedHigh;
             if (proposedHigh) {
                 // Record selected grid and grid data
