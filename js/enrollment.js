@@ -302,6 +302,7 @@ function LoadDistrictCohortData(data, schoolId, year)
 function LoadModelvsActualData(data, schoolId)
 {
 	var iKey = ['"7/1/1999"','"7/1/2000"','"7/1/2001"','"7/1/2002"','"7/1/2003"','"7/1/2004"','"7/1/2005"','"7/1/2006"','"7/1/2007"','"7/1/2008"','"7/1/2009"','"7/1/2010"','"7/1/2011"','"7/1/2012"','"7/1/2013"','"7/1/2014"','"7/1/2015"','"7/1/2016"','"7/1/2017"','"7/1/2018"','"7/1/2019"','"7/1/2020"'];
+    var xLables = [1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020];
 	var school = data.schools[schoolId];
 
 	var predictedEnrollment = [];
@@ -321,7 +322,7 @@ function LoadModelvsActualData(data, schoolId)
         var calendarYear = i + 1999;
         console.log(school + " year " + calendarYear + " prediction:" + prediction + " enrollment:" + data.district.enrollment[0] + " construction:" + data.district.construction[0] + " promoted:"+promotedStudent);
 		predictedEnrollment[i+6] = prediction;
-		console.log(i + " constuction units:"+data.construction);
+		console.log(i + " constuction units:"+data.construction, "percent constructon:"+100* HSStudents(PromoteStudents(data.district.construction[0], projectionSpan))/ prediction);
 	}
 
 //	enrolledStudents = PromoteStudents(enrolledStudents, projectionSpan);
@@ -329,7 +330,7 @@ function LoadModelvsActualData(data, schoolId)
 //	constStudents = PromoteStudents(constStudents, projectionSpan);
 //	var studentsConst = HSStudents(constStudents);
 	
-    data.district = { "enrollment": [], "grade": iKey, "set": ["actual", "model"] };
+    data.district = { "enrollment": [], "grade": xLables, "year": ["actual", "forecast"] };
 	data.district.enrollment[1] = predictedEnrollment;
 
     // Historic high school data from school database
@@ -345,7 +346,8 @@ function LoadModelvsActualData(data, schoolId)
 				actualStudents += Number(data.schools[1187].enrollment[year].StudCnt912);
 				actualStudents += Number(data.schools[2783].enrollment[year].StudCnt912);
 				actualStudents += Number(data.schools[1188].enrollment[year].StudCnt912);
-				actualStudents += Number(data.schools[1320].enrollment[year].StudCnt912);
+                actualStudents += Number(data.schools[1320].enrollment[year].StudCnt912);
+                //actualStudents = Number(data.schools[districtId].enrollment[year].StudCnt912);
 			}
 
 			data.district.enrollment[0][iYear] = actualStudents;					
