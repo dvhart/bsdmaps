@@ -340,8 +340,8 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
 
             $scope.data.solutionName = selectedSolution[0]["solutionName"];
             $scope.data.solutionDescription = selectedSolution[0]["solutionDescription"];
-            //$scope.data.solutionUsername = selectedSolution[0]["solutionUsername"];
-            //$scope.data.solutionEmail = selectedSolution[0]["email"];
+            $scope.data.solutionUsername = selectedSolution[0]["solutionUsername"];
+            $scope.data.solutionEmail = selectedSolution[0]["email"];
             $scope.data.solutionUrl = selectedSolution[0]["url"];
 
             results = Results(geoJson.features, schoolData);
@@ -568,7 +568,7 @@ function UpdateScopeData($scope, results) {
     $scope.data.milesTraveled = results.distance;
     $scope.data.total_transitions = results.transitions;
     $scope.data.total_split_es = results.split_es;
-    $scope.data.total_split_ms = results.split_ms;
+    $scope.data.total_split_ms = results.split_ms;    
     $scope.data.total_frl_p = (100 * frl / students).toFixed(2);
     $scope.data.totalAccidentRate = results.totalAccidentRate.toFixed(2);
 
@@ -862,7 +862,7 @@ function Results(grids, schoolData)
                 }
             }
         }
-
+        
         for (key in split_ms) {
             if (split_ms[key].length > 1) {
                 if (split_ms[key].indexOf(results.schools[i].dbname) >= 0) {
@@ -888,7 +888,7 @@ function Results(grids, schoolData)
             results.split_es++;
         }
     }
-
+    
     for (key in split_ms) {
         if (split_ms[key].length > 1) {
             results.split_ms++;

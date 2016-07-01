@@ -219,6 +219,7 @@ function RefreshFromDB(dbData) {
             if (grid._id) {
                 grid.properties.id = grid._id;
             }
+
         });
 
         var newData = new google.maps.Data({map: map});
