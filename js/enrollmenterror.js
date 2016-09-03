@@ -1,7 +1,5 @@
 var app = angular.module('BoundaryEntry', ['chart.js']);
 var app = angular.module('BoundaryEntry', ['chart.js']);
-var map;
-var heatmap;
 var directionsService;
 var directionsDisplay;
 var geocoder;
@@ -37,9 +35,8 @@ app.controller('BoundaryController', function ($scope, $http) {
         "studentsJson": {},
         "constructionJson": {},
         "plotYears": [],
-        "mapYears":[],
-        "plotSchool":0,
-        "graphType": "year",
+        "plotSchool": [districtId],
+        "plotName": "Plot",
         "permits": {},
         "permitLookup":{},
         "permitPlot": {},
@@ -53,39 +50,26 @@ app.controller('BoundaryController', function ($scope, $http) {
     
     $scope.PlotChange = function ()
     {
-    	if($scope.data.graphType == "year"){
-    		LoadDistrictData($scope.data, $scope.data.plotSchool[0], $scope.data.plotYears, true);    		
-    	}
-    	else if($scope.data.graphType == "cohort" && $scope.data.plotSchool[0] && $scope.data.plotYears[0]){
-    		LoadDistrictCohortData($scope.data, $scope.data.plotSchool[0], $scope.data.plotYears[0])
-    	}
-		else if($scope.data.graphType == "model_actual")
-		{
-			LoadModelvsActualData($scope.data, $scope.data.plotSchool[0]); 
-		}
-    }
-    
-    $scope.PermitPlotChange = function (){
-        PlotPermitData($scope.data, $scope.data.schoolPermits);
+		LoadModelvsActualData($scope.data, $scope.data.plotSchool[0]); 
     }
     
     $scope.ComputeEnrollment = function ()
     {
-        console.log("ComputeEnrollment");
+        //console.log("ComputeEnrollment");
         //StudentsToGrids($scope.data.studentsJson, $scope.data.gridsJson);
         //console.log("Students assigned to grids");
 		
         //console.log("Construction assigned to grids");
 		//$http.post('/SetBSData', $scope.data.gridsJson);
-        console.log("Posted to DB");
+        //console.log("Posted to DB");
 		$http.get('/GetBSData').then(function (bsdData) {
-			console.log("/GetBSData " + bsdData.statusText);			
+			//console.log("/GetBSData " + bsdData.statusText);			
 			if(bsdData.statusText == "OK" && bsdData.data)
 			{
 				$scope.data.gridsJson = bsdData.data;
 				ConstructionToGrids($scope.data.constructionJson, $scope.data.gridsJson);
 				BSD2020Estimate($scope.data.gridsJson, $scope.data.constructionJson);
-				console.log("ComputedEstimate");				
+				//console.log("ComputedEstimate");				
 			}
 		});
     }
@@ -93,32 +77,17 @@ app.controller('BoundaryController', function ($scope, $http) {
 
 
     function init() {
-        SchoolInit($http, $scope.data, function(){
-			// Initialise the map.
-			var myLatLng = { lat: 45.498, lng: -122.82 };
-			var mapProp = {
-				center: myLatLng,
-				zoom: 12,
-				zoom: 12,
-				mapTypeId: google.maps.MapTypeId.ROADMAP
-            };
-
-			map = new google.maps.Map(document.getElementById('safety-map-holder'), mapProp);
-			directionsService = new google.maps.DirectionsService;
-			var renderOptions = { preserveViewport: true };
-			directionsDisplay = new google.maps.DirectionsRenderer(renderOptions);
-			geocoder = new google.maps.Geocoder;
-            infowindow = new google.maps.InfoWindow;
+        SchoolInit($http, $scope.data, function (){
             LoadPermits($http, function (permits) {
-                $scope.data.permits = { "type": "FeatureCollection", "features": [] };                
+                $scope.data.permits = { "type": "FeatureCollection", "features": [] };
                 permits.features.forEach(function (feature) {
                     if (feature.properties.gc) {
-                        $scope.data.permits.features.push(feature); 
+                        $scope.data.permits.features.push(feature);
                     }
                     $scope.data.permitLookup[feature.properties.activity] = feature;
                 });
                 
-                LoadGeoJson($http, $scope, map);	
+                LoadGeoJson($http, $scope);
             });
         });
     };
@@ -138,6 +107,7 @@ function SchoolInit( $http, data, callback)
 
 function LoadDistrictData(data, schoolId, years, withFeeders)
 {
+    var enrollment = [];
 	var iKey = ['"7/1/1999"','"7/1/2000"','"7/1/2001"','"7/1/2002"','"7/1/2003"','"7/1/2004"','"7/1/2005"','"7/1/2006"','"7/1/2007"','"7/1/2008"','"7/1/2009"','"7/1/2010"','"7/1/2011"','"7/1/2012"','"7/1/2013"','"7/1/2014"','"7/1/2015"'];
     
     if (data.schools && data.schools[schoolId]) {
@@ -150,28 +120,27 @@ function LoadDistrictData(data, schoolId, years, withFeeders)
 			years.forEach(function(year){
 				var key = iKey[Number(year)];
 				data.district.year = year;
-				var enrollment = school.enrollment[key];
+				var schoolEnrollment = school.enrollment[key];
 				var enrollmentNum = [];
 				if(enrollment)
 				{
-					enrollment.grade.forEach(function (value, index){
+                    schoolEnrollment.grade.forEach(function (value, index){
 						enrollmentNum[index] = Number(value);
 					});					
 				}
-				data.district.enrollment.push(enrollmentNum);			
+				enrollment.push(enrollmentNum);			
 			});			
 		}
 		else
 		{
 		   for (var date in school.enrollment) {
 				data.district.year.push(date.replace(/['"]+/g, ''));
-				var enrollment = school.enrollment[date];
+				var schoolEnrollment = school.enrollment[date];
 				var enrollmentNum = [];
-				enrollment.grade.forEach(function (value, index){
+				schoolEnrollment.grade.forEach(function (value, index){
 					enrollmentNum[index] = Number(value);
 				});				
-				data.district.enrollment.push(enrollmentNum);
-				//console.log(school.displayName +": "+ enrollmentNum);
+				enrollment.push(enrollmentNum);
 			}			
 		}
     }
@@ -198,7 +167,7 @@ function LoadDistrictData(data, schoolId, years, withFeeders)
 					{
 						for(var i = 0; i<=8; i++)
 						{
-							data.district.enrollment[iYear][i] += grid.properties.students[i] * Number(esEnrolement.grade[i]) / es.norm[i];
+							enrollment[iYear][i] += grid.properties.students[i] * Number(esEnrolement.grade[i]) / es.norm[i];
 						}
 					}
 
@@ -206,7 +175,7 @@ function LoadDistrictData(data, schoolId, years, withFeeders)
 					{
 						for(var i = 6; i<=8; i++)
 						{
-							data.district.enrollment[iYear][i] += grid.properties.students[i] * Number(msEnrolement.grade[i]) / ms.norm[i];
+							enrollment[iYear][i] += grid.properties.students[i] * Number(msEnrolement.grade[i]) / ms.norm[i];
 						}						
                     }
                     
@@ -217,27 +186,12 @@ function LoadDistrictData(data, schoolId, years, withFeeders)
                     else {
                     	data.district.construction[iYear]=constStudentsArray;
                     }
-
-					//if(esEnrolement){
-						//console.log(grid.properties.PA_NUMBER+" year:"+year+" HS:"+school.displayName +" MS:" + es.displayName +" "+esEnrolement.StudCnt+ + " MS:" + ms.displayName+ " " +msEnrolement.StudCnt);
-						//console.log("esStudCnt:" + esEnrolement.StudCnt + " esNorm:" + es.norm+ " msStudCnt:" + msEnrolement.StudCnt + " msNorm:" + ms.norm);					
-					//}
-					//console.log("students:" + grid.properties.students[i]);
-					//console.log("Enrollment:"+data.district.enrollment[iYear]);
-
                 });
 			}
     	});
     }
 
-	//var calendarYear =  years[0] + 1999;
-    //console.log("Year:"+calendarYear+ " Students From Construction:" + data.district.construction[0]);
-	
-	//if(years)
-	//{
-	//	var iYear = iKey[Number(years[0])];
-	//	console.log(data.schools[schoolId].displayName + ", "+data.district.enrollment[0]);		
-	//}
+    return enrollment;
 }
 
 function LoadDistrictCohortData(data, schoolId, year)
@@ -283,18 +237,11 @@ function LoadDistrictCohortData(data, schoolId, year)
 					{
 						data.district.enrollment[0][iCohart+1] += grid.properties.students[iCohart] * Number(msEnrolement.grade[iCohart]) / ms.norm[iCohart];						
 					}
-
-					//if(esEnrolement){
-						//console.log(grid.properties.PA_NUMBER+" year:"+year+" HS:"+school.displayName +" MS:" + es.displayName +" "+esEnrolement.StudCnt+ + " MS:" + ms.displayName+ " " +msEnrolement.StudCnt);
-						//console.log("esStudCnt:" + esEnrolement.StudCnt + " esNorm:" + es.norm+ " msStudCnt:" + msEnrolement.StudCnt + " msNorm:" + ms.norm);					
-					//}
-					//console.log("students:" + grid.properties.students[i]);
-					//console.log("Enrollment:"+data.district.enrollment[iYear]);
 				}
 			}
 		});
     }
-    else{
+    else {
     	console.log("LoadDistrictCohortData school data not available");
     }				
 }
@@ -306,23 +253,19 @@ function LoadModelvsActualData(data, schoolId)
 	var school = data.schools[schoolId];
 
 	var predictedEnrollment = [];
-//	var enrolledStudents = InitArray(13, 0);
-//	var constStudents = InitArray(13, 0);
 	for(var i=0; i< 16; i++)
 	{
 		data.construction = 0;
-		LoadDistrictData(data, schoolId, [i], true);
+		var districtEnrollment = LoadDistrictData(data, schoolId, [i], true);
 		
-//		enrolledStudents = Sum(enrolledStudents, data.district.enrollment[0]);
-//		constStudents = Sum(constStudents, data.district.construction[0]);
-        var studentArray = Sum(data.district.enrollment[0], data.district.construction[0])
+        var studentArray = Sum(districtEnrollment[0], data.district.construction[0])
         var promotedStudent=PromoteStudents(studentArray, projectionSpan);
 		var prediction = HSStudents(promotedStudent);
         
         var calendarYear = i + 1999;
-        console.log(school + " year " + calendarYear + " prediction:" + prediction + " enrollment:" + data.district.enrollment[0] + " construction:" + data.district.construction[0] + " promoted:"+promotedStudent);
+        //console.log(school + " year " + calendarYear + " prediction:" + prediction + " enrollment:" + districtEnrollment[0] + " construction:" + data.district.construction[0] + " promoted:"+promotedStudent);
 		predictedEnrollment[i+6] = prediction;
-		console.log(i + " constuction units:"+data.construction, "percent constructon:"+100* HSStudents(PromoteStudents(data.district.construction[0], projectionSpan))/ prediction);
+		//console.log(i + " constuction units:"+data.construction, "percent constructon:"+100* HSStudents(PromoteStudents(data.district.construction[0], projectionSpan))/ prediction);
 	}
 
 //	enrolledStudents = PromoteStudents(enrolledStudents, projectionSpan);
@@ -334,7 +277,8 @@ function LoadModelvsActualData(data, schoolId)
 	data.district.enrollment[1] = predictedEnrollment;
 
     // Historic high school data from school database
-	data.district.enrollment[0] = [];
+    data.district.enrollment[0] = [];
+    data.plotName = school.displayName + " Forecast (gray) and Actual Enrollment (blue)";
 	iKey.forEach(function (year, iYear){
 		var enrollment = school.enrollment[year];
 		if(enrollment)
@@ -355,36 +299,6 @@ function LoadModelvsActualData(data, schoolId)
 	});
 }
 
-function PlotPermitData(data, schoolId) {
-    var plotData = [[]];
-    var xLables = [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016];
-
-    data.gridsJson.features.forEach(function (feature) { 
-        if (feature.properties.permits) {
-            for (var permitKey in feature.properties.permits) {
-                var permitData = data.permitLookup[permitKey];
-                var year = Year(permitData.properties.acc_date);
-                var type = Number(permitData.properties.class);
-                var units = Number(permitData.properties.housecount);
-                var school = SchoolToId(feature.properties.HIGH_DESC);
-                if(schoolId[0]==districtId || school == schoolId[0])
-                {
-					if (!plotData[0][year - 2000]) {
-						plotData[0][year - 2000] = units;
-					}
-					else {
-						plotData[0][year - 2000] += units;
-					}  	
-                }
-            }
-        }
-    });
-    //chart-data="data.permitPlot.data"
-    //chart-labels="data.permitPlot.lables" chart-legend="true" chart-series="data.permitPlot.xAxis"'
-    data.permitPlot = { "data": plotData, "xAxisLables": xLables, "seriesLabels": ["BSD"] };
-
-}
-
 function ParseHighSchoolData(data) {
     if (data.schools) {
         
@@ -396,18 +310,25 @@ function ParseHighSchoolData(data) {
             var isHs = false;
             for (var iKey = 0; iKey < keys.length && !isHs; iKey++) {
                 var numHsStudents = Number(school.enrollment[keys[iKey]].StudCnt912);
-                if (numHsStudents > 0) {
+                if (numHsStudents > 0 &&(
+                        school.displayName == "Aloha" || 
+                        school.displayName == "Beaverton" ||
+                        school.displayName == "Sunset" ||
+                        school.displayName == "Westview" ||
+                        school.displayName == "Beaverton SD 48J" ||
+                        school.displayName == "Southridge")){
                     isHs = true;
                 }
             }
             if (isHs) {
                 data.high.push([Number(schoolId), school.displayName]);
+                //console.log(schoolId+" "+ school.displayName);
             }
         }
     }
 }
 
-function LoadGeoJson($http, $scope, map) {
+function LoadGeoJson($http, $scope) {
     
     LoadGeoJsonFiles($http, function (constructionJson, studentsJson, schoolsJson) {
         $scope.data.constructionJson = constructionJson;
@@ -420,26 +341,8 @@ function LoadGeoJson($http, $scope, map) {
             AddFeatureBounds($scope.data.gridsJson);
             AddFeatureBounds($scope.data.constructionJson);
             
-            var newData = new google.maps.Data({ map: map });
-            newData.addGeoJson($scope.data.gridsJson);
-            newData.addGeoJson(constructionJson);
-            //newData.addGeoJson($scope.data.permits);
-            //newData.addGeoJson(studentsJson);
-            //newData.addGeoJson(schoolsJson);
-            
-            // No error means GeoJSON was valid!
-            map.data.setMap(null);
-            map.data = newData;
-            
             FindSchoolEnrollment2020($scope.data.gridsJson, $scope.data.schools);
             ProjectEnrollment($scope.data.gridsJson, $scope.data.schools);
-            PlotPermitData($scope.data, 0);
-            
-            heatmap = new google.maps.visualization.HeatmapLayer({
-                data: getPoints($scope.data.permits, $scope.data.mapYears),
-                map: map
-            });
-            
             Configure($scope);
         });
     });
@@ -531,155 +434,9 @@ function ProjectEnrollment(grids, schools)
 
 function Configure($scope) {
 
-	LoadDistrictData($scope.data, countyIdcountyId);
-    // Initialise the map.
-    //map.data.setControls(['LineString', 'Polygon']);
-    
-    map.data.setStyle(function (feature) {
-        var highSchool = feature.getProperty('HIGH_DESC');
-        var gc = Number(feature.getProperty('PA_NUMBER'));
-        var color = 'grey';
-        
-        //if ($scope.data.colorMap == 'Proposed') {
-        //    var school = FindSchool(highSchool, schoolData);
-        //    if (school) {
-        //        color = school.color;
-        //    }
-        //} 
-        //else if ($scope.data.colorMap == 'Distance') {
-        //    for (var i = 0; i < schoolData.hs.length; i++) {
-        //        if (highSchool == schoolData.hs[i].dbName) {
-        //            var distances = feature.getProperty('distance');
-        //            var distance = distances[i];
-        //            color = HeatMapRG(1000, 5000, distance);
-        //        }
-        //    }
-        //}
-        //else {
-        //    if ($scope.data.colorMap != 'Safety') {
-        //        highSchool = $scope.data.colorMap;
-        //    }
-        //    for (var i = 0; i < schoolData.hs.length; i++) {
-        //        if (highSchool == schoolData.hs[i].dbName) {
-        //            var accidentRates = feature.getProperty('accidentRate');
-        //            var accidentRate = accidentRates[i];
-        //            color = HeatMapRG(minAccidentRate[i], maxAccidentRate[i], accidentRates[i]);
-        //        }
-        //    }
-        //}
-        
-        return { editable: false, draggable: false, strokeWeight: 1, fillColor: color, fillOpacity: 0.0};
-    });
-    
-    map.data.addListener('addfeature' , function (ev) {
-        map.data.revertStyle();
-        newFeature = null;
-        ev.feature.toGeoJson(function (grid) {
-            newFeature = grid;
-        });
-    });
-    
-    map.data.addListener('mouseover', function (event) {
-        map.data.revertStyle();
-        //infoWindowMarker.setMap(null);
-        map.data.overrideStyle(event.feature, { strokeWeight: 1 });
-        
-        //if (selecting == 1 && ($scope.data.dragFunc == "paint")) {
-        //    var proposedHigh = $scope.data.proposedHigh;
-        //    if (proposedHigh) {
-        //        // Record selected grid and grid data
-        //        selectedGrid = event.feature;
-        //        selectedGrid.setProperty('proposedHigh', ProposedHigh(proposedHigh, selectedGrid));
-        //        selectedES = selectedGrid.getProperty('elementary');
-                
-        //        //var numEsGrids = 0;
-        //        //if ($scope.data.paintBy == "ES") {
-        //        //    mapGrids.forEach(function (grid) {
-        //        //        if (grid.getProperty('elementary') == selectedES) {
-        //        //            grid.setProperty('proposedHigh', ProposedHigh(proposedHigh, grid));
-        //        //            numEsGrids++;
-        //        //        }
-        //        //    });
-        //        //}
-                
-        //        //map.data.toGeoJson(function (geoJson) {
-        //        //    results = Results(geoJson.features, schoolData);
-        //        //});
-                
-        //        //$scope.data.mapName = defaultMapName;
-        //        //$scope.data.mapDescription = defaultMapDescription;
-                
-        //        //UpdateScopeData($scope, results);
-        //        $scope.$apply();
-        //    }
-        //}
-    });
-    
-    map.data.addListener('mouseout', function (event) {
-        map.data.revertStyle();
-    });
-    
-    
-    map.data.addListener('click', selectGrid = function (event) {
-        if (selecting) {
-            var thisGrid = event.feature;
-            
-            var accidentNum = thisGrid.getProperty("accidentRate");
-            var accidentStr = [];
-            accidentNum.forEach(function (rate, iRate) {
-                accidentStr.push(rate.toFixed(2));
-            });
-            
-            thisGrid.getProperty("accidentRate");
-            
-            var msg = "gc:" + thisGrid.getProperty("gc") +
-                    "<br>High School:" + thisGrid.getProperty("high") +
-                    "<br>Proposed:" + thisGrid.getProperty("proposedHigh") +
-                    "<br>Students:" + thisGrid.getProperty("hs2020") +
-                    "<br>Dist:" + thisGrid.getProperty("distance") +
-                    "<br>Crash:" + accidentStr;
-            
-            infoWindowMarker.setMap(null);
-            
-            infowindow.setContent(msg);
-            infowindow.open(map, infoWindowMarker);
-            var centroid = thisGrid.getProperty("centroid");
-            infoWindowMarker.setPosition({ lat: centroid[1], lng: centroid[0] });
-            infoWindowMarker.setVisible(false);
-            infoWindowMarker.setMap(map);
-        }
-        else {
-            var proposedHigh = $scope.data.proposedHigh;
-            if (proposedHigh) {
-                // Record selected grid and grid data
-                selectedGrid = event.feature;
-                selectedGrid.setProperty('proposedHigh', ProposedHigh(proposedHigh, selectedGrid));
-                selectedES = selectedGrid.getProperty('elementary');
-                
-                var numEsGrids = 0;
-                if ($scope.data.paintBy == "ES") {
-                    mapGrids.forEach(function (grid) {
-                        if (grid.getProperty('elementary') == selectedES) {
-                            grid.setProperty('proposedHigh', ProposedHigh(proposedHigh, grid));
-                            numEsGrids++;
-                        }
-                    });
-                }
-                
-                console.log("click elementary grids=" + numEsGrids);
-                
-                map.data.toGeoJson(function (geoJson) {
-                    results = Results(geoJson.features, schoolData);
-                });
-                
-                $scope.data.mapName = defaultMapName;
-                $scope.data.mapDescription = defaultMapDescription;
-                
-                UpdateScopeData($scope, results);
-                $scope.$apply();
-            }
-        }
-    });
+    LoadModelvsActualData($scope.data, $scope.data.plotSchool[0]); 
+
+    return { editable: false, draggable: false, strokeWeight: 1, fillColor: 'blue', fillOpacity: 0.0};
 };
 
 
@@ -696,28 +453,6 @@ function StudentsToGrids(students, grids)
 
         grids.features[iGrid].properties.students[grade]++;
     });
-}
-
-
-function GridJsonToPolygon(grid) 
-{
-    var paths = [];
-    var exteriorDirection;
-    var interiorDirection;
-    for (var i = 0; i < grid.geometry.coordinates.length; i++) {
-        var path = [];
-        for (var j = 0; j < grid.geometry.coordinates[i].length; j++) {
-            var ll = new google.maps.LatLng(grid.geometry.coordinates[i][j][1], grid.geometry.coordinates[i][j][0]);
-            path.push(ll);
-        }
-        paths.push(path);
-    }
-
-    googleObj = new google.maps.Polygon({paths: paths});
-    if (grid.properties) {
-        googleObj.set("geojsonProperties", grid.properties);
-    }
-    return googleObj;
 }
 
 function CCW(path) {
@@ -828,8 +563,8 @@ function BoundsOverlap(poly, grids)
 		if(centerX >= grid.properties.bounds[0][0] && centerX <= grid.properties.bounds[1][0]){
 			if(centerY >= grid.properties.bounds[0][1] && centerY <= grid.properties.bounds[1][1]){
 				overlapedGrids[iGrid] = grid;
-				console.log("Cstn Bounds ["+minX+","+minY+"], ["+maxX+","+maxY+"]");
-				console.log( grid.properties.PA_NUMBER +" Bounds [" + grid.properties.bounds[0] +"], [" + grid.properties.bounds[0]+"]");
+				//console.log("Cstn Bounds ["+minX+","+minY+"], ["+maxX+","+maxY+"]");
+				//console.log( grid.properties.PA_NUMBER +" Bounds [" + grid.properties.bounds[0] +"], [" + grid.properties.bounds[0]+"]");
 				gridIndex = iGrid;				
 			}
 		}
@@ -870,20 +605,9 @@ function BSD2020Estimate(grids, constructionJson)
         var modelError = Math.abs(estStudents - grid.properties.DDP_DISP);
         avergeError += modelError
         
-        console.log("Grid:" + grid.properties.PA_NUMBER + " BSD2020:" + grid.properties.DDP_DISP+ " recomputed:"+ estStudents + " modelError:" + modelError);
+        //console.log("Grid:" + grid.properties.PA_NUMBER + " BSD2020:" + grid.properties.DDP_DISP+ " recomputed:"+ estStudents + " modelError:" + modelError);
         if (/* modelError > 1.0 estProgression > 0.1 && estProgression <= 1.2 &&*/ grid.properties.TTL_DU.length > 0) {
             constructionError += modelError;
-            //console.log("Grid:" + grid.properties.PA_NUMBER + " BSD2020:" + grid.properties.DDP_DISP, " modelError:" + modelError + " students:" + grid.properties.students);
-			//var TTL = 0
-			//for(var iTTL = 0; iTTL<grid.properties.TTL_DU.length; iTTL++)
-			//{
-			//	TTL += grid.properties.TTL_DU[iTTL];
-			//}
-			//var scaleFactorWithProgression  = (grid.properties.DDP_DISP - estProgression)/TTL;
-			//var scaleFactorWitoutProgression = (grid.properties.DDP_DISP)/TTL;
-			//var constType = grid.properties.TYPE;
-			//console.log("Grid:" + grid.properties.PA_NUMBER + " BSD2020:" + grid.properties.DDP_DISP+ " recompted:" + estStudents + " difference:" + difference);
-			//console.log(constType + " sfp:" + scaleFactorWithProgression + " sfnp:" + scaleFactorWitoutProgression);
 		}  
 
 	});
@@ -891,8 +615,8 @@ function BSD2020Estimate(grids, constructionJson)
 	var percentError = 100*Math.abs(totalBSDStudents-totalProjectedStudents)/totalBSDStudents;
 	averageError = avergeError / grids.features.length;
 
-	console.log("BSD 2020 Enrollment Forecast:"+ totalBSDStudents.toFixed(3) + " Verification Forecast:" + totalProjectedStudents.toFixed(3)
-	+ " Percent Error:" +percentError.toFixed(3)+"%  Average Error:"+ averageError.toFixed(3)+" students" +" construction error:"+ constructionError);
+	//console.log("BSD 2020 Enrollment Forecast:"+ totalBSDStudents.toFixed(3) + " Verification Forecast:" + totalProjectedStudents.toFixed(3)
+	//+ " Percent Error:" +percentError.toFixed(3)+"%  Average Error:"+ averageError.toFixed(3)+" students" +" construction error:"+ constructionError);
 }
 
 function EstProgression(students/*, constStudents*/)
@@ -903,9 +627,6 @@ function EstProgression(students/*, constStudents*/)
 	for(var i=9-yearProgression; i<=12-yearProgression; i++)
 	{
 		estStudents += students[i]*progression[i];
-		//if(constStudents[i]){
-		//	estStudents += constStudents[i]*progression[i];
-		//}
 	}
 	return estStudents;
 }
@@ -913,56 +634,10 @@ function EstProgression(students/*, constStudents*/)
 function PromoteStudents(students, years)
 {
     var progression =[1,1,1,1.243718942,1.10998072,0.954883453,0.574595332,0.86953753,1.538136848,1.215197243,1.043448532,0.947282306,1];
-    //var progression = [1,1,1,3.062498113,0.404784509,1.520186301,2.272240567,0.174060091,1.359198795,2.992270046,0.380521746,1.50808518,1];
-    //var progression = [1,1,1,3.050327544,0.403903568,1.533511151,2.291625975,0.17126898,1.36615342,2.980378568,0.379693608,1.521303961,1];
-    //var progression = [1, 1, 1, 1.85303184, 0.578138291, 1.191937752, 1.528760346, 0.263974194, 1.965911442, 1.810538804, 0.543484711, 1.182449585, 1];
-    //var progression = [1, 1, 1, 1.432208648, 1.947391378, 1.665685262, 0.358502044, 1.0686238, 0.569198921, 1.399365773, 1.830664838, 1.652425928, 1];
-   // var progression = [1, 1, 1, 1.354243375, 0.834672069, 0.84, 0.852842273, 0.85086777, 1.470314858, 1.32318837, 0.784641867, 0.833313358, 1];
-    //var progression = [1, 1, 1, 1.023469829, 0.827572393, 1.01, 1.01, 0.820748977, 1.428561322, 1, 0.777967746, 1.001960109, 1];
-    //var progression = [1, 1, 1, 1.004023902, 1.011032133, 1.003, 1, 1, 0.995, 0.981, 0.950430919, 0.995015831, 1];
     var estStudents = ProgressStudents(students, progression, years);
 
 	return estStudents;
 }
-
-
-
-//function EstConstruciton(grid)
-//{
-//    var sfdRate = 0.16;
-
-//    switch (grid.properties.ELEM_DESC) {
-//        case "Bonny Slope ES":
-//        case "Cedar Mill ES":
-//        case "Jacob Wismer ES":
-//        case "Springville K8":
-//			sfdRate = 0.22;
-//            break;
-//    }  
-//    var estStudents = 0; 
-//	if(grid.properties.TTL_DU && grid.properties.TTL_DU.length)
-//	{
-//		for(var i=0; i<grid.properties.TTL_DU.length; i++)
-//		{
-//			var TTL_DU = grid.properties.TTL_DU[i];
-//			if(grid.properties.TYPE[i] == "SFD"){
-//				estStudents += sfdRate*TTL_DU;
-//				//estStudents += 0.20*TTL_DU;
-//			}
-//			else if(grid.properties.TYPE[i] == "SFA"){
-//				estStudents += 0.04*TTL_DU;			
-//			}
-//			else if(grid.properties.TYPE[i] == "MFA"){
-//			estStudents += 0.066*TTL_DU;			
-//			}
-//			else if(grid.properties.TYPE[i] == "APT"){
-//			estStudents += 0.065*TTL_DU;			
-//			}		
-//		}
-//	}
-//	return estStudents;
-//}
-
 
 function EstConstrucitonBSD2020(grid, constructionLookup, finalYear) {
     var studentGenerationTable = StudentGenerationBSD2020(SchoolToId(grid.properties.ELEM_DESC));
@@ -1037,14 +712,6 @@ function StudentGenerationBSD2020(schoolID)
             };
     }
     return studentGeneration;
-}
-
-function getPoints(permits, years) {
-    var locations = [];
-    permits.features.forEach(function(feature){
-		locations.push(new google.maps.LatLng(feature.geometry.coordinates[1],feature.geometry.coordinates[0]));
-    });
-    return locations;
 }
 
 function AddStudents(estStudents, finalYear, studentGeneration, construction, constYear) {
