@@ -1,0 +1,185 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BSD 2020 Enrollement Error Analysis</title>
+
+    <script src="angular.min.js"></script>
+    <script src="Chart.min.js"></script>
+    <script src="angular-chart.min.js"></script>
+    <script src="Calculations.js"></script>
+    <script src="ServerApi.js"></script>
+    <script src="enrollmenterror.js"></script>
+    <link href="style.css" rel="stylesheet" />
+    <link href="angular-chart.min.css" rel="stylesheet" />
+    <style type="text/css">
+        #container {
+            height: 100%;
+            width: 100%;
+            font-size: 0;
+            background-color: white;
+        }
+
+        #title {
+            display: inline-block;
+            text-align: center;
+            width: 95%;
+            margin: 5px;
+            display: inline-block;
+            vertical-align: top;
+            font-size: 12px;
+            background: white;
+        }
+
+        #introduction {
+            width: 95%;
+            margin: 10px;
+            display: inline-block;
+            *display: inline;
+            zoom: 1;
+            vertical-align: top;
+            font-size: 13px;
+            column-count: 2;
+        }
+
+        #error_analysis {
+            display: inline-block;
+            width: 47%;
+            margin: 5px;
+            display: inline-block;
+            vertical-align: top;
+            font-size: 12px;
+            background: white;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+            outline: 1px solid rgba(0,0,0,0.2);
+        }
+
+        #panel {
+            margin: 5px;
+        }
+
+        #error_discussion {
+            display: inline-block;
+            width: 51%;
+            margin: 5px;
+            display: inline-block;
+            zoom: 1;
+            vertical-align: top;
+            font-size: 12px;
+            background: white;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+            outline: 1px solid rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body ng-app="BoundaryEntry">
+    <div id="container" ng-controller="BoundaryController">
+        <div id="title">
+            <div id="panel">
+                <h2>BSD 2020 Enrollement Forecast Error Analysis</h2>
+            </div>
+        </div>
+        <div id="introduction">
+            The Beaverton School District (BSD) enrollement forecast, used to determine high school boundaries,
+            predicts student enrollement 6 years in the future based on current enrollement, new construction,
+            and the probability of student progression. The error analysis performed below and supplied to BSD
+            applies BSD's own forecast method to historic BSD enrollement data in order to determine the error of
+            the BSD enrollement forecast. Because of this error analysis, BSD admitted that they accidentally
+            double counted option school students and did not take the time to consider enrollement trends within
+            the district (<a href="https://v3.boardbook.org/Public/PublicItemDownload.aspx?ik=39121399">
+                1 August,
+                2016 Board Meeting section "Student Population Projection Discussion"
+            </a>). In
+            addition, rather than addressing these errors, the BSD simply hopes that these errors will provide
+            a buffer of additional space. Unfortunately, this is not the case. Westview's growth--the motivation
+            for the new high school and subsequent boundary adjustment process--is significantly higher than the
+            BSD enrollement forecast while all other schools' growth is significantly less. Consequently, although
+            the BSD is unnecessarily displacing 40% of the school district, it has publicly recognized that much
+            of this displacement is unnecessary. Still worse, based on its own data and forecast, the BSD has
+            seen that the proposed boundaries will still not solve the original problem of Westview's enrollement growth.
+            Please contact <a href="mailto:Don_Grotting@beaverton.k12.or.us;Susan_Greenberg@beaverton.k12.or.us;Anne_Bryan@beaverton.k12.or.us;
+                                      Eric_Simpson@beaverton.k12.or.us;Donna_Tyner@beaverton.k12.or.us;LeeAnn_Larsen@beaverton.k12.or.us;
+                                      Becky_Tymchuk@beaverton.k12.or.us;Linda_Degman@beaverton.k12.or.us?Subject=Correct%20enrollement%20Forecast">
+                Superintendent Grotting and the Beaverton School Board
+            </a>
+            to help them understand that this is not an acceptable solution for our community.
+            <br />
+        </div>
+        <div id="Error">
+            <div id="error_analysis">
+                <div id="panel">
+                    <b>Forecast error analysis:</b> select district or high school to plot actual enrollment and BSD enrollment forecast for that year.
+                    <br /><br />
+                    <b>Select Error Analysis:</b> <select ng-options="hs[1] for hs in data.high" ng-model="data.plotSchool" ng-change="PlotChange()" value="data.plotSchool"></select>
+                    <br /><h3><span ng-bind="data.plotName"></span></h3>
+                    <canvas id="districtPopulationYear" class="chart chart-line" chart-data="data.district.enrollment"
+                            chart-labels="data.district.grade" chart-legend="true" chart-series="data.district.year"
+                            chart-click="onClick" chart-options="{datasetFill:false}" colours [{
+                            fillColor 'rgba(47, 132, 71, 0.8)' ,
+                            strokeColor 'rgba(47, 132, 71, 0.8)' ,
+                            highlightFill 'rgba(47, 132, 71, 0.8)' ,
+                            highlightStroke 'rgba(47, 132, 71, 0.8)' }]"></canvas>
+                </div>
+            </div>
+            <div id="error_discussion">
+                <div id="panel">
+                    <h3>Major Errors in BSD Enrollement Forecast</h3>
+                    <ol>
+                        <li>
+                            <b>Option School Error:</b> if computed correctly, the student
+                            <a href="http://digitalcommons.wayne.edu/cgi/viewcontent.cgi?article=1411&context=jmasm">
+                                progression probability
+                            </a> would have included the probability
+                            of students transitions between comprehensive schools and option schools.
+                            Unfortunately, option school students were simply subtracted from the initial data set.  The 6 year
+                            progression means freshman, sophomore, and junior option school students are double counted
+                            (about 1040 students or 10% of high school enrollement). In an attempt to correct this error, the BSD
+                            <a href="https://v3.boardbook.org/Public/PublicItemDownload.aspx?ik=39121399">
+                                "Student
+                                Population Projection Discussion"
+                            </a> incorrectly subtracted the senior option school student count from the high school enrollement although
+                            this number had already been subtracted from the 6th grade enrollement.
+                        </li>
+                        <li>
+                            <b>Error in Growth Rate:</b> the growing enrollement error (~2%/year) is clearly visible
+                            by plotting "Beaverton SD 48J" in the "Forecast Error Analysis" graph.  In a 6 year forecst, the
+                            error in growth rate is even greater than the option school error--12%  or 1200 student over
+                            prediction--by 2020.  The error in growth rate is in addition to the option school error.
+                        </li>
+                        <li>
+                            <b>Neighborhood Differences in Student Progression:</b> the largest error in the BSD enrollement forecast
+                            is the assumption that student progression is constant throughout the district.  Plotting the forecast
+                            error for individual high schools clearly shows the flaw in this assumption.  Westview, for example,
+                            under predicts student enrollement by 5% while all other high schools over predict student enrollement by up to
+                            18% for 2015.  This is despite taking into account the differences in new construction across BSD.
+                            Clearly, student progression is not constant across the school district.  The excuse for not accounting for
+                            the largest error source in the enrollement forecast is the time needed to reformat historic student data.
+                            The time to reformat historic student data is certainly less than the time, expense
+                            and disruption caused to the district by ignoring these errors.
+                        </li>
+                    </ol>
+                    The massive BSD enrollement forecast errors clearly show the forecast is unable to predict future enrollement.
+                    This is the first BSD enrollement forecast produced by Davis Demographics software.  Obviously, its results should
+                    have been checked against historic enrollement data and previous forecasts.  This was not done effectively.
+                    With total error for different high school schools both over and under predicting 2020 enrollement
+                    by 30% or more, no confidence or valid conclusions can be made based on the currentbBSD enrollement forecast.
+                    <br /><br />
+                    The boundary proposal provided by Superintendent Rose <a href="http://www.sensibleboundaries.com/analysis/">
+                    violates both the <a href="https://www.beaverton.k12.or.us/dist/Admin%20Regs%20and%20Policies/JC.pdf">
+                    desires and process</a> established by the school board.  Since it also fails to feasibly allocate
+                    high school space in its rush redefine high school boundaries, none of the high school boundary objectives
+                    have been satisfied.
+                    <br /><br />
+                    For Superintendent Grotting, restarting the high school boundary ajustment process with a verified enrollment
+                    forecast is the best possible scenario.  Because elementary and middle school
+                    boundary changes are still ahead, all school boundaries can be adderssed together with much better results.
+                    All school boundaries require an accurate enrollment forecast.
+                    BSD now recognizes that there will be fewer students than was previously forecast.  The resulting surplus space can be
+                    directed, not for arbitrary and unnecessary boundary changes due to massive forecast errors, but at improving the
+                    quality of our children’s education.  School board members and BSD have previoiusly advocated new science,
+                    technology, and vocational programs that now become possible.
+                </div>
+            </div>
+        </div>
+</body>
+</html>
