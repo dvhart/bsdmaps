@@ -337,11 +337,7 @@ function LoadGeoJson($http, $scope) {
 
         LoadBSDGrids($http, function (gridsJson) {
             $scope.data.gridsJson = gridsJson;
-            // Add geometry limits to speed matching
-            AddFeatureBounds($scope.data.gridsJson);
-            AddFeatureBounds($scope.data.constructionJson);
 
-            FindSchoolEnrollment2020($scope.data.gridsJson, $scope.data.schools);
             ProjectEnrollment($scope.data.gridsJson, $scope.data.schools);
             Configure($scope);
         });
