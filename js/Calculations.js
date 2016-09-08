@@ -412,6 +412,7 @@ function SchoolToId(school) {
         case "Scholls Heights ES":
         case "Scholls Heights":
             return 2781;
+        case "Science & Technology":
         case "School of Science & Technology":
             return 1314;
         case "Sexton Mountain Elementary School":
@@ -463,6 +464,22 @@ function SchoolToId(school) {
         case "South Cooper Mountain HS":
         case "South Cooper Mountain":
             return 1179;
+        case "Merlo Station":
+        case "Merlo Station Night School":
+            return 3587;
+        case "Arts and Communication MS":
+        case "Arts & Communication Middle Magnet School":
+            return 3548;
+        case "Arts and Communication":
+        case "Arts and Communication Magnet Academy":
+            return 1304;
+        case "Community School":
+            return 1305;
+        case "International School of Beaverton--Middle":
+        case "ISBMS":
+            return 4473;
+        case "Hope Chinese":
+            return 4867;
     }
     return null;
 }
