@@ -341,11 +341,11 @@ function Configure($scope) {
 
 function ConstructionToGrids(construction, grids)
 {
-	grids.features.forEach(function(grid){
-		grid.properties.TYPE = [];
-		grid.properties.SHAPE_Area = [];
-		grid.properties.TTL_DU = [];	
-	});
+    grids.features.forEach(function (grid) {
+        grid.properties.TYPE = [];
+        grid.properties.SHAPE_Area = [];
+        grid.properties.TTL_DU = [];
+    });
     construction.features.forEach(function(development){
         var devPoly = development.geometry.coordinates[0];
         var TTL_DU = development.properties.TTL_DU; // Total development units
