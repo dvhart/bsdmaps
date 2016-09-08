@@ -358,7 +358,7 @@ app.controller('BoundaryController', function ($scope, $http, $sce) {
         out += '<div class="stats-table">';
         out += '<div class="stats-header-row">';
         out += '    <div class="stats-header-cell">School</div>';
-        out += '    <div class="stats-header-cell">Students</div>';
+        out += '    <div class="stats-header-cell">Students<sup><a href="enrollmenterror.html">3</a></sup></div>';
         out += '    <div class="stats-header-cell">Capacity</div>';
         out += '    <div class="stats-header-cell">Proximity (miles)</div>';
         out += '    <div class="stats-header-cell">Crash Rate<sup><a href="crashrate.html">2</a></sup></div>';
