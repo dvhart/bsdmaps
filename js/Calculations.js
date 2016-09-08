@@ -79,14 +79,14 @@ function AccidentRate(totalAccidents, studyYears, averageAnnualDailyTraffice, se
 function AddFeatureBounds(geoJson) {
     for (var iFeature = 0; iFeature < geoJson.features.length; iFeature++) {
         var feature = geoJson.features[iFeature];
-        
+
         var pt = feature.geometry.coordinates[0][0];
         var bounds = [[pt[0], pt[1]], [pt[0], pt[1]]];
         for (var iCoordinates = 0; iCoordinates < feature.geometry.coordinates.length; iCoordinates++) {
             var coordinate = feature.geometry.coordinates[iCoordinates];
             for (var iCoordinate = 0; iCoordinate < coordinate.length; iCoordinate++) {
                 pt = coordinate[iCoordinate];
-                
+
                 if (pt[0] < bounds[0][0]) {
                     bounds[0][0] = pt[0];
                 }
@@ -128,7 +128,7 @@ function WithinPolygon(location, grid) {
 
 function FindGridIndex(location, grids) {
     var gridIndex;
-    
+
     for (var iGrid = 0; !gridIndex && iGrid < grids.features.length; iGrid++) {
         var grid = grids.features[iGrid];
         if (WithnBounds(location, grid.properties.bounds)) {
@@ -152,7 +152,7 @@ function GridJsonToPolygon(grid) {
         }
         paths.push(path);
     }
-    
+
     googleObj = new google.maps.Polygon({ paths: paths });
     if (grid.properties) {
         googleObj.set("geojsonProperties", grid.properties);
@@ -173,7 +173,7 @@ function InitArray(size, value)
 
 function Multiply(vector, scaler) {
     var product = [];
-    
+
     for (var i = 0; i < vector.length; i++) {
         product[i] = vector[i] * scaler;
     }
@@ -210,7 +210,7 @@ function ElementProduct(array1, array2)
 {
     var ary = [];
     var length = Math.min(array1.length, array2.length);
-    
+
     for(var i=0; i<length; i++)
     {
         ary[i] = array1[i] * array2[i];
@@ -486,7 +486,7 @@ function SchoolToId(school) {
 
 function Centroid(locations) {
     var centroidLocation = [0, 0];
-    
+
     if (locations != null && locations.length > 1) {
         for (var i = 0; i < locations.length - 1; i++) {
             centroidLocation[0] += locations[i][0];

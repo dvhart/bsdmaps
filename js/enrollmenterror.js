@@ -53,7 +53,7 @@ app.controller('BoundaryController', function ($scope, $http) {
     {
         LoadModelvsActualData($scope.data, $scope.data.plotSchool[0]);
     }
-    
+
     function init() {
         SchoolInit($http, $scope.data, function () {
             LoadPermits($http, function (permits) {
@@ -64,7 +64,7 @@ app.controller('BoundaryController', function ($scope, $http) {
                     }
                     $scope.data.permitLookup[feature.properties.activity] = feature;
                 });
-                
+
                 LoadGeoJson($http, $scope);
             });
         });
@@ -87,7 +87,7 @@ function ActualEnrollment(schoolId, year, data) {
     var enrollment = [];
     var school = data.schools[schoolId];
     data.district = { "enrollment": [], "grade": ["k", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"], "year": [] };
-    
+
     var key = iKey[year];
     data.district.year = year;
     var schoolEnrollment = school.enrollment[key];
@@ -140,7 +140,7 @@ function ForecastEnrollment(schoolId, startYear, span, data)
             var esEnrolement = es.enrollment[key];
             var msEnrolement = ms.enrollment[key];
             var hsEnrolement = hs.enrollment[key];
-            
+
             if (esEnrolement || schoolId == districtId) {
                 for (var i = 0; i <= 5; i++) {
                     if (esEnrolement) {
@@ -154,7 +154,7 @@ function ForecastEnrollment(schoolId, startYear, span, data)
                     }
                 }
             }
-            
+
             if (msEnrolement || schoolId == districtId) {
                 for (var i = 6; i <= 8; i++) {
                     //if (startYear == 15) {
@@ -165,7 +165,7 @@ function ForecastEnrollment(schoolId, startYear, span, data)
                     //}
                 }
             }
-            
+
             if (hsEnrolement && schoolId == districtId) {
                 for (var i = 9; i <= 12; i++) {
                     //if (startYear == 15) {
@@ -179,7 +179,7 @@ function ForecastEnrollment(schoolId, startYear, span, data)
             }
             var gridForecast = PromoteStudents(enrollment, span);
             forecastEnrollment = Sum(forecastEnrollment, gridForecast);
-            
+
             var histConstruction = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
             for (var i= startYear; i < startYear+span && i < 15; i++) {
                 var constStudentsArray = EstStudentsFromConstruciton(grid, data, i + 1999);
@@ -192,14 +192,14 @@ function ForecastEnrollment(schoolId, startYear, span, data)
             var construction = EstConstrucitonBSD2020(grid, data.constructionLookup, startYear + span + 1999);
             forecastEnrollment = Sum(forecastEnrollment, construction);
 
-            //console.log("Grid:" + grid.properties.PA_NUMBER + " recomputed:"+ HSStudents(Sum(construction, Sum(histConstruction, gridForecast)))+ 
+            //console.log("Grid:" + grid.properties.PA_NUMBER + " recomputed:"+ HSStudents(Sum(construction, Sum(histConstruction, gridForecast)))+
             //    " gridForecast:" + gridForecast+ " histConstruction:"+ histConstruction+
             //    " construction:"+ construction
             //);
 
         }
     });
-    
+
     return forecastEnrollment;
 }
 
@@ -207,7 +207,7 @@ function LoadModelvsActualData(data, schoolId)
 {
     var xLables = [1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020];
     var school = data.schools[schoolId];
-    
+
     var actualEnrollment = [];
     var predictedEnrollment = [];
     for (var i=0; i< 16; i++)
@@ -278,7 +278,7 @@ function LoadGeoJson($http, $scope) {
 
     LoadGeoJsonFiles($http, function (constructionJson, studentsJson, schoolsJson) {
         $scope.data.constructionJson = constructionJson;
-        
+
         $scope.data.constructionLookup = {};
         $scope.data.constructionJson.features.forEach(function (feature) {
             if ($scope.data.constructionLookup[Number(feature.properties.STDYAREA)]) {
@@ -288,7 +288,7 @@ function LoadGeoJson($http, $scope) {
                 $scope.data.constructionLookup[Number(feature.properties.STDYAREA)] = [feature];
             }
         });
-    
+
         LoadBSDGrids($http, function (gridsJson) {
             $scope.data.gridsJson = gridsJson;
             // Add geometry limits to speed matching
@@ -353,8 +353,8 @@ function ConstructionToGrids(construction, grids)
         var SHAPE_Area = development.properties.SHAPE_Area; // Construction area
         var iGrid = FindIntersectionIndex(development, grids); //
         grids.features[iGrid].properties.TTL_DU.push(TTL_DU);
-       	grids.features[iGrid].properties.TYPE.push(TYPE);
-       	grids.features[iGrid].properties.SHAPE_Area.push(SHAPE_Area);      	
+        grids.features[iGrid].properties.TYPE.push(TYPE);
+        grids.features[iGrid].properties.SHAPE_Area.push(SHAPE_Area);
     });
 }
 

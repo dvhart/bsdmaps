@@ -33,9 +33,9 @@ function SaveGrids($http, grids, callback) {
 function RefreshFromSafetyDB(dbData, renderMap) {
     var dbRoutes = []
     try {
-        
+
         dbRoutes = dbData.data;
-        
+
         // Find max accident rate
         var maxRate = 0;
         dbRoutes.forEach(function (route) {
@@ -43,7 +43,7 @@ function RefreshFromSafetyDB(dbData, renderMap) {
                 maxRate = route.rate;
             }
         });
-        
+
         // Set visible with color based on heat map
         dbRoutes.forEach(function (route) {
             var color = HeatMap(0, maxRate, route.rate);
@@ -55,12 +55,12 @@ function RefreshFromSafetyDB(dbData, renderMap) {
             route.polyline = polyline;
             route.polyline.setMap(renderMap);
         });
-        
+
         return dbRoutes;
-        
+
     } catch (error) {
         console.log('error ' + error);
-        
+
         return dbRoutes;
     }
 };
@@ -78,11 +78,11 @@ function LoadSchools($http, callback) {
 
 function SaveSchools($http, schoolsObj) {
     var schoolArray = [];
-    
+
     for (var id in schoolsObj) {
         schoolArray.push(schoolsObj[id]);
     }
-    
+
     $http.post('/SetSchools', schoolArray).then(function successCallback(response) {
         console.log(response);
     }, function errorCallback(response) {
@@ -92,10 +92,10 @@ function SaveSchools($http, schoolsObj) {
 
 function SavePermits($http, permitsObj, callback) {
     $http.post('/SetPermits', permitsObj).then(function successCallback(response) {
-    	if(callback)
-    	{
-    		callback(response);	
-    	}
+        if(callback)
+        {
+            callback(response);
+        }
     }, function errorCallback(response) {
         console.log("SavePermits error:"+response);
     });
@@ -125,10 +125,10 @@ function LoadPermits($http, callback) {
     $http.get('/GetPermits').then(function (getPermits) {
         var permits = getPermits.data;
 
-		if(!permits.features)
-		{
-			permits = {"type": "FeatureCollection","features":[]};
-		}
+        if(!permits.features)
+        {
+            permits = {"type": "FeatureCollection","features":[]};
+        }
 
         callback(permits);
     });
@@ -138,7 +138,7 @@ function LoadGeoJsonFiles($http, callback) {
     var construction = "ResDevProjects.geojson";
     var students = "BSDStudents2014.geojson";
     var schools = "Schools.geojson";
-    
+
     $http.get(construction).success(function (constructionJson) {
         $http.get(students).success(function (studentsJson) {
             $http.get(schools).success(function (schoolsJson) {
@@ -150,7 +150,7 @@ function LoadGeoJsonFiles($http, callback) {
 
 function LoadConstructionJson($http, callback) {
     var construction = "ResDevProjects.geojson";
-    
+
     $http.get(construction).success(function (constructionJson) {
                 callback(constructionJson);
     });
