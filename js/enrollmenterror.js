@@ -276,7 +276,7 @@ function ParseHighSchoolData(data) {
 
 function LoadGeoJson($http, $scope) {
 
-    LoadGeoJsonFiles($http, function (constructionJson, studentsJson, schoolsJson) {
+    LoadConstructionJson($http, function (constructionJson) {
         $scope.data.constructionJson = constructionJson;
 
         $scope.data.constructionLookup = {};
