@@ -147,3 +147,11 @@ function LoadGeoJsonFiles($http, callback) {
         });
     });
 }
+
+function LoadConstructionJson($http, callback) {
+    var construction = "ResDevProjects.geojson";
+    
+    $http.get(construction).success(function (constructionJson) {
+                callback(constructionJson);
+    });
+}
